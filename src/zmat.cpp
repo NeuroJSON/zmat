@@ -43,7 +43,7 @@ const char  *metadata[]={"ArrayType","ArraySize"};
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   TZipMethod zipid=zmZlib;
   int iscompress=1;
-  const char *zipmethods[]={"zlib","gzip"};
+  const char *zipmethods[]={"zlib","gzip",""};
 
   /**
    * If no input is given for this function, it prints help information and return.
@@ -58,10 +58,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
       iscompress=val[0];
   }
   if(nrhs>=3){
-      int len=mxGetNumberOfElements(prhs[1]);
-      if(!mxIsChar(prhs[1]) || len==0)
+      int len=mxGetNumberOfElements(prhs[2]);
+      if(!mxIsChar(prhs[2]) || len==0)
              mexErrMsgTxt("the 'method' field must be a non-empty string");
-      if((zipid=(TZipMethod)zmat_keylookup((char *)mxGetChars(plhs[1]), zipmethods))<0)
+      if((zipid=(TZipMethod)zmat_keylookup((char *)mxArrayToString(prhs[2]), zipmethods))<0)
              mexErrMsgTxt("the specified compression method is not supported");
   }
 
@@ -72,6 +72,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
 	       dimtype buflen[2]={0};
 	       unsigned char *temp=NULL;
+	       char * inputstr=(mxIsChar(prhs[0])? mxArrayToString(prhs[0]) : (char *)mxGetChars(prhs[0]));
 
     	       zs.zalloc = Z_NULL;
     	       zs.zfree = Z_NULL;
@@ -91,14 +92,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    temp=(unsigned char *)malloc(buflen[0]);
 
 		    zs.avail_in = inputsize; // size of input, string + terminator
-		    zs.next_in = (Bytef *)(mxGetChars(prhs[0])); // input char array
+		    zs.next_in = (Bytef *)inputstr; // input char array
 		    zs.avail_out = buflen[0]; // size of output
 
 		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
     
 		    ret=deflate(&zs, Z_FINISH);
 		    if(ret!=Z_STREAM_END && ret!=Z_OK)
-		        mexErrMsgTxt("not all input data is compressed");
+		        mexErrMsgTxt("invalid input buffer");
 		    deflateEnd(&zs);
 	       }else{
 	            if(zipid==zmZlib){
@@ -119,7 +120,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
                     ret=inflate(&zs, Z_FINISH);
 		    if(ret!=Z_STREAM_END && ret!=Z_OK)
-		        mexErrMsgTxt("not all input data is decompressed");
+		        mexErrMsgTxt("invalid input buffer");
 		    inflateEnd(&zs);
 	       }
 	       if(temp){
