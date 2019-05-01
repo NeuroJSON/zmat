@@ -32,7 +32,7 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=#-g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
@@ -57,7 +57,7 @@ ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   MEX=cmd /c mex
   CPPOPT+=-Xcompiler $(OMP)
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
-  CPPOPT+=$(OMP)
+  CPPOPT+=
 else
   CPPOPT+=$(OMP)
   CUCCOPT+=-Xcompiler $(OMP)
@@ -81,6 +81,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 oct:   CXX=mkoctfile
 
 mex:   CXX=$(MEX)
+mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX)
 mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
@@ -106,8 +107,11 @@ $(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS)
 $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	$(AR) $(OBJS) $(OUTPUTFLAG) $(OUTPUT_DIR)/$(BINARY) $(LINKOPT) $(USERLINKOPT)
 
+%$(OBJSUFFIX): %.cpp
+	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -output $@ $<
+
 %$(OBJSUFFIX): %.c
-	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -o $@  $<
+	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -output $@ $<
 
 %$(OBJSUFFIX): %.cu
 	$(CUDACC) -c $(CUCCOPT) -o $@  $<
