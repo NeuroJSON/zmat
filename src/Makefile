@@ -1,26 +1,26 @@
 #################################################################
-#  Makefile for Monte Carlo eXtreme (MCX)
+#  Makefile for ZMAT
 #  Qianqian Fang <q.fang at neu.edu>
-#  2009/04/02
+#  2019/04/30
 #################################################################
 
 BACKEND ?=
 
 ROOTDIR ?= ..
-MZIPDIR  ?= $(ROOTDIR)
-MCXSRC :=$(MZIPDIR)/src
+ZMATDIR  ?= $(ROOTDIR)
+MCXSRC :=$(ZMATDIR)/src
 
 MKDIR      := mkdir
 
 MEX=mex
 AR=$(CC)
 
-BINARY=mzip
-OUTPUT_DIR=$(MZIPDIR)
+BINARY=zmat
+OUTPUT_DIR=$(ZMATDIR)
 
 DOXY       := doxygen
-DOCDIR     := $(MZIPDIR)/doc
-DOXYCFG=mzip.cfg
+DOCDIR     := $(ZMATDIR)/doc
+DOXYCFG=zmat.cfg
 
 INCLUDEDIRS=
 
@@ -38,7 +38,7 @@ OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=
 
-FILES=mzip
+FILES=zmat
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   CC=nvcc
@@ -76,7 +76,7 @@ endif
 
 mex:   CXX=$(MEX)
 mex:   AR=$(MEX)
-mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(MZIPDIR)
+mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
 
 all: mex

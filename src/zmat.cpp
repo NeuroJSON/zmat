@@ -1,5 +1,5 @@
 /***************************************************************************//**
-**  \mainpage MZIP: a data compression function for MATLAB/octave
+**  \mainpage ZMAT: a data compression function for MATLAB/octave
 **
 **  \author Qianqian Fang <q.fang at neu.edu>
 **  \copyright Qianqian Fang, 2019
@@ -10,9 +10,9 @@
 
 
 /***************************************************************************//**
-\file    mzip.cpp
+\file    zmat.cpp
 
-@brief   mex function for MZIP
+@brief   mex function for ZMAT
 *******************************************************************************/
 
 #include <stdio.h>
@@ -31,10 +31,10 @@
 
 enum TZipMethod {zmZlib, zmGzip};
 
-void mzip_usage();
-int  mzip_keylookup(char *origkey, const char *table[]);
+void zmat_usage();
+int  zmat_keylookup(char *origkey, const char *table[]);
 
-/** @brief Mex function for the mzip - an interface to compress/decompress binary data
+/** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
  */
 
@@ -47,7 +47,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
    * If no input is given for this function, it prints help information and return.
    */
   if (nrhs==0){
-     mzip_usage();
+     zmat_usage();
      return;
   }
 
@@ -59,7 +59,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
       int len=mxGetNumberOfElements(prhs[1]);
       if(!mxIsChar(prhs[1]) || len==0)
              mexErrMsgTxt("the 'method' field must be a non-empty string");
-      if((zipid=(TZipMethod)mzip_keylookup((char *)mxGetChars(plhs[1]), zipmethods))<0)
+      if((zipid=(TZipMethod)zmat_keylookup((char *)mxGetChars(plhs[1]), zipmethods))<0)
              mexErrMsgTxt("the specified compression method is not supported");
   }
 
@@ -140,8 +140,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
  * @brief Print a brief help information if nothing is provided
  */
 
-void mzip_usage(){
-     printf("Usage:\n    output=mzip(input,1,'zlib');\n\nPlease run 'help mzip' for more details.\n");
+void zmat_usage(){
+     printf("Usage:\n    output=zmat(input,1,'zlib');\n\nPlease run 'help zmat' for more details.\n");
 }
 
 /**
@@ -152,7 +152,7 @@ void mzip_usage(){
  * @return if found, return the index of the string in the dictionary, otherwise -1.
  */
 
-int mzip_keylookup(char *origkey, const char *table[]){
+int zmat_keylookup(char *origkey, const char *table[]){
     int i=0;
     char *key=(char *)malloc(strlen(origkey)+1);
     memcpy(key,origkey,strlen(origkey)+1);
