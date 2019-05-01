@@ -32,7 +32,7 @@
 enum TZipMethod {zmZlib, zmGzip};
 
 void mzip_usage();
-int mcx_keylookup(char *origkey, const char *table[]);
+int  mzip_keylookup(char *origkey, const char *table[]);
 
 /** @brief Mex function for the mzip - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
@@ -59,7 +59,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
       int len=mxGetNumberOfElements(prhs[1]);
       if(!mxIsChar(prhs[1]) || len==0)
              mexErrMsgTxt("the 'method' field must be a non-empty string");
-      if((zipid=(TZipMethod)mcx_keylookup((char *)mxGetChars(plhs[1]), zipmethods))<0)
+      if((zipid=(TZipMethod)mzip_keylookup((char *)mxGetChars(plhs[1]), zipmethods))<0)
              mexErrMsgTxt("the specified compression method is not supported");
   }
 
@@ -67,8 +67,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0])){
 	       z_stream zs;
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
-	       dimtype buflen[1]={0};
-	       char *temp=NULL;
+	       dimtype buflen[2]={0};
+	       unsigned char *temp=NULL;
 
     	       zs.zalloc = Z_NULL;
     	       zs.zfree = Z_NULL;
@@ -85,7 +85,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		            mexErrMsgTxt("failed to initialize zlib");
 		    }
 		    buflen[0] =deflateBound(&zs,inputsize);
-		    temp=(char *)malloc(buflen[0]);
+		    temp=(unsigned char *)malloc(buflen[0]);
 
 		    zs.avail_in = inputsize + 1; // size of input, string + terminator
 		    zs.next_in = (Bytef *)(mxGetData(prhs[0])); // input char array
@@ -104,7 +104,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		           mexErrMsgTxt("failed to initialize zlib");
 		    }
 		    buflen[0] =inputsize*20;
-		    temp=(char *)malloc(buflen[0]);
+		    temp=(unsigned char *)malloc(buflen[0]);
 
 		    zs.avail_in = inputsize + 1; // size of input, string + terminator
 		    zs.next_in =(Bytef *)(mxGetData(prhs[0])); // input char array
@@ -117,9 +117,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       }
 	       if(temp){
 	            buflen[0]=1;
-		    buflen[1]=strlen(temp)+1;
+		    buflen[1]=strlen((char *)temp);
 		    plhs[0] = mxCreateNumericArray(2,buflen,mxUINT8_CLASS,mxREAL);
-		    memcpy((unsigned char*)mxGetPr(plhs[0]),temp,buflen[1]-1);
+		    memcpy((unsigned char*)mxGetPr(plhs[0]),temp,buflen[1]);
 		    free(temp);
 	       }
 	  }else{
@@ -152,7 +152,7 @@ void mzip_usage(){
  * @return if found, return the index of the string in the dictionary, otherwise -1.
  */
 
-int mcx_keylookup(char *origkey, const char *table[]){
+int mzip_keylookup(char *origkey, const char *table[]){
     int i=0;
     char *key=(char *)malloc(strlen(origkey)+1);
     memcpy(key,origkey,strlen(origkey)+1);
