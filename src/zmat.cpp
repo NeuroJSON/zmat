@@ -34,6 +34,8 @@ enum TZipMethod {zmZlib, zmGzip};
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
 
+const char  *metadata[]={"ArrayType","ArraySize"};
+
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
  */
@@ -63,7 +65,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
              mexErrMsgTxt("the specified compression method is not supported");
   }
 
-   try{
+  try{
 	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0])){
 	       z_stream zs;
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
@@ -87,8 +89,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    buflen[0] =deflateBound(&zs,inputsize);
 		    temp=(unsigned char *)malloc(buflen[0]);
 
-		    zs.avail_in = inputsize + 1; // size of input, string + terminator
-		    zs.next_in = (Bytef *)(mxGetData(prhs[0])); // input char array
+		    zs.avail_in = inputsize; // size of input, string + terminator
+		    zs.next_in = (Bytef *)(mxGetChars(prhs[0])); // input char array
 		    zs.avail_out = buflen[0]; // size of output
 
 		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
@@ -100,13 +102,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		        if(inflateInit(&zs) != Z_OK)
 		           mexErrMsgTxt("failed to initialize zlib");
 		    }else{
-		        if(inflateInit2(&zs, 15|16) != Z_OK)
+		        if(inflateInit2(&zs, 15|32) != Z_OK)
 		           mexErrMsgTxt("failed to initialize zlib");
 		    }
 		    buflen[0] =inputsize*20;
 		    temp=(unsigned char *)malloc(buflen[0]);
 
-		    zs.avail_in = inputsize + 1; // size of input, string + terminator
+		    zs.avail_in = inputsize; // size of input, string + terminator
 		    zs.next_in =(Bytef *)(mxGetData(prhs[0])); // input char array
 		    zs.avail_out = buflen[0]; // size of output
 
@@ -117,22 +119,33 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       }
 	       if(temp){
 	            buflen[0]=1;
-		    buflen[1]=strlen((char *)temp);
+		    buflen[1]=zs.total_out;
 		    plhs[0] = mxCreateNumericArray(2,buflen,mxUINT8_CLASS,mxREAL);
 		    memcpy((unsigned char*)mxGetPr(plhs[0]),temp,buflen[1]);
 		    free(temp);
 	       }
+	       if(nlhs>1){
+	            int inputdim[2]={1,0};
+	            plhs[1]=mxCreateStructMatrix(1,1,2,metadata);
+		    mxArray *val = mxCreateString(mxGetClassName(prhs[0]));
+                    mxSetFieldByNumber(plhs[1],0,0, val);
+
+		    inputdim[1]=mxGetNumberOfDimensions(prhs[0]);
+		    val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
+		    memcpy(mxGetPr(val),mxGetDimensions(prhs[0]),inputdim[1]*sizeof(dimtype));
+                    mxSetFieldByNumber(plhs[1],0,1, val);
+	       }
 	  }else{
 	      mexErrMsgTxt("the input must be in char or int8/uint8 format");
 	  }
-   }catch(const char *err){
+  }catch(const char *err){
       mexPrintf("Error: %s\n",err);
-   }catch(const std::exception &err){
+  }catch(const std::exception &err){
       mexPrintf("C++ Error: %s\n",err.what());
-   }catch(...){
+  }catch(...){
       mexPrintf("Unknown Exception");
-   }
-   return;
+  }
+  return;
 }
 
 
@@ -141,7 +154,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
  */
 
 void zmat_usage(){
-     printf("Usage:\n    output=zmat(input,1,'zlib');\n\nPlease run 'help zmat' for more details.\n");
+     printf("Usage:\n    [output,info]=zmat(input,iscompress,method);\n\nPlease run 'help zmat' for more details.\n");
 }
 
 /**
