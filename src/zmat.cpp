@@ -68,6 +68,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   try{
 	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0])){
 	       z_stream zs;
+	       int ret;
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
 	       dimtype buflen[2]={0};
 	       unsigned char *temp=NULL;
@@ -95,7 +96,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
 		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
     
-		    deflate(&zs, Z_FINISH);
+		    ret=deflate(&zs, Z_FINISH);
+		    if(ret!=Z_STREAM_END && ret!=Z_OK)
+		        mexErrMsgTxt("not all input data is compressed");
 		    deflateEnd(&zs);
 	       }else{
 	            if(zipid==zmZlib){
@@ -113,8 +116,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    zs.avail_out = buflen[0]; // size of output
 
 		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
-    
-		    inflate(&zs, Z_FINISH);
+
+                    ret=inflate(&zs, Z_FINISH);
+		    if(ret!=Z_STREAM_END && ret!=Z_OK)
+		        mexErrMsgTxt("not all input data is decompressed");
 		    inflateEnd(&zs);
 	       }
 	       if(temp){
