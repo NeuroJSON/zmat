@@ -74,6 +74,12 @@ else
   endif
 endif
 
+oct:   OUTPUT_DIR=..
+oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile
+oct:   BINARY=zmat.mex
+oct:   LINKOPT+=--mex $(INCLUDEDIRS)
+oct:   CXX=mkoctfile
+
 mex:   CXX=$(MEX)
 mex:   AR=$(MEX)
 mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
@@ -88,7 +94,7 @@ OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 
 TARGETSUFFIX:=$(suffix $(BINARY))
 
-all mex: $(OUTPUT_DIR)/$(BINARY)
+all mex oct: $(OUTPUT_DIR)/$(BINARY)
 
 makedirs:
 	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi

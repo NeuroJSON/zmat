@@ -66,13 +66,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   }
 
   try{
-	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0])){
+	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0]) || mxIsInt8(prhs[0])){
 	       z_stream zs;
 	       int ret;
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
 	       dimtype buflen[2]={0};
 	       unsigned char *temp=NULL;
-	       char * inputstr=(mxIsChar(prhs[0])? mxArrayToString(prhs[0]) : (char *)mxGetChars(prhs[0]));
+	       char * inputstr=(mxIsChar(prhs[0])? mxArrayToString(prhs[0]) : (char *)mxGetData(prhs[0]));
 
     	       zs.zalloc = Z_NULL;
     	       zs.zfree = Z_NULL;
