@@ -1,0 +1,113 @@
+#################################################################
+#  Makefile for Monte Carlo eXtreme (MCX)
+#  Qianqian Fang <q.fang at neu.edu>
+#  2009/04/02
+#################################################################
+
+BACKEND ?=
+
+ROOTDIR ?= ..
+MZIPDIR  ?= $(ROOTDIR)
+MCXSRC :=$(MZIPDIR)/src
+
+MKDIR      := mkdir
+
+MEX=mex
+AR=$(CC)
+
+BINARY=mzip
+OUTPUT_DIR=$(MZIPDIR)
+
+DOXY       := doxygen
+DOCDIR     := $(MZIPDIR)/doc
+DOXYCFG=mzip.cfg
+
+INCLUDEDIRS=
+
+CUOMPLINK=
+
+ARCH = $(shell uname -m)
+PLATFORM = $(shell uname -s)
+
+DLLFLAG=
+OMP=-fopenmp
+
+CPPOPT=-g -Wall -std=c99 # -DUSE_OS_TIMER
+
+OUTPUTFLAG:=-o
+OBJSUFFIX=.o
+EXESUFFIX=
+
+FILES=mzip
+
+ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
+  CC=nvcc
+  CUOMPLINK=-Xcompiler
+  ifeq ($(findstring x86_64,$(ARCH)), x86_64)
+      LINKOPT=-L"$(CUDA_PATH)/lib/x64" $(CUDART)
+  else
+      LINKOPT=-L"$(CUDA_PATH)/lib/Win32" $(CUDART)
+  endif
+  INCLUDEDIRS +=-I"$(CUDA_PATH)/lib/include"
+  CPPOPT =-c -D_CRT_SECURE_NO_DEPRECATE -DWIN32
+  OBJSUFFIX=.obj
+  EXESUFFIX=.exe
+  DLLFLAG=
+  OMP=/openmp
+  MEX=cmd /c mex
+  CPPOPT+=-Xcompiler $(OMP)
+else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
+  CPPOPT+=$(OMP)
+else
+  CPPOPT+=$(OMP)
+  CUCCOPT+=-Xcompiler $(OMP)
+  ifeq ($(findstring x86_64,$(ARCH)), x86_64)
+     CPPOPT +=-m64
+     CUCCOPT +=-m64
+     ifeq "$(wildcard /usr/local/cuda/lib64)" "/usr/local/cuda/lib64"
+        ifeq ($(BACKEND),cuda)
+           LINKOPT=-L/usr/local/cuda/lib64 $(CUDART) -lm -lstdc++
+        else ifeq ($(BACKEND),cudastatic)
+           LINKOPT=-L/usr/local/cuda/lib64 $(CUDART) -lm -static-libgcc -static-libstdc++
+        endif
+     endif
+  endif
+endif
+
+mex:   CXX=$(MEX)
+mex:   AR=$(MEX)
+mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(MZIPDIR)
+mex:   OUTPUT_DIR=..
+
+all: mex
+
+doc: makedocdir
+	$(DOXY) $(DOXYCFG)
+
+OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
+
+TARGETSUFFIX:=$(suffix $(BINARY))
+
+all mex: $(OUTPUT_DIR)/$(BINARY)
+
+makedirs:
+	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi
+
+makedocdir:
+	@if test ! -d $(DOCDIR); then $(MKDIR) $(DOCDIR); fi
+
+$(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS)
+$(OUTPUT_DIR)/$(BINARY): $(OBJS)
+	$(AR) $(OBJS) $(OUTPUTFLAG) $(OUTPUT_DIR)/$(BINARY) $(LINKOPT) $(USERLINKOPT)
+
+%$(OBJSUFFIX): %.c
+	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -o $@  $<
+
+%$(OBJSUFFIX): %.cu
+	$(CUDACC) -c $(CUCCOPT) -o $@  $<
+
+clean:
+	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX)
+
+.DEFAULT_GOAL := all
+
