@@ -59,10 +59,10 @@ ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
   CPPOPT+=
 else
-  CPPOPT+=$(OMP)
+  CPPOPT+=
   CUCCOPT+=-Xcompiler $(OMP)
   ifeq ($(findstring x86_64,$(ARCH)), x86_64)
-     CPPOPT +=-m64
+     CPPOPT +=
      CUCCOPT +=-m64
      ifeq "$(wildcard /usr/local/cuda/lib64)" "/usr/local/cuda/lib64"
         ifeq ($(BACKEND),cuda)
