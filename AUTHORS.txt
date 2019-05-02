@@ -9,3 +9,8 @@ Email: <q.fang at neu.edu>
 
 ZMAT Website : http://iso2mesh.sf.net/jsonlab
 
+
+The base64_{encode,decode} functions in the zmat.cpp functions were copied from
+http://web.mit.edu/freebsd/head/contrib/wpa/src/utils/base64.c
+http://web.mit.edu/freebsd/head/contrib/wpa/src/utils/base64.h
+written by Jouni Malinen <j@w1.fi> licensed under the BSD license

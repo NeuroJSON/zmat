@@ -4,6 +4,9 @@
 **  \author Qianqian Fang <q.fang at neu.edu>
 **  \copyright Qianqian Fang, 2019
 **
+**  Functions: base64_encode()/base64_decode()
+**  \copyright 2005-2011, Jouni Malinen <j@w1.fi>
+**
 **  \section slicense License
 **          GPL v3, see LICENSE.txt for details
 *******************************************************************************/
@@ -29,11 +32,16 @@
       typedef size_t dimtype;                           /**<  MATLAB after 2017 uses size_t as the dimension array */
 #endif
 
-enum TZipMethod {zmZlib, zmGzip};
 
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
+unsigned char * base64_encode(const unsigned char *src, size_t len,
+			      size_t *out_len);
+unsigned char * base64_decode(const unsigned char *src, size_t len,
+			      size_t *out_len);
 
+
+enum TZipMethod {zmZlib, zmGzip, zmBase64};
 const char  *metadata[]={"type","size"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
@@ -43,7 +51,7 @@ const char  *metadata[]={"type","size"};
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   TZipMethod zipid=zmZlib;
   int iscompress=1;
-  const char *zipmethods[]={"zlib","gzip",""};
+  const char *zipmethods[]={"zlib","gzip","base64",""};
 
   /**
    * If no input is given for this function, it prints help information and return.
@@ -72,6 +80,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
 	       dimtype buflen[2]={0};
 	       unsigned char *temp=NULL;
+	       size_t outputsize=0;
 	       char * inputstr=(mxIsChar(prhs[0])? mxArrayToString(prhs[0]) : (char *)mxGetData(prhs[0]));
 
     	       zs.zalloc = Z_NULL;
@@ -80,52 +89,64 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
 	       if(inputsize==0)
 		    mexErrMsgTxt("input can not be empty");
+
 	       if(iscompress){
-	            if(zipid==zmZlib){
-		        if(deflateInit(&zs, Z_DEFAULT_COMPRESSION) != Z_OK)
-		            mexErrMsgTxt("failed to initialize zlib");
-		    }else{
-		        if(deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15|16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK)
-		            mexErrMsgTxt("failed to initialize zlib");
+                    if(zipid==zmBase64){
+
+		        temp=base64_encode((const unsigned char*)inputstr, inputsize, &outputsize);
+	            }else{
+			if(zipid==zmZlib){
+		            if(deflateInit(&zs, Z_DEFAULT_COMPRESSION) != Z_OK)
+		        	mexErrMsgTxt("failed to initialize zlib");
+			}else{
+		            if(deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15|16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK)
+		        	mexErrMsgTxt("failed to initialize zlib");
+			}
+			buflen[0] =deflateBound(&zs,inputsize);
+			temp=(unsigned char *)malloc(buflen[0]);
+			zs.avail_in = inputsize; // size of input, string + terminator
+			zs.next_in = (Bytef *)inputstr; // input char array
+			zs.avail_out = buflen[0]; // size of output
+
+			zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
+
+			ret=deflate(&zs, Z_FINISH);
+			outputsize=zs.total_out;
+			if(ret!=Z_STREAM_END && ret!=Z_OK)
+		            mexErrMsgTxt("invalid input buffer");
+			deflateEnd(&zs);
 		    }
-		    buflen[0] =deflateBound(&zs,inputsize);
-		    temp=(unsigned char *)malloc(buflen[0]);
-
-		    zs.avail_in = inputsize; // size of input, string + terminator
-		    zs.next_in = (Bytef *)inputstr; // input char array
-		    zs.avail_out = buflen[0]; // size of output
-
-		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
-
-		    ret=deflate(&zs, Z_FINISH);
-		    if(ret!=Z_STREAM_END && ret!=Z_OK)
-		        mexErrMsgTxt("invalid input buffer");
-		    deflateEnd(&zs);
 	       }else{
-	            if(zipid==zmZlib){
-		        if(inflateInit(&zs) != Z_OK)
-		           mexErrMsgTxt("failed to initialize zlib");
-		    }else{
-		        if(inflateInit2(&zs, 15|32) != Z_OK)
-		           mexErrMsgTxt("failed to initialize zlib");
+                    if(zipid==zmBase64){
+		        temp=base64_decode((const unsigned char*)inputstr, inputsize, &outputsize);
+	            }else{
+	        	if(zipid==zmZlib){
+		            if(inflateInit(&zs) != Z_OK)
+		               mexErrMsgTxt("failed to initialize zlib");
+			}else{
+		            if(inflateInit2(&zs, 15|32) != Z_OK)
+		               mexErrMsgTxt("failed to initialize zlib");
+			}
+			buflen[0] =inputsize*20;
+			temp=(unsigned char *)malloc(buflen[0]);
+
+			zs.avail_in = inputsize; // size of input, string + terminator
+			zs.next_in =(Bytef *)(mxGetData(prhs[0])); // input char array
+			zs.avail_out = buflen[0]; // size of output
+
+			zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
+
+                	ret=inflate(&zs, Z_FINISH);
+			outputsize=zs.total_out;
+
+			if(ret!=Z_STREAM_END && ret!=Z_OK)
+		            mexErrMsgTxt("invalid input buffer");
+			inflateEnd(&zs);
 		    }
-		    buflen[0] =inputsize*20;
-		    temp=(unsigned char *)malloc(buflen[0]);
-
-		    zs.avail_in = inputsize; // size of input, string + terminator
-		    zs.next_in =(Bytef *)(mxGetData(prhs[0])); // input char array
-		    zs.avail_out = buflen[0]; // size of output
-
-		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
-
-                    ret=inflate(&zs, Z_FINISH);
-		    if(ret!=Z_STREAM_END && ret!=Z_OK)
-		        mexErrMsgTxt("invalid input buffer");
-		    inflateEnd(&zs);
 	       }
 	       if(temp){
 	            buflen[0]=1;
-		    buflen[1]=zs.total_out;
+		    buflen[1]=outputsize;
 		    plhs[0] = mxCreateNumericArray(2,buflen,mxUINT8_CLASS,mxREAL);
 		    memcpy((unsigned char*)mxGetPr(plhs[0]),temp,buflen[1]);
 		    free(temp);
@@ -189,4 +210,156 @@ int zmat_keylookup(char *origkey, const char *table[]){
     }
     free(key);
     return -1;
+}
+
+
+/*
+ * Base64 encoding/decoding (RFC1341)
+ * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
+ *
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
+ */
+
+static const unsigned char base64_table[65] =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+ * base64_encode - Base64 encode
+ * @src: Data to be encoded
+ * @len: Length of the data to be encoded
+ * @out_len: Pointer to output length variable, or %NULL if not used
+ * Returns: Allocated buffer of out_len bytes of encoded data,
+ * or %NULL on failure
+ *
+ * Caller is responsible for freeing the returned buffer. Returned buffer is
+ * nul terminated to make it easier to use as a C string. The nul terminator is
+ * not included in out_len.
+ */
+unsigned char * base64_encode(const unsigned char *src, size_t len,
+			      size_t *out_len)
+{
+	unsigned char *out, *pos;
+	const unsigned char *end, *in;
+	size_t olen;
+	int line_len;
+
+	olen = len * 4 / 3 + 4; /* 3-byte blocks to 4-byte */
+	olen += olen / 72; /* line feeds */
+	olen++; /* nul termination */
+	if (olen < len)
+		return NULL; /* integer overflow */
+	out = (unsigned char *)malloc(olen);
+	if (out == NULL)
+		return NULL;
+
+	end = src + len;
+	in = src;
+	pos = out;
+	line_len = 0;
+	while (end - in >= 3) {
+		*pos++ = base64_table[in[0] >> 2];
+		*pos++ = base64_table[((in[0] & 0x03) << 4) | (in[1] >> 4)];
+		*pos++ = base64_table[((in[1] & 0x0f) << 2) | (in[2] >> 6)];
+		*pos++ = base64_table[in[2] & 0x3f];
+		in += 3;
+		line_len += 4;
+		if (line_len >= 72) {
+			*pos++ = '\n';
+			line_len = 0;
+		}
+	}
+
+	if (end - in) {
+		*pos++ = base64_table[in[0] >> 2];
+		if (end - in == 1) {
+			*pos++ = base64_table[(in[0] & 0x03) << 4];
+			*pos++ = '=';
+		} else {
+			*pos++ = base64_table[((in[0] & 0x03) << 4) |
+					      (in[1] >> 4)];
+			*pos++ = base64_table[(in[1] & 0x0f) << 2];
+		}
+		*pos++ = '=';
+		line_len += 4;
+	}
+
+	if (line_len)
+		*pos++ = '\n';
+
+	*pos = '\0';
+	if (out_len)
+		*out_len = pos - out;
+	return out;
+}
+
+
+/**
+ * base64_decode - Base64 decode
+ * @src: Data to be decoded
+ * @len: Length of the data to be decoded
+ * @out_len: Pointer to output length variable
+ * Returns: Allocated buffer of out_len bytes of decoded data,
+ * or %NULL on failure
+ *
+ * Caller is responsible for freeing the returned buffer.
+ */
+unsigned char * base64_decode(const unsigned char *src, size_t len,
+			      size_t *out_len)
+{
+	unsigned char dtable[256], *out, *pos, block[4], tmp;
+	size_t i, count, olen;
+	int pad = 0;
+
+	memset(dtable, 0x80, 256);
+	for (i = 0; i < sizeof(base64_table) - 1; i++)
+		dtable[base64_table[i]] = (unsigned char) i;
+	dtable['='] = 0;
+
+	count = 0;
+	for (i = 0; i < len; i++) {
+		if (dtable[src[i]] != 0x80)
+			count++;
+	}
+
+	if (count == 0 || count % 4)
+		return NULL;
+
+	olen = count / 4 * 3;
+	pos = out = (unsigned char *)malloc(olen);
+	if (out == NULL)
+		return NULL;
+
+	count = 0;
+	for (i = 0; i < len; i++) {
+		tmp = dtable[src[i]];
+		if (tmp == 0x80)
+			continue;
+
+		if (src[i] == '=')
+			pad++;
+		block[count] = tmp;
+		count++;
+		if (count == 4) {
+			*pos++ = (block[0] << 2) | (block[1] >> 4);
+			*pos++ = (block[1] << 4) | (block[2] >> 2);
+			*pos++ = (block[2] << 6) | block[3];
+			count = 0;
+			if (pad) {
+				if (pad == 1)
+					pos--;
+				else if (pad == 2)
+					pos -= 2;
+				else {
+					/* Invalid padding */
+					free(out);
+					return NULL;
+				}
+				break;
+			}
+		}
+	}
+
+	*out_len = pos - out;
+	return out;
 }

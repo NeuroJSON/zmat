@@ -16,6 +16,7 @@ function [output, info]=zmat(input, iscompress, method)
 %      method: (optional) compression method, currently, zmat supports the below methods
 %             'zlib': zlib/zip based data compression (default)
 %             'gzip': gzip formatted data compression
+%             'base64': encode or decode use base64 format
 %
 % output:
 %      output: a uint8 row vector, storing the compressed or decompressed data
@@ -30,6 +31,8 @@ function [output, info]=zmat(input, iscompress, method)
 %   [ss, info]=zmat(uint8(eye(5)))
 %   orig=zmat(ss,0)
 %   orig=reshape(orig, info.size)
+%   ss=char(zmat('zmat test',1,'base64'))
+%   orig=char(zmat(ss,0,'base64'))
 %
-% -- this function is part of ZMAT toolbox (http://iso2mesh.sf.net/jsonlab)
+% -- this function is part of the ZMAT toolbox (http://iso2mesh.sf.net/jsonlab)
 %
