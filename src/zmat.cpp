@@ -26,12 +26,7 @@
 #include "mex.h"
 #include "zlib.h"
 
-#if (! defined MX_API_VER) || (MX_API_VER < 0x07300000)
-      typedef int dimtype;                              /**<  MATLAB before 2017 uses int as the dimension array */
-#else
-      typedef size_t dimtype;                           /**<  MATLAB after 2017 uses size_t as the dimension array */
-#endif
-
+typedef mwSize dimtype;
 
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
