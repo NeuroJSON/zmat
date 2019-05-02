@@ -24,8 +24,6 @@ function [output, info]=zmat(input, iscompress, method)
 %            'type': the class of the input array
 %            'size': the dimensions of the input array
 %
-% note: This function only works for matlab
-%
 % example:
 %
 %   [ss, info]=zmat(uint8(eye(5)))
