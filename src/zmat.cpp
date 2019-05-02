@@ -34,7 +34,7 @@ enum TZipMethod {zmZlib, zmGzip};
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
 
-const char  *metadata[]={"ArrayType","ArraySize"};
+const char  *metadata[]={"type","size"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
@@ -96,7 +96,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    zs.avail_out = buflen[0]; // size of output
 
 		    zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
-    
+
 		    ret=deflate(&zs, Z_FINISH);
 		    if(ret!=Z_STREAM_END && ret!=Z_OK)
 		        mexErrMsgTxt("invalid input buffer");
