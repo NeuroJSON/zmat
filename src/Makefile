@@ -83,7 +83,7 @@ oct:   CXX=mkoctfile
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX)
-mex:   LINKOPT+= -cxx CLIBS='$$CLIBS -lz' CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
 
 all: mex
