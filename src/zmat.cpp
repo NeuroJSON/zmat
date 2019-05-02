@@ -152,7 +152,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    free(temp);
 	       }
 	       if(nlhs>1){
-	            int inputdim[2]={1,0};
+	            dimtype inputdim[2]={1,0};
 	            plhs[1]=mxCreateStructMatrix(1,1,2,metadata);
 		    mxArray *val = mxCreateString(mxGetClassName(prhs[0]));
                     mxSetFieldByNumber(plhs[1],0,0, val);
