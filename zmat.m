@@ -23,6 +23,7 @@ function [output, info]=zmat(input, iscompress, method)
 %      info: (optional) a struct storing additional info regarding the input data, may have
 %            'type': the class of the input array
 %            'size': the dimensions of the input array
+%            'status': the zlib function return value, including potential error codes (<0)
 %
 % example:
 %
@@ -32,5 +33,5 @@ function [output, info]=zmat(input, iscompress, method)
 %   ss=char(zmat('zmat test',1,'base64'))
 %   orig=char(zmat(ss,0,'base64'))
 %
-% -- this function is part of the ZMAT toolbox (http://iso2mesh.sf.net/jsonlab)
+% -- this function is part of the ZMAT toolbox (http://github.com/fangq/zmat)
 %

@@ -116,6 +116,7 @@ savejson.m
        info: (optional) a struct storing additional info regarding the input data, may have
              'type': the class of the input array
              'size': the dimensions of the input array
+             'status': the zlib function return value, including potential error codes (<0)
  
   example:
  
