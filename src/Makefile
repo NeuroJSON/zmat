@@ -38,7 +38,7 @@ OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=
 
-FILES=zmat
+FILES=
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   CC=nvcc
@@ -75,14 +75,14 @@ else
 endif
 
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile
+oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp 
 oct:   BINARY=zmat.mex
 oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 oct:   CXX=mkoctfile
 
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
-mex:   AR=$(MEX)
+mex:   AR=$(MEX) zmat.cpp
 mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
 

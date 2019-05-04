@@ -140,17 +140,6 @@ base64 encoding/decoding to strings.
 Please run these examples and understand how ZMat works before you use
 it to process your data.
 
-=======================
-Known Issues and TODOs
-=======================
-
-ZMat has several known limitations. We are striving to make it more general
-and robust. Hopefully in a few future releases, the limitations become less.
-
-Here are the known issues:
-
-  * The default output buffer to store decompressed data is 20x of the input data size. If the compression ratio is higher than that, zmat may produce an error
-
 ==========================
 Contribution and feedback
 ==========================

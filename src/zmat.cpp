@@ -120,6 +120,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
                     if(zipid==zmBase64){
 		        temp=base64_decode((const unsigned char*)inputstr, inputsize, &outputsize);
 	            }else{
+		        int count=1;
 	        	if(zipid==zmZlib){
 		            if(inflateInit(&zs) != Z_OK)
 		               mexErrMsgTxt("failed to initialize zlib");
@@ -136,7 +137,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
 			zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
 
-                	ret=inflate(&zs, Z_FINISH);
+                	while((ret=inflate(&zs, Z_SYNC_FLUSH))!=Z_STREAM_END && count<=10){
+			    temp=(unsigned char *)realloc(temp, (buflen[0]<<count));
+			    zs.next_out =  (Bytef *)(temp+(buflen[0]<<(count-1))); //(Bytef *)(); // output char array
+			    zs.avail_out = (buflen[0]<<(count-1)); // size of output
+			    count++;
+			}
 			outputsize=zs.total_out;
 
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
