@@ -37,7 +37,7 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 
 
 enum TZipMethod {zmZlib, zmGzip, zmBase64};
-const char  *metadata[]={"type","size"};
+const char  *metadata[]={"type","size","status"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
@@ -108,13 +108,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 			ret=deflate(&zs, Z_FINISH);
 			outputsize=zs.total_out;
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
-		            mexErrMsgTxt("invalid input buffer");
+		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			deflateEnd(&zs);
 		    }
 	       }else{
                     if(zipid==zmBase64){
 		        temp=base64_decode((const unsigned char*)inputstr, inputsize, &outputsize);
 	            }else{
+		        int count=1;
 	        	if(zipid==zmZlib){
 		            if(inflateInit(&zs) != Z_OK)
 		               mexErrMsgTxt("failed to initialize zlib");
@@ -131,11 +132,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
 			zs.next_out =  (Bytef *)(temp); //(Bytef *)(); // output char array
 
-                	ret=inflate(&zs, Z_FINISH);
+                	while((ret=inflate(&zs, Z_SYNC_FLUSH))!=Z_STREAM_END && count<=10){
+			    temp=(unsigned char *)realloc(temp, (buflen[0]<<count));
+			    zs.next_out =  (Bytef *)(temp+(buflen[0]<<(count-1)));
+			    zs.avail_out = (buflen[0]<<(count-1)); // size of output
+			    count++;
+			}
 			outputsize=zs.total_out;
 
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
-		            mexErrMsgTxt("invalid input buffer");
+		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			inflateEnd(&zs);
 		    }
 	       }
@@ -148,7 +154,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       }
 	       if(nlhs>1){
 	            dimtype inputdim[2]={1,0};
-	            plhs[1]=mxCreateStructMatrix(1,1,2,metadata);
+	            plhs[1]=mxCreateStructMatrix(1,1,3,metadata);
 		    mxArray *val = mxCreateString(mxGetClassName(prhs[0]));
                     mxSetFieldByNumber(plhs[1],0,0, val);
 
@@ -156,6 +162,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
 		    memcpy(mxGetPr(val),mxGetDimensions(prhs[0]),inputdim[1]*sizeof(dimtype));
                     mxSetFieldByNumber(plhs[1],0,1, val);
+
+                    val = mxCreateDoubleMatrix(1,1,mxREAL);
+                    *mxGetPr(val) = ret;
+                    mxSetFieldByNumber(plhs[1],0,2, val);
 	       }
 	  }else{
 	      mexErrMsgTxt("the input must be in char or int8/uint8 format");
