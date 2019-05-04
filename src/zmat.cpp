@@ -26,8 +26,6 @@
 #include "mex.h"
 #include "zlib.h"
 
-typedef mwSize dimtype;
-
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
 unsigned char * base64_encode(const unsigned char *src, size_t len,
@@ -72,8 +70,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	  if(mxIsChar(prhs[0]) || mxIsUint8(prhs[0]) || mxIsInt8(prhs[0])){
 	       z_stream zs;
 	       int ret;
-	       dimtype inputsize=mxGetNumberOfElements(prhs[0]);
-	       dimtype buflen[2]={0};
+	       mwSize inputsize=mxGetNumberOfElements(prhs[0]);
+	       mwSize buflen[2]={0};
 	       unsigned char *temp=NULL;
 	       size_t outputsize=0;
 	       char * inputstr=(mxIsChar(prhs[0])? mxArrayToString(prhs[0]) : (char *)mxGetData(prhs[0]));
@@ -153,14 +151,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 		    free(temp);
 	       }
 	       if(nlhs>1){
-	            dimtype inputdim[2]={1,0};
+	            mwSize inputdim[2]={1,0}, *dims=(mwSize *)mxGetDimensions(prhs[0]);
+		    unsigned int *inputsize=NULL;
 	            plhs[1]=mxCreateStructMatrix(1,1,3,metadata);
 		    mxArray *val = mxCreateString(mxGetClassName(prhs[0]));
                     mxSetFieldByNumber(plhs[1],0,0, val);
 
 		    inputdim[1]=mxGetNumberOfDimensions(prhs[0]);
+		    inputsize=(unsigned int *)malloc(inputdim[1]*sizeof(unsigned int));
 		    val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
-		    memcpy(mxGetPr(val),mxGetDimensions(prhs[0]),inputdim[1]*sizeof(dimtype));
+		    for(int i=0;i<inputdim[1];i++)
+		        inputsize[i]=dims[i];
+		    memcpy(mxGetPr(val),inputsize,inputdim[1]*sizeof(unsigned int));
                     mxSetFieldByNumber(plhs[1],0,1, val);
 
                     val = mxCreateDoubleMatrix(1,1,mxREAL);
