@@ -88,7 +88,7 @@ or decompresing/decoding data streams. The help info of the function is shown
 below
 
 ----------
-savejson.m
+zmat.m
 ----------
 
 .. code-block:: matlab

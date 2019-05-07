@@ -22,7 +22,7 @@ DOXY       := doxygen
 DOCDIR     := $(ZMATDIR)/doc
 DOXYCFG=zmat.cfg
 
-INCLUDEDIRS=
+INCLUDEDIRS=-Ieasylzma/easylzma-0.0.8/include
 
 CUOMPLINK=
 
@@ -74,15 +74,17 @@ else
   endif
 endif
 
+oct:   CC=$(MEX)
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp 
+oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
 oct:   BINARY=zmat.mex
 oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 oct:   CXX=mkoctfile
 
+#mex:   CC=$(MEX)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
-mex:   AR=$(MEX) zmat.cpp
+mex:   AR=$(MEX) zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a $(INCLUDEDIRS)
 mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
 
@@ -108,10 +110,10 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	$(AR) $(OBJS) $(OUTPUTFLAG) $(OUTPUT_DIR)/$(BINARY) $(LINKOPT) $(USERLINKOPT)
 
 %$(OBJSUFFIX): %.cpp
-	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -output $@ $<
+	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.c
-	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -output $@ $<
+	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.cu
 	$(CUDACC) -c $(CUCCOPT) -o $@  $<

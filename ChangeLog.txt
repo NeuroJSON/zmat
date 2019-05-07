@@ -1,0 +1,19 @@
+= Change Log =
+
+== ZMAT 0.5.0 (Zac-the-rat), FangQ <q.fang (a) neu.edu> ==
+
+ 2019-05-04 [       ] tag and release v0.5.0
+ 2019-05-04 [d8cd440] apply patch to compile on newer matlab and octave
+ 2019-05-04 [bd099b9] handle large inflate output with dynamic buffer, compile with 1 command
+ 2019-05-03 [86a0dea] return the zlib return value for debugging
+ 2019-05-03 [f204eb4] add README
+ 2019-05-02 [e3c2ae1] function is fully compatible with octave
+ 2019-05-02 [d48a771] avoid windows mex error
+ 2019-05-02 [ed388d7] zmat now supports base64 encoding and decoding
+ 2019-05-01 [545876c] add help file
+ 2019-05-01 [5ab9a67] compile zmat on mac
+ 2019-05-01 [396cb6f] zmat now supports gnu octave on Linux
+ 2019-05-01 [d6a48c6] now integrated with jsonlab
+ 2019-05-01 [3c42350] first working version, both zipping and unzipping
+ 2019-05-01 [9300e18] rename project to zmat
+ 2019-04-30 [93b0a77] Initial commit
