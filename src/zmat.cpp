@@ -22,9 +22,13 @@
 #include <string.h>
 #include <exception>
 #include <ctype.h>
+#include <assert.h>
 
 #include "mex.h"
 #include "zlib.h"
+
+#include "easylzma/compress.h"
+#include "easylzma/decompress.h"
 
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
@@ -34,7 +38,24 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 			      size_t *out_len);
 
 
-enum TZipMethod {zmZlib, zmGzip, zmBase64};
+
+/* compress a chunk of memory and return a dynamically allocated buffer
+ * if successful.  return value is an easylzma error code */
+int simpleCompress(elzma_file_format format,
+                   const unsigned char * inData,
+                   size_t inLen,
+                   unsigned char ** outData,
+                   size_t * outLen);
+
+/* decompress a chunk of memory and return a dynamically allocated buffer
+ * if successful.  return value is an easylzma error code */
+int simpleDecompress(elzma_file_format format,
+                     const unsigned char * inData,
+                     size_t inLen,
+                     unsigned char ** outData,
+                     size_t * outLen);
+
+enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma};
 const char  *metadata[]={"type","size","status"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
@@ -44,7 +65,7 @@ const char  *metadata[]={"type","size","status"};
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   TZipMethod zipid=zmZlib;
   int iscompress=1;
-  const char *zipmethods[]={"zlib","gzip","base64",""};
+  const char *zipmethods[]={"zlib","gzip","base64","lzip","lzma",""};
 
   /**
    * If no input is given for this function, it prints help information and return.
@@ -85,9 +106,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
 	       if(iscompress){
                     if(zipid==zmBase64){
-
 		        temp=base64_encode((const unsigned char*)inputstr, inputsize, &outputsize);
-	            }else{
+	            }else if(zipid==zmZlib || zipid==zmGzip){
 			if(zipid==zmZlib){
 		            if(deflateInit(&zs, Z_DEFAULT_COMPRESSION) != Z_OK)
 		        	mexErrMsgTxt("failed to initialize zlib");
@@ -108,11 +128,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
 		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			deflateEnd(&zs);
+		    }else{
+		        ret = simpleCompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
+					inputsize, &temp, &outputsize);
+			if(ret!=ELZMA_E_OK)
+		            mexErrMsgTxt("easylzma error, see info.status for error flag");
 		    }
 	       }else{
                     if(zipid==zmBase64){
 		        temp=base64_decode((const unsigned char*)inputstr, inputsize, &outputsize);
-	            }else{
+	            }else if(zipid==zmZlib || zipid==zmGzip){
 		        int count=1;
 	        	if(zipid==zmZlib){
 		            if(inflateInit(&zs) != Z_OK)
@@ -141,6 +166,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
 		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			inflateEnd(&zs);
+		    }else{
+		        ret = simpleDecompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
+					inputsize, &temp, &outputsize);
+			if(ret!=ELZMA_E_OK)
+		            mexErrMsgTxt("easylzma error, see info.status for error flag");
 		    }
 	       }
 	       if(temp){
@@ -369,4 +399,130 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 
 	*out_len = pos - out;
 	return out;
+}
+
+
+struct dataStream 
+{
+    const unsigned char * inData;
+    size_t inLen;
+
+    unsigned char * outData;
+    size_t outLen;
+};
+
+static int
+inputCallback(void *ctx, void *buf, size_t * size)
+{
+    size_t rd = 0;
+    struct dataStream * ds = (struct dataStream *) ctx;
+    assert(ds != NULL);
+    
+    rd = (ds->inLen < *size) ? ds->inLen : *size;
+
+    if (rd > 0) {
+        memcpy(buf, (void *) ds->inData, rd);
+        ds->inData += rd;
+        ds->inLen -= rd;
+    }
+
+    *size = rd;
+
+    return 0;
+}
+
+static size_t
+outputCallback(void *ctx, const void *buf, size_t size)
+{
+    struct dataStream * ds = (struct dataStream *) ctx;
+    assert(ds != NULL);
+    
+    if (size > 0) {
+        ds->outData = (unsigned char *)realloc(ds->outData, ds->outLen + size);
+        memcpy((void *) (ds->outData + ds->outLen), buf, size);
+        ds->outLen += size;
+    }
+
+    return size;
+}
+
+int
+simpleCompress(elzma_file_format format, const unsigned char * inData,
+               size_t inLen, unsigned char ** outData,
+               size_t * outLen)
+{
+    int rc;
+    elzma_compress_handle hand;
+
+    /* allocate compression handle */
+    hand = elzma_compress_alloc();
+    assert(hand != NULL);
+
+    rc = elzma_compress_config(hand, ELZMA_LC_DEFAULT,
+                               ELZMA_LP_DEFAULT, ELZMA_PB_DEFAULT,
+                               5, (1 << 20) /* 1mb */,
+                               format, inLen);
+
+    if (rc != ELZMA_E_OK) {
+        elzma_compress_free(&hand);
+        return rc;
+    }    
+
+    /* now run the compression */
+    {
+        struct dataStream ds;
+        ds.inData = inData;
+        ds.inLen = inLen;
+        ds.outData = NULL;
+        ds.outLen = 0;
+
+        rc = elzma_compress_run(hand, inputCallback, (void *) &ds,
+                                outputCallback, (void *) &ds,
+                                NULL, NULL);
+        
+        if (rc != ELZMA_E_OK) {
+            if (ds.outData != NULL) free(ds.outData);
+            elzma_compress_free(&hand);
+            return rc;
+        }
+
+        *outData = ds.outData;
+        *outLen = ds.outLen;
+    }
+
+    return rc;
+}
+
+int
+simpleDecompress(elzma_file_format format, const unsigned char * inData,
+                 size_t inLen, unsigned char ** outData,
+                 size_t * outLen)
+{
+    int rc;
+    elzma_decompress_handle hand;
+    
+    hand = elzma_decompress_alloc();
+    
+    /* now run the compression */
+    {
+        struct dataStream ds;
+        ds.inData = inData;
+        ds.inLen = inLen;
+        ds.outData = NULL;
+        ds.outLen = 0;
+
+        rc = elzma_decompress_run(hand, inputCallback, (void *) &ds,
+                                  outputCallback, (void *) &ds, format);
+        
+        if (rc != ELZMA_E_OK) {
+            if (ds.outData != NULL) free(ds.outData);
+            elzma_decompress_free(&hand);
+            return rc;
+        }
+        
+        *outData = ds.outData;
+        *outLen = ds.outLen;
+    }
+
+    return rc;
 }
