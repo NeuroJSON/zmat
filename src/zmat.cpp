@@ -27,8 +27,10 @@
 #include "mex.h"
 #include "zlib.h"
 
-#include "easylzma/compress.h"
-#include "easylzma/decompress.h"
+#ifndef NO_LZMA
+  #include "easylzma/compress.h"
+  #include "easylzma/decompress.h"
+#endif
 
 void zmat_usage();
 int  zmat_keylookup(char *origkey, const char *table[]);
@@ -38,7 +40,7 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 			      size_t *out_len);
 
 
-
+#ifndef NO_LZMA
 /* compress a chunk of memory and return a dynamically allocated buffer
  * if successful.  return value is an easylzma error code */
 int simpleCompress(elzma_file_format format,
@@ -54,6 +56,7 @@ int simpleDecompress(elzma_file_format format,
                      size_t inLen,
                      unsigned char ** outData,
                      size_t * outLen);
+#endif
 
 enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma};
 const char  *metadata[]={"type","size","status"};
@@ -65,7 +68,11 @@ const char  *metadata[]={"type","size","status"};
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   TZipMethod zipid=zmZlib;
   int iscompress=1;
+#ifndef NO_LZMA
   const char *zipmethods[]={"zlib","gzip","base64","lzip","lzma",""};
+#else
+  const char *zipmethods[]={"zlib","gzip","base64",""};
+#endif
 
   /**
    * If no input is given for this function, it prints help information and return.
@@ -128,11 +135,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
 		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			deflateEnd(&zs);
+#ifndef NO_LZMA
 		    }else{
 		        ret = simpleCompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 					inputsize, &temp, &outputsize);
 			if(ret!=ELZMA_E_OK)
 		            mexErrMsgTxt("easylzma error, see info.status for error flag");
+#endif
 		    }
 	       }else{
                     if(zipid==zmBase64){
@@ -166,11 +175,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 			if(ret!=Z_STREAM_END && ret!=Z_OK)
 		            mexErrMsgTxt("zlib error, see info.status for error flag");
 			inflateEnd(&zs);
+#ifndef NO_LZMA
 		    }else{
 		        ret = simpleDecompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 					inputsize, &temp, &outputsize);
 			if(ret!=ELZMA_E_OK)
 		            mexErrMsgTxt("easylzma error, see info.status for error flag");
+#endif
 		    }
 	       }
 	       if(temp){
@@ -401,6 +412,7 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 	return out;
 }
 
+#ifndef NO_LZMA
 
 struct dataStream 
 {
@@ -526,3 +538,5 @@ simpleDecompress(elzma_file_format format, const unsigned char * inData,
 
     return rc;
 }
+
+#endif

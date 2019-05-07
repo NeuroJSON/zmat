@@ -76,7 +76,7 @@ endif
 
 oct:   CC=$(MEX)
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp 
+oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
 oct:   BINARY=zmat.mex
 oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 oct:   CXX=mkoctfile
@@ -84,8 +84,8 @@ oct:   CXX=mkoctfile
 #mex:   CC=$(MEX)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
-mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz -leasylzma' -Leasylzma/easylzma-0.0.8/lib/ -outdir $(ZMATDIR)
+mex:   AR=$(MEX) zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a $(INCLUDEDIRS)
+mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   OUTPUT_DIR=..
 
 all: mex
