@@ -109,6 +109,8 @@ zmat.m
        method: (optional) compression method, currently, zmat supports the below methods
               'zlib': zlib/zip based data compression (default)
               'gzip': gzip formatted data compression
+              'lzip': lzip formatted data compression
+              'lzma': lzma formatted data compression
               'base64': encode or decode use base64 format
  
   output:
