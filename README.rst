@@ -4,7 +4,7 @@
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.5 (Zac-the-rat)
+* Version: 0.8 (Mox-the-fox)
 * Binaries: http://github.com/fangq/zmat_mex
 * URL: http://github.com/fangq/zmat
 
@@ -19,9 +19,9 @@ Table of Contents
 Introduction
 ============
 
-ZMat is a portable mex function to enable zlib/gzip based data 
-compression/decompression and base64 encoding/decoding support in 
-MATLAB and GNU Octave. It is fast and portable, can compress a 
+ZMat is a portable mex function to enable zlib/gzip/lzma/lzip based 
+data compression/decompression and base64 encoding/decoding support 
+in MATLAB and GNU Octave. It is fast and portable, can compress a 
 large array within a fraction of a second.
 
 ZMat accepts 3 types of inputs: char-based strings, uint8 arrays
@@ -104,8 +104,8 @@ zmat.m
  
   input:
        input: a string, int8 or uint8 array
-       iscompress: (optional) if iscompress is 1, zmat compresses the input, 
-              if 0, it decompresses the input. Default value is 1.
+       iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input, 
+              if 0, it decompresses/decodes the input. Default value is 1.
        method: (optional) compression method, currently, zmat supports the below methods
               'zlib': zlib/zip based data compression (default)
               'gzip': gzip formatted data compression
@@ -122,13 +122,14 @@ zmat.m
  
   example:
  
-    [ss, info]=zmat(uint8(eye(5)))         % compress an 5x5 identity matrix
-    orig=zmat(ss,0)                        % decompress the compressed matrix
-    orig=reshape(orig, info.size)          % restore the original size using info output
-    ss=char(zmat('zmat test',1,'base64'))  % encode a string using base64
-    orig=char(zmat(ss,0,'base64'))         % decode the base64 string
+    [ss, info]=zmat(uint8(eye(5)))
+    orig=zmat(ss,0)
+    orig=reshape(orig, info.size)
+    ss=char(zmat('zmat test',1,'base64'))
+    orig=char(zmat(ss,0,'base64'))
  
-  -- this function is part of the zmat toolbox (http://github.com/fangq/zmat)
+  -- this function is part of the ZMAT toolbox (http://github.com/fangq/zmat)
+
 
 ---------
 examples
