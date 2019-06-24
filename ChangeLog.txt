@@ -1,5 +1,11 @@
 = Change Log =
 
+== ZMAT 0.8.0 (Mox-the-fox), FangQ <q.fang (a) neu.edu> ==
+
+ 2019-05-07 [27a8583] make lzma optional in compilation, use static library
+ 2019-05-06 [3d8de61] support lzma compression via easylzma, close #1
+
+
 == ZMAT 0.5.0 (Zac-the-rat), FangQ <q.fang (a) neu.edu> ==
 
  2019-05-04 [       ] tag and release v0.5.0

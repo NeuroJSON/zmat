@@ -7,10 +7,19 @@ Address: Dept. of Bioengineering
 URL: http://fanglab.org
 Email: <q.fang at neu.edu>
 
-ZMAT Website : http://iso2mesh.sf.net/jsonlab
+ZMAT Website : https://github.com/fangq/zmat
+
 
 
 The base64_{encode,decode} functions in the zmat.cpp functions were copied from
 http://web.mit.edu/freebsd/head/contrib/wpa/src/utils/base64.c
 http://web.mit.edu/freebsd/head/contrib/wpa/src/utils/base64.h
 written by Jouni Malinen <j@w1.fi> licensed under the BSD license
+
+
+The optional LZMA/LZIP compression support is provided by
+the easylzma library written by Lloyd Hilaiel, which was
+built on Igor Pavlov's LZMA library (both previous works
+were released under the public domain)
+
+https://github.com/lloyd/easylzma

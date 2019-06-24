@@ -14,8 +14,9 @@ MKDIR      := mkdir
 
 MEX=mex
 AR=$(CC)
+ECHO       := echo
 
-BINARY=zmat
+BINARY:=zmat
 OUTPUT_DIR=$(ZMATDIR)
 
 DOXY       := doxygen
@@ -32,13 +33,13 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=
 OMP=-fopenmp
 
-CPPOPT=#-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -O3 #-g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=.mex*
 
-FILES=
+FILES=zmatlib
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   CC=nvcc
@@ -86,18 +87,29 @@ mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a $(INCLUDEDIRS)
 mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
+mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
+lib:   BINARY=libzmat.a
+lib:   AR         :=ar
+lib:   ARFLAGS    :=cr
+lib:   AROUTPUT   :=
+
 all: mex
+
+TARGETSUFFIX:=$(suffix $(BINARY))
+
+ifeq ($(TARGETSUFFIX),.so)
+        CCFLAGS+= $(DLLFLAG) 
+        ARFLAGS+= -shared -Wl,-soname,$(BINARY).1 
+endif
 
 doc: makedocdir
 	$(DOXY) $(DOXYCFG)
 
 OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 
-TARGETSUFFIX:=$(suffix $(BINARY))
-
-all mex oct: $(OUTPUT_DIR)/$(BINARY)
+all lib mex oct: $(OUTPUT_DIR)/$(BINARY)
 
 makedirs:
 	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi
@@ -107,19 +119,24 @@ makedocdir:
 
 $(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS)
 $(OUTPUT_DIR)/$(BINARY): $(OBJS)
-	$(AR) $(OBJS) $(OUTPUTFLAG) $(OUTPUT_DIR)/$(BINARY) $(LINKOPT) $(USERLINKOPT)
+	@$(ECHO) Building $@
+	$(AR) $(ARFLAGS) $(OUTPUTFLAG) $@ $(OBJS) $(LINKOPT) $(USERLINKOPT)
 
 %$(OBJSUFFIX): %.cpp
 	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.c
+	@$(ECHO) Building $@
 	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.cu
+	@$(ECHO) Building $@
 	$(CUDACC) -c $(CUCCOPT) -o $@  $<
 
 clean:
 	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX)
+
+.PHONY: all mex oct
 
 .DEFAULT_GOAL := all
 
