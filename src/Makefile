@@ -16,7 +16,7 @@ MEX=mex
 AR=$(CC)
 ECHO       := echo
 
-BINARY:=zmat
+BINARY:=zipmat
 OUTPUT_DIR=$(ZMATDIR)
 
 DOXY       := doxygen
@@ -30,7 +30,7 @@ CUOMPLINK=
 ARCH = $(shell uname -m)
 PLATFORM = $(shell uname -s)
 
-DLLFLAG=
+DLLFLAG=-fPIC
 OMP=-fopenmp
 
 CPPOPT=-g -Wall -O3 #-g -Wall -std=c99 # -DUSE_OS_TIMER
@@ -75,6 +75,11 @@ else
   endif
 endif
 
+lib:   AR         :=ar
+lib:   ARFLAGS    :=cr
+lib:   AROUTPUT   :=
+
+oct mex: CPPOPT+= $(DLLFLAG)
 oct:   CC=$(MEX)
 oct:   OUTPUT_DIR=..
 oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
@@ -89,11 +94,6 @@ mex:   AR=$(MEX) zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a $(INCLUDED
 mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
-
-lib:   BINARY=libzmat.a
-lib:   AR         :=ar
-lib:   ARFLAGS    :=cr
-lib:   AROUTPUT   :=
 
 all: mex
 
@@ -136,7 +136,7 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 clean:
 	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX)
 
-.PHONY: all mex oct
+.PHONY: all mex oct lib
 
 .DEFAULT_GOAL := all
 
