@@ -21,15 +21,17 @@ Introduction
 
 ZMat is a portable mex function to enable zlib/gzip/lzma/lzip based 
 data compression/decompression and base64 encoding/decoding support 
-in MATLAB and GNU Octave. It is fast and portable, can compress a 
+in MATLAB and GNU Octave. It is fast and portable, can process a 
 large array within a fraction of a second.
 
-ZMat accepts 3 types of inputs: char-based strings, uint8 arrays
-or vectors, or int8 arrays/vectors. Any other input format will 
+ZMat accepts 3 types of inputs: char-based strings, numerical arrays
+or vectors, or logical arrays/vectors. Any other input format will 
 result in an error unless you typecast the input into int8/uint8
-format. A multi-dimensional char/int8/uint8 array is accepeted
-but will be processed as a 1D vector. One can reshape the output
-after decoding using the 2nd output "info" from zmat.
+format. A multi-dimensional numerical array is accepeted, and the
+original input's type/dimension info is stored in the 2nd output
+"info". If one calls zmat with both the encoded data (in byte vector)
+and the "info" structure, zmat will attempts to restore the original
+input's type and size after decoding.
 
 ZMat uses zlib - an open-source and widely used library for data
 compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
@@ -83,7 +85,7 @@ you need to edit is ~/.octaverc , where "~" is your home directory.
 Using ZMat
 ================
 
-ZMat provides a single mex function, zmat.mex* -- for both compressing/encoding
+ZMat provides a single mex function, zipmat.mex* -- for both compressing/encoding
 or decompresing/decoding data streams. The help info of the function is shown
 below
 
@@ -96,16 +98,21 @@ zmat.m
   output=zmat(input)
      or
   [output, info]=zmat(input, iscompress, method)
+  output=zmat(input, info)
  
   A portable data compression/decompression toolbox for MATLAB/GNU Octave
   
   author: Qianqian Fang <q.fang at neu.edu>
-  date for initial version: 04/30/2019
+  initial version created on 04/30/2019
  
   input:
-       input: a string, int8 or uint8 array
+       input: a char, non-complex numeric or logical vector or array
        iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input, 
               if 0, it decompresses/decodes the input. Default value is 1.
+              if one defines iscompress as the info struct (2nd output of
+              zmat) during encoding, zmat will perform a
+              decoding/decompression operation and recover the original
+              input using the info stored in the info structure.
        method: (optional) compression method, currently, zmat supports the below methods
               'zlib': zlib/zip based data compression (default)
               'gzip': gzip formatted data compression
@@ -118,18 +125,18 @@ zmat.m
        info: (optional) a struct storing additional info regarding the input data, may have
              'type': the class of the input array
              'size': the dimensions of the input array
+             'byte': the number of bytes per element in the input array
              'status': the zlib function return value, including potential error codes (<0)
  
   example:
  
-    [ss, info]=zmat(uint8(eye(5)))
+    [ss, info]=zmat(eye(5))
     orig=zmat(ss,0)
-    orig=reshape(orig, info.size)
+    orig=zmat(ss,info)
     ss=char(zmat('zmat test',1,'base64'))
     orig=char(zmat(ss,0,'base64'))
  
-  -- this function is part of the ZMAT toolbox (http://github.com/fangq/zmat)
-
+  -- this function is part of the zmat toolbox (http://github.com/fangq/zmat)
 
 ---------
 examples

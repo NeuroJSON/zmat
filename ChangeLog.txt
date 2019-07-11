@@ -2,6 +2,12 @@
 
 == ZMAT 0.8.0 (Mox-the-fox), FangQ <q.fang (a) neu.edu> ==
 
+ 2019-07-11 [177ed52] move mex to private/, zmat.m can pre/post process, accept nd-array and logical, can restore array size/type
+ 2019-07-11 [0412419] change makefile to compile both mex and library
+ 2019-06-24 [274ce37] compile zmat on octave 5
+ 2019-06-24 [a662701] update in-matlab compile script
+ 2019-06-23 [68f35d0] place functions into a separate unit for libzmat.a
+ 2019-06-03 [14a84a5] update changelog to add lzma support
  2019-05-07 [27a8583] make lzma optional in compilation, use static library
  2019-05-06 [3d8de61] support lzma compression via easylzma, close #1
 
