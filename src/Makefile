@@ -6,7 +6,7 @@
 
 BACKEND ?=
 
-ROOTDIR ?= ../private
+ROOTDIR ?= ..
 ZMATDIR  ?= $(ROOTDIR)
 MCXSRC :=$(ZMATDIR)/src
 
