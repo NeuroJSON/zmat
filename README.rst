@@ -21,15 +21,17 @@ Introduction
 
 ZMat is a portable mex function to enable zlib/gzip/lzma/lzip based 
 data compression/decompression and base64 encoding/decoding support 
-in MATLAB and GNU Octave. It is fast and portable, can compress a 
+in MATLAB and GNU Octave. It is fast and portable, can process a 
 large array within a fraction of a second.
 
-ZMat accepts 3 types of inputs: char-based strings, uint8 arrays
-or vectors, or int8 arrays/vectors. Any other input format will 
+ZMat accepts 3 types of inputs: char-based strings, numerical arrays
+or vectors, or logical arrays/vectors. Any other input format will 
 result in an error unless you typecast the input into int8/uint8
-format. A multi-dimensional char/int8/uint8 array is accepeted
-but will be processed as a 1D vector. One can reshape the output
-after decoding using the 2nd output "info" from zmat.
+format. A multi-dimensional numerical array is accepeted, and the
+original input's type/dimension info is stored in the 2nd output
+"info". If one calls zmat with both the encoded data (in byte vector)
+and the "info" structure, zmat will attempts to restore the original
+input's type and size after decoding.
 
 ZMat uses zlib - an open-source and widely used library for data
 compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
@@ -83,7 +85,7 @@ you need to edit is ~/.octaverc , where "~" is your home directory.
 Using ZMat
 ================
 
-ZMat provides a single mex function, zmat.mex* -- for both compressing/encoding
+ZMat provides a single mex function, zipmat.mex* -- for both compressing/encoding
 or decompresing/decoding data streams. The help info of the function is shown
 below
 

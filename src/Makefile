@@ -6,7 +6,7 @@
 
 BACKEND ?=
 
-ROOTDIR ?= ..
+ROOTDIR ?= ../private
 ZMATDIR  ?= $(ROOTDIR)
 MCXSRC :=$(ZMATDIR)/src
 
@@ -80,14 +80,13 @@ lib:   ARFLAGS    :=cr
 lib:   AROUTPUT   :=
 
 oct mex: CPPOPT+= $(DLLFLAG)
-oct:   CC=$(MEX)
 oct:   OUTPUT_DIR=..
 oct:   AR= CXXFLAGS='-O3' LFLAGS='$(-lz)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
 oct:   BINARY=zmat.mex
+oct:   ARFLAGS    :=
 oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 oct:   CXX=mkoctfile
 
-#mex:   CC=$(MEX)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp easylzma/easylzma-0.0.8/lib/libeasylzma_s.a $(INCLUDEDIRS)
