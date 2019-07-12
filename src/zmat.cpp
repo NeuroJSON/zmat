@@ -32,8 +32,6 @@ void zmat_usage();
 
 const char  *metadata[]={"type","size","byte","method","status"};
 
-extern char *zmat_err[];
-
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
  */
@@ -77,7 +75,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       unsigned char * inputstr=(mxIsChar(prhs[0])? (unsigned char *)mxArrayToString(prhs[0]) : (unsigned char *)mxGetData(prhs[0]));
     	       int errcode=zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, iscompress);
 	       if(errcode<0)
-	           mexErrMsgTxt(zmat_err[-errcode]);
+	           mexErrMsgTxt(zmat_error(-errcode));
 	       if(outputbuf){
 	            buflen[0]=1;
 		    buflen[1]=outputsize;

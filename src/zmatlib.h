@@ -18,6 +18,8 @@ int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputs
 int zmat_decode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret);
 
 int  zmat_keylookup(char *origkey, const char *table[]);
+char *zmat_error(int id);
+
 unsigned char * base64_encode(const unsigned char *src, size_t len,
 			      size_t *out_len);
 unsigned char * base64_decode(const unsigned char *src, size_t len,

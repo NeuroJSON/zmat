@@ -7,13 +7,21 @@
 
 #include "zlib.h"
 
-char *zmat_err[]={
+char *zmat_errcode[]={
 	"No error", 
 	"input can not be empty", 
 	"failed to initialize zlib", 
 	"zlib error, see info.status for error flag", 
 	"easylzma error, see info.status for error flag"
 	};
+
+    
+char * zmat_error(int id){
+    if(id>=0 && id<(sizeof(zmat_errcode) / sizeof(zmat_errcode[0])))
+        return zmat_errcode[id];
+    else
+        return "unknown error";
+}
 
 int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret, const int iscompress){
        z_stream zs;
