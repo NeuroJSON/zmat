@@ -31,6 +31,7 @@ function varargout=zmat(varargin)
 %            'type': the class of the input array
 %            'size': the dimensions of the input array
 %            'byte': the number of bytes per element in the input array
+%            'method': a copy of the 3rd input indicating the encoding method
 %            'status': the zlib function return value, including potential error codes (<0)
 %
 % example:

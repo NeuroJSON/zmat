@@ -5,7 +5,6 @@
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
 * Version: 0.8 (Mox-the-fox)
-* Binaries: http://github.com/fangq/zmat_mex
 * URL: http://github.com/fangq/zmat
 
 #################
@@ -38,10 +37,10 @@ compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
 installed in your system library path (defined by the environment
 variables LD_LIBRARY_PATH or DYLD_LIBRARY_PATH, respectively).
 
-The pre-compiled mex binaries for both MATLAB and Octave are 
-provided in a separate github repository
-
-http://github.com/fangq/zmat_mex
+The pre-compiled mex binaries for MATLAB are stored inside the 
+subfolder named "private". Those precompiled for GNU Octave are
+stored in the subfolder named "octave", with one operating system
+per subfolder.
 
 If you do not want to compile zmat yourself, you can download the
 precompiled package by either clicking on the "Download ZIP" button
@@ -49,7 +48,7 @@ on the above URL, or use the below git command:
 
 .. code:: shell
 
-    git clone https://github.com/fangq/zmat_mex.git
+    git clone https://github.com/fangq/zmat.git
 
 ================
 Installation
@@ -57,12 +56,16 @@ Installation
 
 The installation of ZMat is no different from any other simple
 MATLAB toolboxes. You only need to download/unzip the  package
-to a folder, and add the folder's path to MATLAB/Octave's path list
-by using the following command:
+to a folder, and add the folder's path (that contains zmat.m and 
+the "private" folder) to MATLAB's path list by using the 
+following command:
 
 .. code:: matlab
 
-    addpath('/path/to/zmax');
+    addpath('/path/to/zmat');
+
+For Octave, one needs to copy the zipmat.mat file inside the "octave",
+from the subfolder matching the OS into the "private" subfolder.
 
 If you want to add this path permanently, you need to type "pathtool", 
 browse to the zmat root folder and add to the list, then click "Save".
@@ -126,6 +129,7 @@ zmat.m
              'type': the class of the input array
              'size': the dimensions of the input array
              'byte': the number of bytes per element in the input array
+             'method': a copy of the 3rd input indicating the encoding method
              'status': the zlib function return value, including potential error codes (<0)
  
   example:
