@@ -67,7 +67,7 @@ following command:
 For Octave, one needs to copy the zipmat.mat file inside the "``octave``",
 from the subfolder matching the OS into the "``private``" subfolder.
 
-If you want to add this path permanently, you need to type "pathtool", 
+If you want to add this path permanently, you need to type "``pathtool``", 
 browse to the zmat root folder and add to the list, then click "Save".
 Then, run "``rehash``" in MATLAB, and type "``which zmat``", if you see an 
 output, that means ZMax is installed for MATLAB/Octave.
@@ -172,7 +172,9 @@ Next, you need to make sure your system has ``cmake``, ``gcc``, ``g++``,
 please install CMake, gcc, MATLAB and GNU Octave and add the paths to 
 these utilities to the system PATH environment variable.
 
-The first step of compilation is to compile [``eazylzma``](https://github.com/lloyd/easylzma)
+The first step of compilation is to compile Eazylzma (https://github.com/lloyd/easylzma),
+a submodule that zmat needs to apply lzma compression.
+
 Please use the below commands in a terminal window
 
 .. code-block:: shell
