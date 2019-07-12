@@ -20,22 +20,22 @@ Introduction
 
 ZMat is a portable mex function to enable zlib/gzip/lzma/lzip based 
 data compression/decompression and base64 encoding/decoding support 
-in MATLAB and GNU Octave. It is fast and portable, can process a 
+in MATLAB and GNU Octave. It is fast and compact, can process a 
 large array within a fraction of a second.
 
 ZMat accepts 3 types of inputs: char-based strings, numerical arrays
 or vectors, or logical arrays/vectors. Any other input format will 
-result in an error unless you typecast the input into int8/uint8
+result in an error unless you typecast the input into ```int8/uint8```
 format. A multi-dimensional numerical array is accepeted, and the
 original input's type/dimension info is stored in the 2nd output
-"info". If one calls zmat with both the encoded data (in byte vector)
-and the "info" structure, zmat will attempts to restore the original
-input's type and size after decoding.
+``"info"``. If one calls ``zmat`` with both the encoded data (in byte vector)
+and the ``"info"`` structure, zmat will first decode the binary data 
+and then restore the original input's type and size.
 
 ZMat uses zlib - an open-source and widely used library for data
 compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
 installed in your system library path (defined by the environment
-variables LD_LIBRARY_PATH or DYLD_LIBRARY_PATH, respectively).
+variables ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, respectively).
 
 The pre-compiled mex binaries for MATLAB are stored inside the 
 subfolder named "private". Those precompiled for GNU Octave are
@@ -154,6 +154,61 @@ base64 encoding/decoding to strings.
 Please run these examples and understand how ZMat works before you use
 it to process your data.
 
+
+==========================
+Compile ZMat
+==========================
+
+To recompile ZMat, you first need to check out ZMat source code, along
+with the needed submodules from the Github repository using the below 
+command
+
+.. code:: shell
+
+      git clone --recursive https://github.com/fangq/zmat.git zmat
+
+Next, you need to make sure your system has ``cmake``, ``gcc``, ``g++``,
+``mex`` and ``mkoctfile`` (if compiling for Octave is needed). If not, 
+please install CMake, gcc, MATLAB and GNU Octave and add the paths to 
+these utilities to the system PATH environment variable.
+
+The first step of compilation is to compile [``eazylzma``](https://github.com/lloyd/easylzma)
+Please use the below commands in a terminal window
+
+.. code-block:: shell
+
+      cd zmat/src/eazylzma
+      cmake .
+      make clean all
+
+if there is any dependency is missing, please install and rerun the compilation.
+If successful, a static library named ``zmat/src/easylzma/easylzma-0.0.8/lib/libeasylzma_s.a``
+is generated.
+
+The next step is to compile zmat. You may choose one of the two methods:
+
+Method 1: please open MATLAB or Octave, and run the below commands
+
+.. code-block:: matlab
+
+      cd zmat/src
+      compilezmat
+
+Method 2: please open a terminal, and run the below shall commands
+
+.. code-block:: shell
+
+      cd zmat/src
+      make clean mex
+
+to create the mex file for MATLAB, and run ``make clean oct`` to compile
+the mex file for Octave. 
+
+The compilex mex files are named as ``zipmat.mex*`` under the zmat root folder.
+One may move those into the ``private`` folder to overwrite the existing files,
+or leave them in the root folder. MATLAB/Octave will use these files when 
+``zmat`` is called.
+
 ==========================
 Contribution and feedback
 ==========================
@@ -167,7 +222,7 @@ following command:
 
 .. code:: shell
 
-      git clone https://github.com/fangq/zmat.git zmat
+      git clone --recursive https://github.com/fangq/zmat.git zmat
 
 or browsing the github site at
 
@@ -177,17 +232,9 @@ or browsing the github site at
  
 
 You can make changes to the files as needed. Once you are satisfied with your
-changes, and ready to share it with others, please cd the root directory of 
-ZNat, and type
-
-.. code:: shell
-
-      git diff --no-prefix > yourname_featurename.patch
- 
-
-You then email the .patch file to ZMat's maintainer, Qianqian Fang, at
-the email address shown in the beginning of this file. Qianqian will review 
-the changes and commit it to the subversion if they are satisfactory.
+changes, and ready to share it with others, please submit your changes as a
+"pull request" on github.  The project maintainer, Dr. Qianqian Fang will
+review the changes and choose to accept the patch.
 
 We appreciate any suggestions and feedbacks from you. Please use the iso2mesh
 mailing list to report any questions you may have regarding ZMat:
