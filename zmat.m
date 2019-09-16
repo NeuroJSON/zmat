@@ -23,16 +23,21 @@ function varargout=zmat(varargin)
 %             'gzip': gzip formatted data compression
 %             'lzip': lzip formatted data compression
 %             'lzma': lzma formatted data compression
+%             'lz4':  lz4 formatted data compression
+%             'lz4hc':lz4hc (LZ4 with high-compression ratio) formatted data compression
 %             'base64': encode or decode use base64 format
 %
 % output:
-%      output: a uint8 row vector, storing the compressed or decompressed data
+%      output: a uint8 row vector, storing the compressed or decompressed data; 
+%             empty when an error is encountered
 %      info: (optional) a struct storing additional info regarding the input data, may have
 %            'type': the class of the input array
 %            'size': the dimensions of the input array
 %            'byte': the number of bytes per element in the input array
 %            'method': a copy of the 3rd input indicating the encoding method
-%            'status': the zlib function return value, including potential error codes (<0)
+%            'status': the zlib/lzma/lz4 compression/decompression function return value, 
+%                    including potential error codes; see documentation of the respective 
+%                    libraries for details
 %
 % example:
 %

@@ -39,7 +39,7 @@ OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=.mex*
 
-FILES=zmatlib
+FILES=zmatlib lz4/lz4 lz4/lz4hc
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   CC=nvcc

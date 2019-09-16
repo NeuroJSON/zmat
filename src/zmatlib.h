@@ -6,12 +6,17 @@
   #include "easylzma/decompress.h"
 #endif
 
+#ifndef NO_LZ4
+  #include "lz4/lz4.h"
+  #include "lz4/lz4hc.h"
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma};
+enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc};
 
 int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret, const int iscompress);
 int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret);

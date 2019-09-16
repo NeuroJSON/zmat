@@ -4,7 +4,7 @@
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.8 (Mox-the-fox)
+* Version: 0.9 (Gus-the-duck)
 * URL: http://github.com/fangq/zmat
 
 #################
@@ -18,10 +18,15 @@ Table of Contents
 Introduction
 ============
 
-ZMat is a portable mex function to enable zlib/gzip/lzma/lzip based 
-data compression/decompression and base64 encoding/decoding support 
+ZMat is a portable mex function to enable zlib/gzip/lzma/lzip/lz4/lz4hc 
+based data compression/decompression and base64 encoding/decoding support 
 in MATLAB and GNU Octave. It is fast and compact, can process a 
-large array within a fraction of a second.
+large array within a fraction of a second. 
+
+Among the 6 supported compression methods, lz4 is the fastest for 
+compression/decompression; lzma is the slowest but has the highest 
+compression ratio; zlib/gzip have the best balance between speed 
+and compression time.
 
 ZMat accepts 3 types of inputs: char-based strings, numerical arrays
 or vectors, or logical arrays/vectors. Any other input format will 
@@ -121,16 +126,21 @@ zmat.m
               'gzip': gzip formatted data compression
               'lzip': lzip formatted data compression
               'lzma': lzma formatted data compression
+              'lz4':  lz4 formatted data compression
+              'lz4hc':lz4hc (LZ4 with high-compression ratio) formatted data compression
               'base64': encode or decode use base64 format
  
   output:
-       output: a uint8 row vector, storing the compressed or decompressed data
+       output: a uint8 row vector, storing the compressed or decompressed data; 
+              empty when an error is encountered
        info: (optional) a struct storing additional info regarding the input data, may have
              'type': the class of the input array
              'size': the dimensions of the input array
              'byte': the number of bytes per element in the input array
              'method': a copy of the 3rd input indicating the encoding method
-             'status': the zlib function return value, including potential error codes (<0)
+             'status': the zlib/lzma/lz4 compression/decompression function return value, 
+                     including potential error codes; see documentation of the respective 
+                     libraries for details
  
   example:
  
@@ -244,3 +254,23 @@ mailing list to report any questions you may have regarding ZMat:
 `iso2mesh-users <https://groups.google.com/forum/#!forum/iso2mesh-users>`_
 
 (Subscription to the mailing list is needed in order to post messages).
+
+
+==========================
+Acknowledgement
+==========================
+
+ZMat is linked against 4 open-source data compression libraries
+
+1. ZLib library: https://www.zlib.net/
+  *  Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
+  *  License: Zlib license
+2. Eazylzma: https://github.com/lloyd/easylzma
+  *  Author: Lloyd Hilaiel (lloyd)
+  *  License: public domain
+3. Original LZMA library:
+  *  Author: Igor Pavlov
+  *  License: public domain
+4. LZ4 library: https://lz4.github.io/lz4/
+  *  Copyright (C) 2011-2019, Yann Collet.
+  *  License: BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)

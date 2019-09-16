@@ -11,8 +11,11 @@ char *zmat_errcode[]={
 	"No error", 
 	"input can not be empty", 
 	"failed to initialize zlib", 
-	"zlib error, see info.status for error flag", 
-	"easylzma error, see info.status for error flag"
+	"zlib error, see info.status for error flag, often a result of mismatch in compression method", 
+	"easylzma error, see info.status for error flag, often a result of mismatch in compression method",
+        "can not allocate output buffer",
+        "lz4 error, see info.status for error flag, often a result of mismatch in compression method",
+	"unsupported method"
 	};
 
     
@@ -60,12 +63,27 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 	            return -3;
 		deflateEnd(&zs);
 #ifndef NO_LZMA
-	    }else{
+	    }else if(zipid==zmLzma || zipid==zmLzip){
 	        *ret = simpleCompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 				inputsize, outputbuf, outputsize);
 		if(*ret!=ELZMA_E_OK)
 		     return -4;
 #endif
+#ifndef NO_LZ4
+            }else if(zipid==zmLz4 || zipid==zmLz4hc){
+                *outputsize=LZ4_compressBound(inputsize);
+                if (!(*outputbuf = (unsigned char *)malloc(*outputsize)))
+                     return -5;
+		if(zipid==zmLz4)
+	            *outputsize = LZ4_compress_default((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize);
+		else
+		    *outputsize = LZ4_compress_HC((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize, 8);
+		*ret=*outputsize;
+		if(*outputsize==0)
+		     return -6;
+#endif
+	    }else{
+		return -7;
 	    }
        }else{
             if(zipid==zmBase64){
@@ -100,12 +118,34 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 		    return -3;
 		inflateEnd(&zs);
 #ifndef NO_LZMA
-	    }else{
+            }else if(zipid==zmLzma || zipid==zmLzip){
 	        *ret = simpleDecompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 				inputsize, outputbuf, outputsize);
 		if(*ret!=ELZMA_E_OK)
 		     return -4;
 #endif
+#ifndef NO_LZ4
+            }else if(zipid==zmLz4 || zipid==zmLz4hc){
+	        int count=2;
+                *outputsize=(inputsize<<count);
+                if (!(*outputbuf = (unsigned char *)malloc(*outputsize))){
+		     *ret=-5;
+                     return *ret;
+		}
+        	while((*ret=LZ4_decompress_safe((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize))<=0 && count<=10){
+		     *outputsize=(inputsize<<count);
+                     if (!(*outputbuf = (unsigned char *)realloc(*outputbuf, *outputsize))){
+		        *ret=-5;
+                         return *ret;
+		     }
+                     count++;
+		}
+		*outputsize=*ret;
+		if(*ret<0)
+		     return -6;
+#endif
+	    }else{
+		return -7;
 	    }
        }
        return 0;

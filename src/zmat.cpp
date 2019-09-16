@@ -39,10 +39,14 @@ const char  *metadata[]={"type","size","byte","method","status"};
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
   TZipMethod zipid=zmZlib;
   int iscompress=1;
-#ifndef NO_LZMA
-  const char *zipmethods[]={"zlib","gzip","base64","lzip","lzma",""};
-#else
+#if defined(NO_LZ4) && defined(NO_LZMA)
   const char *zipmethods[]={"zlib","gzip","base64",""};
+#elif !defined(NO_LZMA) && defined(NO_LZ4)
+  const char *zipmethods[]={"zlib","gzip","base64","lzip","lzma",""};
+#elif defined(NO_LZMA) && !defined(NO_LZ4)
+  const char *zipmethods[]={"zlib","gzip","base64","lz4","lz4hc",""};
+#else
+  const char *zipmethods[]={"zlib","gzip","base64","lzip","lzma","lz4","lz4hc",""};
 #endif
 
   /**
@@ -67,19 +71,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 
   try{
 	  if(mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && ~mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])){
-	       int ret;
+	       int ret=-1;
 	       mwSize inputsize=mxGetNumberOfElements(prhs[0])*mxGetElementSize(prhs[0]);
 	       mwSize buflen[2]={0};
 	       unsigned char *outputbuf=NULL;
 	       size_t outputsize=0;
 	       unsigned char * inputstr=(mxIsChar(prhs[0])? (unsigned char *)mxArrayToString(prhs[0]) : (unsigned char *)mxGetData(prhs[0]));
     	       int errcode=zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, iscompress);
-	       if(errcode<0)
-	           mexErrMsgTxt(zmat_error(-errcode));
+               if(errcode<0){
+	           if(outputbuf)
+		       free(outputbuf);
+		   outputbuf=NULL;
+	           outputsize=0;
+	       }
+	       buflen[0]=1;
+	       buflen[1]=outputsize;
+	       plhs[0] = mxCreateNumericArray(2,buflen,mxUINT8_CLASS,mxREAL);
 	       if(outputbuf){
-	            buflen[0]=1;
-		    buflen[1]=outputsize;
-                    plhs[0] = mxCreateNumericArray(2,buflen,mxUINT8_CLASS,mxREAL);
 		    memcpy((unsigned char*)mxGetPr(plhs[0]),outputbuf,buflen[1]);
 		    free(outputbuf);
 	       }
@@ -108,6 +116,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
                     val = mxCreateDoubleMatrix(1,1,mxREAL);
                     *mxGetPr(val) = ret;
                     mxSetFieldByNumber(plhs[1],0,4, val);
+	       }
+	       if(errcode<0){
+	           mexErrMsgTxt(zmat_error(-errcode));
 	       }
 	  }else{
 	      mexErrMsgTxt("the input must be a char, non-complex numerical or logical array");
