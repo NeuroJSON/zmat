@@ -78,6 +78,12 @@ endif
 lib:   AR         :=ar
 lib:   ARFLAGS    :=cr
 lib:   AROUTPUT   :=
+lib:   LINKOPT    :=easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
+
+dll:   CPPOPT     +=$(DLLFLAG)
+dll:   AR         :=gcc
+dll:   ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1
+dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
 oct:   OUTPUT_DIR=..
@@ -108,7 +114,7 @@ doc: makedocdir
 
 OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 
-all lib mex oct: $(OUTPUT_DIR)/$(BINARY)
+all dll lib mex oct: $(OUTPUT_DIR)/$(BINARY)
 
 makedirs:
 	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi
