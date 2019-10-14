@@ -78,11 +78,12 @@ endif
 lib:   AR         :=ar
 lib:   ARFLAGS    :=cr
 lib:   AROUTPUT   :=
-lib:   LINKOPT    :=easylzma/easylzma-0.0.8/lib/libeasylzma_s.a
+lib:   LINKOPT    :=easylzma/src/CMakeFiles/easylzma_s.dir/*.o easylzma/src/CMakeFiles/easylzma_s.dir/pavlov/*.o
 
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   AR         :=gcc
 dll:   ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1
+dll:   LINKOPT    :=easylzma/src/CMakeFiles/easylzma.dir/*.o easylzma/src/CMakeFiles/easylzma.dir/pavlov/*.o
 dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
