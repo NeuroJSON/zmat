@@ -5,15 +5,22 @@ filelist={'lz4/lz4.c','lz4/lz4hc.c','easylzma/compress.c','easylzma/decompress.c
     'easylzma/pavlov/Alloc.c', 'easylzma/pavlov/7zCrc.c','zmatlib.c'};
 
 mexfile='zmat.cpp';
-
+suffix='.o';
+if(ispc)
+    suffix='.obj';
+end
 if(~exist('OCTAVE_VERSION','builtin'))
-    CCFLAG='CFLAGS=''\$CFLAGS -O3 -g -Ieasylzma -Ieasylzma/pavlov -Ilz4'' -c';
-    LINKFLAG='CXXLIBS=''\$CXXLIBS -lz'' -output ../zipmat -outdir ../';
+    CCFLAG='CFLAGS=''-O3 -g -Ieasylzma -Ieasylzma/pavlov -Ilz4'' -c';
+    LINKFLAG='CXXLIBS=''-lz'' -output ../zipmat -outdir ../';
     for i=1:length(filelist)
         fprintf(1,'mex %s %s\n', CCFLAG, filelist{i});
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
     end
-    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(sprintf('%s ' ,filelist{:}),'\.c[p]*','\.o'));
+    if(ispc)
+        filelist=dir('*.obj');
+        filelist={filelist.name};
+    end
+    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(sprintf('%s ' ,filelist{:}),'\.c[p]*',suffix));
     fprintf(1,'%s\n',cmd);
     eval(cmd)
 else
@@ -23,6 +30,10 @@ else
         fprintf(stdout,'mex %s %s\n', CCFLAG, filelist{i});
         fflush(stdout);
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
+    end
+    if(ispc)
+        filelist=dir('*.obj');
+        filelist={filelist.name};
     end
     cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(sprintf('%s ' ,filelist{:}),'\.c[p]*','\.o'));
     fprintf(stdout,'%s\n',cmd);fflush(stdout);
