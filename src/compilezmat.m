@@ -1,12 +1,31 @@
+filelist={'lz4/lz4.c','lz4/lz4hc.c','easylzma/compress.c','easylzma/decompress.c', ...
+    'easylzma/lzma_header.c', 'easylzma/lzip_header.c', 'easylzma/common_internal.c', ...
+    'easylzma/pavlov/LzmaEnc.c', 'easylzma/pavlov/LzmaDec.c', 'easylzma/pavlov/LzmaLib.c' ...
+    'easylzma/pavlov/LzFind.c', 'easylzma/pavlov/Bra.c', 'easylzma/pavlov/BraIA64.c' ...
+    'easylzma/pavlov/Alloc.c', 'easylzma/pavlov/7zCrc.c','zmatlib.c'};
+
+mexfile='zmat.cpp';
+
 if(~exist('OCTAVE_VERSION','builtin'))
-    mex CFLAGS='$CFLAGS -O3 -g' -c lz4/lz4.c
-    mex CFLAGS='$CFLAGS -O3 -g' -c lz4/lz4hc.c
-    mex CFLAGS='$CFLAGS -O3 -g' -Ieasylzma/easylzma-0.0.8/include -c zmatlib.c
-    mex zmat.cpp zmatlib.o lz4.o lz4hc.o easylzma/easylzma-0.0.8/lib/libeasylzma_s.a -Ieasylzma/easylzma-0.0.8/include -output ../zipmat -outdir ../ CXXLIBS='$CXXLIBS -lz'
+    CCFLAG='CFLAGS=''\$CFLAGS -O3 -g -Ieasylzma -Ieasylzma/pavlov -Ilz4'' -c';
+    LINKFLAG='CXXLIBS=''\$CXXLIBS -lz'' -output ../zipmat -outdir ../';
+    for i=1:length(filelist)
+        fprintf(1,'mex %s %s\n', CCFLAG, filelist{i});
+        eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
+    end
+    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(strjoin(filelist),'\.c[p]*','\.o'));
+    fprintf(1,'%s\n',cmd);
+    eval(cmd)
 else
-    mex -O3 -g -c lz4/lz4.c
-    mex -O3 -g -c lz4/lz4hc.c
-    mex -Ieasylzma/easylzma-0.0.8/include -c zmatlib.c
-    mex zmat.cpp zmatlib.o lz4.o lz4hc.o easylzma/easylzma-0.0.8/lib/libeasylzma_s.a -Ieasylzma/easylzma-0.0.8/include -o ../zipmat -lz
+    CCFLAG='-O3 -g -c -Ieasylzma -Ieasylzma/pavlov -Ilz4';
+    LINKFLAG='-o ../zipmat -lz';
+    for i=1:length(filelist)
+        fprintf(stdout,'mex %s %s\n', CCFLAG, filelist{i});
+        fflush(stdout);
+        eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
+    end
+    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(strjoin(filelist),'\.c[p]*','\.o'));
+    fprintf(stdout,'%s\n',cmd);fflush(stdout);
+    eval(cmd)
 end
 
