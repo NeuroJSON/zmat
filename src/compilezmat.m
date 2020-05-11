@@ -13,7 +13,7 @@ if(~exist('OCTAVE_VERSION','builtin'))
         fprintf(1,'mex %s %s\n', CCFLAG, filelist{i});
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
     end
-    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(strjoin(filelist),'\.c[p]*','\.o'));
+    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(sprintf('%s ' ,filelist{:}),'\.c[p]*','\.o'));
     fprintf(1,'%s\n',cmd);
     eval(cmd)
 else
@@ -24,7 +24,7 @@ else
         fflush(stdout);
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
     end
-    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(strjoin(filelist),'\.c[p]*','\.o'));
+    cmd=sprintf('mex %s -Ieasylzma %s %s',mexfile, LINKFLAG, regexprep(sprintf('%s ' ,filelist{:}),'\.c[p]*','\.o'));
     fprintf(stdout,'%s\n',cmd);fflush(stdout);
     eval(cmd)
 end
