@@ -1,3 +1,0 @@
-[submodule "src/easylzma"]
-	path = src/easylzma
-	url = https://github.com/lloyd/easylzma
