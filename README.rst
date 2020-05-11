@@ -1,10 +1,10 @@
 ##############################################################################                                                      
-  ZMAT: A portable data compression/decompression toolbox for MATLAB/Octave             
+ZMAT: A lightweight C-library and MATLAB/Octave toolbox for inline data compression
 ##############################################################################
 
-* Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
+* Copyright (C) 2019,2020  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.9 (Gus-the-duck)
+* Version: 0.9.8 (Peg-the-hen - alpha)
 * URL: http://github.com/fangq/zmat
 
 #################
@@ -18,17 +18,37 @@ Table of Contents
 Introduction
 ============
 
-ZMat is a portable mex function to enable zlib/gzip/lzma/lzip/lz4/lz4hc 
-based data compression/decompression and base64 encoding/decoding support 
+ZMat provides both an easy-to-use C-based data compression library - 
+`libzmat` as well a portable mex function to enable `zlib/gzip/lzma/lzip/lz4/lz4hc`
+based data compression/decompression and `base64` encoding/decoding support 
 in MATLAB and GNU Octave. It is fast and compact, can process a 
 large array within a fraction of a second. 
 
-Among the 6 supported compression methods, lz4 is the fastest for 
-compression/decompression; lzma is the slowest but has the highest 
-compression ratio; zlib/gzip have the best balance between speed 
+Among the 6 supported compression methods, `lz4` is the fastest for 
+compression/decompression; `lzma` is the slowest but has the highest 
+compression ratio; `zlib/gzip` have the best balance between speed 
 and compression time.
 
-ZMat accepts 3 types of inputs: char-based strings, numerical arrays
+The `libzmat` library, including the static library (`libzmat.a`) and the
+dynamic library `libzmat.so` or `libzmat.dll`, provides a single function to 
+conveniently compress or decompress a memory buffer:
+
+.. code:: c
+
+  int zmat_run(
+        const size_t inputsize,     /* input buffer data length */
+        unsigned char *inputstr,    /* input buffer */
+        size_t *outputsize,         /* output buffer data length */
+        unsigned char **outputbuf,  /* output buffer */
+        const int zipid,            /* 0-zlib,1-gzip,2-base64,3-lzma,4-lzip,5-lz4,6-lz4hc */
+        int *status,                /*return status for error handling*/
+        const int iscompress        /* 1 to compress, 0 to decompress */
+      );
+
+The library is lightweight and compact and can be directly embedded in the source code 
+to provide maximal portability.
+
+The ZMat MATLAB function accepts 3 types of inputs: char-based strings, numerical arrays
 or vectors, or logical arrays/vectors. Any other input format will 
 result in an error unless you typecast the input into ```int8/uint8```
 format. A multi-dimensional numerical array is accepeted, and the
@@ -37,14 +57,14 @@ original input's type/dimension info is stored in the 2nd output
 and the ``"info"`` structure, zmat will first decode the binary data 
 and then restore the original input's type and size.
 
-ZMat uses zlib - an open-source and widely used library for data
+ZMat uses `zlib` - an open-source and widely used library for data
 compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
 installed in your system library path (defined by the environment
 variables ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, respectively).
 
 The pre-compiled mex binaries for MATLAB are stored inside the 
-subfolder named "private". Those precompiled for GNU Octave are
-stored in the subfolder named "octave", with one operating system
+subfolder named `private`. Those precompiled for GNU Octave are
+stored in the subfolder named `octave`, with one operating system
 per subfolder.
 
 If you do not want to compile zmat yourself, you can download the
@@ -175,29 +195,14 @@ command
 
 .. code:: shell
 
-      git clone --recursive https://github.com/fangq/zmat.git zmat
+      git clone https://github.com/fangq/zmat.git zmat
 
-Next, you need to make sure your system has ``cmake``, ``gcc``, ``g++``,
+Next, you need to make sure your system has ``gcc``, ``g++``,
 ``mex`` and ``mkoctfile`` (if compiling for Octave is needed). If not, 
-please install CMake, gcc, MATLAB and GNU Octave and add the paths to 
+please install gcc, MATLAB and GNU Octave and add the paths to 
 these utilities to the system PATH environment variable.
 
-The first step of compilation is to compile Eazylzma (https://github.com/lloyd/easylzma),
-a submodule that zmat needs to apply lzma compression.
-
-Please use the below commands in a terminal window
-
-.. code-block:: shell
-
-      cd zmat/src/eazylzma
-      cmake .
-      make clean all
-
-if there is any dependency is missing, please install and rerun the compilation.
-If successful, a static library named ``zmat/src/easylzma/easylzma-0.0.8/lib/libeasylzma_s.a``
-is generated.
-
-The next step is to compile zmat. You may choose one of the two methods:
+To compile zmat, you may choose one of the two methods:
 
 Method 1: please open MATLAB or Octave, and run the below commands
 
@@ -234,7 +239,7 @@ following command:
 
 .. code:: shell
 
-      git clone --recursive https://github.com/fangq/zmat.git zmat
+      git clone https://github.com/fangq/zmat.git zmat
 
 or browsing the github site at
 
