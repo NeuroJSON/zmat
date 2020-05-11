@@ -60,7 +60,7 @@ ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   OMP=-fopenmp
   MEX=cmd /c mex
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
-  CPPOPT+=
+
 else
   CPPOPT+=
   CUCCOPT+=-Xcompiler $(OMP)
@@ -83,11 +83,25 @@ ifeq ($(MAKECMDGOALS),lib)
    BINARY     :=libzmat.a
    AROUTPUT   :=
    LINKOPT    :=
+   ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
+      OUTPUTFLAG :=
+   endif
+endif
+
+ifeq ($(MAKECMDGOALS),dll)
+   OUTPUTFLAG :=-o
+   BINARY     :=libzmat.so
+
+   ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
+      ARFLAGS    :=-shared -Wl,-install_name,$(BINARY).1 -lz
+   else
+      ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1 -lz
+   endif
 endif
 
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   AR         :=gcc
-dll:   ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1
+dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
 dll:   LINKOPT    :=
 dll:   AROUTPUT   :=-o
 
@@ -109,11 +123,6 @@ mex:   OUTPUT_DIR=..
 all: mex
 
 TARGETSUFFIX:=$(suffix $(BINARY))
-
-ifeq ($(TARGETSUFFIX),.so)
-        CCFLAGS+= $(DLLFLAG) 
-        ARFLAGS+= -shared -Wl,-soname,$(BINARY).1 
-endif
 
 doc: makedocdir
 	$(DOXY) $(DOXYCFG)
