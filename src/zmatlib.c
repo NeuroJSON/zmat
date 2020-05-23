@@ -1,3 +1,47 @@
+/***************************************************************************//**
+**  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression 
+**
+**  \author Qianqian Fang <q.fang at neu.edu>
+**  \copyright Qianqian Fang, 2019-2020
+**
+**  ZMat provides an easy-to-use interface for stream compression and decompression.
+**
+**  It can be compiled as a MATLAB/Octave mex function (zipmat.mex/zmat.m) and compresses 
+**  arrays and strings in MATLAB/Octave. It can also be compiled as a lightweight
+**  C-library (libzmat.a/libzmat.so) that can be called in C/C++/FORTRAN etc to 
+**  provide stream-level compression and decompression.
+**
+**  Currently, zmat/libzmat supports 6 different compression algorthms, including
+**     - zlib and gzip : the most widely used algorithm algorithms for .zip and .gz files
+**     - lzma and lzip : high compression ratio LZMA based algorithms for .lzma and .lzip files
+**     - lz4 and lz4hc : real-time compression based on LZ4 and LZ4HC algorithms
+**     - base64        : base64 encoding and decoding
+**
+**  Depencency: ZLib library: https://www.zlib.net/
+**  author: (C) 1995-2017 Jean-loup Gailly and Mark Adler
+**
+**  Depencency: LZ4 library: https://lz4.github.io/lz4/
+**  author: (C) 2011-2019, Yann Collet, 
+**
+**  Depencency: Original LZMA library
+**  author: Igor Pavlov
+**
+**  Depencency: Eazylzma: https://github.com/lloyd/easylzma
+**  author: Lloyd Hilaiel (lloyd)
+**
+**  Depencency: base64_encode()/base64_decode()
+**  \copyright 2005-2011, Jouni Malinen <j@w1.fi>
+**
+**  \section slicense License
+**          GPL v3, see LICENSE.txt for details
+*******************************************************************************/
+
+/***************************************************************************//**
+\file    zmatlib.c
+
+@brief   Compression and decompression interfaces: zmat_run, zmat_encode, zmat_decode
+*******************************************************************************/
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -43,10 +87,10 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 	        *outputbuf=base64_encode((const unsigned char*)inputstr, inputsize, outputsize);
             }else if(zipid==zmZlib || zipid==zmGzip){
 		if(zipid==zmZlib){
-	            if(deflateInit(&zs, Z_DEFAULT_COMPRESSION) != Z_OK)
+	            if(deflateInit(&zs,  (iscompress>0) ? Z_DEFAULT_COMPRESSION : (-iscompress)) != Z_OK)
 	        	return -2;
 		}else{
-	            if(deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15|16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK)
+	            if(deflateInit2(&zs, (iscompress>0) ? Z_DEFAULT_COMPRESSION : (-iscompress), Z_DEFLATED, 15|16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK)
 	        	return -2;
 		}
 		buflen[0] =deflateBound(&zs,inputsize);
@@ -65,7 +109,7 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 #ifndef NO_LZMA
 	    }else if(zipid==zmLzma || zipid==zmLzip){
 	        *ret = simpleCompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
-				inputsize, outputbuf, outputsize);
+				inputsize, outputbuf, outputsize, iscompress);
 		if(*ret!=ELZMA_E_OK)
 		     return -4;
 #endif
@@ -77,7 +121,7 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 		if(zipid==zmLz4)
 	            *outputsize = LZ4_compress_default((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize);
 		else
-		    *outputsize = LZ4_compress_HC((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize, 8);
+		    *outputsize = LZ4_compress_HC((const char *)inputstr, (char*)(*outputbuf), inputsize, *outputsize, (iscompress>0)?8:(-iscompress));
 		*ret=*outputsize;
 		if(*outputsize==0)
 		     return -6;
@@ -387,7 +431,7 @@ outputCallback(void *ctx, const void *buf, size_t size)
 int
 simpleCompress(elzma_file_format format, const unsigned char * inData,
                size_t inLen, unsigned char ** outData,
-               size_t * outLen)
+               size_t * outLen, int level)
 {
     int rc;
     elzma_compress_handle hand;
@@ -398,7 +442,7 @@ simpleCompress(elzma_file_format format, const unsigned char * inData,
 
     rc = elzma_compress_config(hand, ELZMA_LC_DEFAULT,
                                ELZMA_LP_DEFAULT, ELZMA_PB_DEFAULT,
-                               5, (1 << 20) /* 1mb */,
+                               ((level>0)?5:-level), (1 << 20) /* 1mb */,
                                format, inLen);
 
     if (rc != ELZMA_E_OK) {

@@ -14,9 +14,14 @@ function varargout=zmat(varargin)
 %      input: a char, non-complex numeric or logical vector or array
 %      iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input, 
 %             if 0, it decompresses/decodes the input. Default value is 1.
-%             if one defines iscompress as the info struct (2nd output of
-%             zmat) during encoding, zmat will perform a
-%             decoding/decompression operation and recover the original
+%
+%             if iscompress is set to a negative integer, (-iscompress) specifies
+%             the compression level. For zlib/gzip, default level is 6 (1-9); for 
+%             lzma/lzip, default level is 5 (1-9); for lz4hc, default level is 8 (1-16).
+%             the default compression level is used if iscompress is set to 1.
+%
+%             if one defines iscompress as the info struct (2nd output of zmat), zmat 
+%             will perform a decoding/decompression operation and recover the original
 %             input using the info stored in the info structure.
 %      method: (optional) compression method, currently, zmat supports the below methods
 %             'zlib': zlib/zip based data compression (default)
@@ -38,6 +43,8 @@ function varargout=zmat(varargin)
 %            'status': the zlib/lzma/lz4 compression/decompression function return value, 
 %                    including potential error codes; see documentation of the respective 
 %                    libraries for details
+%            'level': a copy of the iscompress flag; if non-zero, specifying compression 
+%                    level, see above
 %
 % example:
 %

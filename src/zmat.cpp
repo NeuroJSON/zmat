@@ -1,16 +1,40 @@
 /***************************************************************************//**
-**  \mainpage ZMAT: a data compression function for MATLAB/octave
+**  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression 
 **
 **  \author Qianqian Fang <q.fang at neu.edu>
-**  \copyright Qianqian Fang, 2019
+**  \copyright Qianqian Fang, 2019-2020
 **
-**  Functions: base64_encode()/base64_decode()
+**  ZMat provides an easy-to-use interface for stream compression and decompression.
+**
+**  It can be compiled as a MATLAB/Octave mex function (zipmat.mex/zmat.m) and compresses 
+**  arrays and strings in MATLAB/Octave. It can also be compiled as a lightweight
+**  C-library (libzmat.a/libzmat.so) that can be called in C/C++/FORTRAN etc to 
+**  provide stream-level compression and decompression.
+**
+**  Currently, zmat/libzmat supports 6 different compression algorthms, including
+**     - zlib and gzip : the most widely used algorithm algorithms for .zip and .gz files
+**     - lzma and lzip : high compression ratio LZMA based algorithms for .lzma and .lzip files
+**     - lz4 and lz4hc : real-time compression based on LZ4 and LZ4HC algorithms
+**     - base64        : base64 encoding and decoding
+**
+**  Depencency: ZLib library: https://www.zlib.net/
+**  author: (C) 1995-2017 Jean-loup Gailly and Mark Adler
+**
+**  Depencency: LZ4 library: https://lz4.github.io/lz4/
+**  author: (C) 2011-2019, Yann Collet, 
+**
+**  Depencency: Original LZMA library
+**  author: Igor Pavlov
+**
+**  Depencency: Eazylzma: https://github.com/lloyd/easylzma
+**  author: Lloyd Hilaiel (lloyd)
+**
+**  Depencency: base64_encode()/base64_decode()
 **  \copyright 2005-2011, Jouni Malinen <j@w1.fi>
 **
 **  \section slicense License
 **          GPL v3, see LICENSE.txt for details
 *******************************************************************************/
-
 
 /***************************************************************************//**
 \file    zmat.cpp
@@ -30,7 +54,7 @@
 
 void zmat_usage();
 
-const char  *metadata[]={"type","size","byte","method","status"};
+const char  *metadata[]={"type","size","byte","method","status","level"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
@@ -94,7 +118,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       if(nlhs>1){
 	            mwSize inputdim[2]={1,0}, *dims=(mwSize *)mxGetDimensions(prhs[0]);
 		    unsigned int *inputsize=NULL;
-	            plhs[1]=mxCreateStructMatrix(1,1,5,metadata);
+	            plhs[1]=mxCreateStructMatrix(1,1,6,metadata);
 		    mxArray *val = mxCreateString(mxGetClassName(prhs[0]));
                     mxSetFieldByNumber(plhs[1],0,0, val);
 
@@ -116,6 +140,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
                     val = mxCreateDoubleMatrix(1,1,mxREAL);
                     *mxGetPr(val) = ret;
                     mxSetFieldByNumber(plhs[1],0,4, val);
+
+                    val = mxCreateDoubleMatrix(1,1,mxREAL);
+                    *mxGetPr(val) = iscompress;
+                    mxSetFieldByNumber(plhs[1],0,5, val);
 	       }
 	       if(errcode<0){
 	           mexErrMsgTxt(zmat_error(-errcode));
