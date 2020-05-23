@@ -4,7 +4,7 @@ ZMAT: A lightweight C-library and MATLAB/Octave toolbox for inline data compress
 
 * Copyright (C) 2019,2020  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.9.8 (Peg-the-hen - alpha)
+* Version: 0.9.8 (Archie-the-goat - alpha)
 * URL: http://github.com/fangq/zmat
 
 #################
@@ -42,7 +42,7 @@ conveniently compress or decompress a memory buffer:
         unsigned char **outputbuf,  /* output buffer */
         const int zipid,            /* 0-zlib,1-gzip,2-base64,3-lzma,4-lzip,5-lz4,6-lz4hc */
         int *status,                /*return status for error handling*/
-        const int iscompress        /* 1 to compress, 0 to decompress */
+        const int iscompress        /* 1 compress (default level); -1 to -9 compression level, 0 decompress */
       );
 
 The library is lightweight and compact and can be directly embedded in the source code 
