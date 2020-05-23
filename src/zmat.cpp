@@ -166,5 +166,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
  */
 
 void zmat_usage(){
-     printf("ZMat (v0.9.0)\nUsage:\n\t[output,info]=zmat(input,iscompress,method);\n\nPlease run 'help zmat' for more details.\n");
+     printf("ZMat (v0.9.8)\nUsage:\n\t[output,info]=zmat(input,iscompress,method);\n\nPlease run 'help zmat' for more details.\n");
 }
