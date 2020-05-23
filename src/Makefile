@@ -10,7 +10,7 @@ ROOTDIR ?= ..
 ZMATDIR  ?= $(ROOTDIR)
 MCXSRC :=$(ZMATDIR)/src
 
-MKDIR      := mkdir
+MKDIR      :=mkdir
 
 MEX=mex
 AR=$(CC)
@@ -85,6 +85,10 @@ ifeq ($(MAKECMDGOALS),lib)
    LINKOPT    :=
 endif
 
+ifeq ($(MAKECMDGOALS),dll)
+   BINARY     :=libzmat.so
+endif
+
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   AR         :=gcc
 dll:   ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1
@@ -102,7 +106,7 @@ oct:   CXX=mkoctfile
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz' -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz -static-libgcc -static-libstdc++' -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
