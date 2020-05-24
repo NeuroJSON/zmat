@@ -101,7 +101,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
 	       unsigned char *outputbuf=NULL;
 	       size_t outputsize=0;
 	       unsigned char * inputstr=(mxIsChar(prhs[0])? (unsigned char *)mxArrayToString(prhs[0]) : (unsigned char *)mxGetData(prhs[0]));
-    	       int errcode=zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, iscompress);
+    	       int errcode=0;
+	       if(inputsize>0)
+	           errcode=zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, iscompress);
+
                if(errcode<0){
 	           if(outputbuf)
 		       free(outputbuf);
