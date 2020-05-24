@@ -48,27 +48,49 @@
 #include <assert.h>
 
 #include "zmatlib.h"
-
 #include "zlib.h"
 
+/**
+ * @brief Coarse grained error messages (encoder-specific detailed error codes are in the status parameter)
+ *
+ */
+
 char *zmat_errcode[]={
-	"No error", 
-	"input can not be empty", 
-	"failed to initialize zlib", 
-	"zlib error, see info.status for error flag, often a result of mismatch in compression method", 
-	"easylzma error, see info.status for error flag, often a result of mismatch in compression method",
-        "can not allocate output buffer",
-        "lz4 error, see info.status for error flag, often a result of mismatch in compression method",
-	"unsupported method"
+	"No error", /*0*/
+	"input can not be empty", /*-1*/
+	"failed to initialize zlib", /*-2*/
+	"zlib error, see info.status for error flag, often a result of mismatch in compression method", /*-3*/
+	"easylzma error, see info.status for error flag, often a result of mismatch in compression method",/*-4*/
+        "can not allocate output buffer",/*-5*/
+        "lz4 error, see info.status for error flag, often a result of mismatch in compression method",/*-6*/
+	"unsupported method" /*-7*/
 	};
 
-    
+/**
+ * @brief Convert error code to a string error message
+ *
+ * @param[in] id: zmat error code
+ */
+
 char * zmat_error(int id){
     if(id>=0 && id<(sizeof(zmat_errcode) / sizeof(zmat_errcode[0])))
         return zmat_errcode[id];
     else
         return "unknown error";
 }
+
+/**
+ * @brief Main interface to perform compression/decompression
+ *
+ * @param[in] inputsize: input stream buffer length
+ * @param[in] inputstr: input stream buffer pointer
+ * @param[in] outputsize: output stream buffer length
+ * @param[in] outputbuf: output stream buffer pointer
+ * @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+ * @param[in] iscompress: 0: decompression, 1: use default compression level; 
+ *             negative interger: set compression level (-1, less, to -9, more compression)
+ * @return return the coarse grained zmat error code; detailed error code is in ret.
+ */
 
 int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret, const int iscompress){
        z_stream zs;
@@ -83,9 +105,18 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 	    return -1;
 
        if(iscompress){
+           /**
+             * perform compression or encoding
+             */
             if(zipid==zmBase64){
+               /**
+                 * base64 encoding
+                 */
 	        *outputbuf=base64_encode((const unsigned char*)inputstr, inputsize, outputsize);
             }else if(zipid==zmZlib || zipid==zmGzip){
+               /**
+                 * zlib (.zip) or gzip (.gz) compression
+                 */
 		if(zipid==zmZlib){
 	            if(deflateInit(&zs,  (iscompress>0) ? Z_DEFAULT_COMPRESSION : (-iscompress)) != Z_OK)
 	        	return -2;
@@ -108,6 +139,9 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 		deflateEnd(&zs);
 #ifndef NO_LZMA
 	    }else if(zipid==zmLzma || zipid==zmLzip){
+               /**
+                 * lzma (.lzma) or lzip (.lzip) compression
+                 */
 	        *ret = simpleCompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 				inputsize, outputbuf, outputsize, iscompress);
 		if(*ret!=ELZMA_E_OK)
@@ -115,6 +149,9 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 #endif
 #ifndef NO_LZ4
             }else if(zipid==zmLz4 || zipid==zmLz4hc){
+               /**
+                 * lz4 or lz4hc compression
+                 */
                 *outputsize=LZ4_compressBound(inputsize);
                 if (!(*outputbuf = (unsigned char *)malloc(*outputsize)))
                      return -5;
@@ -130,9 +167,18 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 		return -7;
 	    }
        }else{
+           /**
+             * perform decompression or decoding
+             */
             if(zipid==zmBase64){
+               /**
+                 * base64 decoding
+                 */
 	        *outputbuf=base64_decode((const unsigned char*)inputstr, inputsize, outputsize);
             }else if(zipid==zmZlib || zipid==zmGzip){
+               /**
+                 * zlib (.zip) or gzip (.gz) decompression
+                 */
 	        int count=1;
         	if(zipid==zmZlib){
 	            if(inflateInit(&zs) != Z_OK)
@@ -163,6 +209,9 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 		inflateEnd(&zs);
 #ifndef NO_LZMA
             }else if(zipid==zmLzma || zipid==zmLzip){
+               /**
+                 * lzma (.lzma) or lzip (.lzip) decompression
+                 */
 	        *ret = simpleDecompress((elzma_file_format)(zipid-3), (unsigned char *)inputstr,
 				inputsize, outputbuf, outputsize);
 		if(*ret!=ELZMA_E_OK)
@@ -170,6 +219,9 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
 #endif
 #ifndef NO_LZ4
             }else if(zipid==zmLz4 || zipid==zmLz4hc){
+               /**
+                 * lz4 or lz4hc decompression
+                 */
 	        int count=2;
                 *outputsize=(inputsize<<count);
                 if (!(*outputbuf = (unsigned char *)malloc(*outputsize))){
@@ -195,9 +247,32 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
        return 0;
 }
 
+/**
+ * @brief Simplified interface to perform compression (use default compression level)
+ *
+ * @param[in] inputsize: input stream buffer length
+ * @param[in] inputstr: input stream buffer pointer
+ * @param[in] outputsize: output stream buffer length
+ * @param[in] outputbuf: output stream buffer pointer
+ * @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+ * @return return the coarse grained zmat error code; detailed error code is in ret.
+ */
+
 int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret){
     return zmat_run(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 1);
 }
+
+/**
+ * @brief Simplified interface to perform decompression
+ *
+ * @param[in] inputsize: input stream buffer length
+ * @param[in] inputstr: input stream buffer pointer
+ * @param[in] outputsize: output stream buffer length
+ * @param[in] outputbuf: output stream buffer pointer
+ * @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+ * @return return the coarse grained zmat error code; detailed error code is in ret.
+ */
+
 int zmat_decode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret){
     return zmat_run(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 0);
 }
@@ -232,8 +307,8 @@ int zmat_keylookup(char *origkey, const char *table[]){
 
 
 /*
- * Base64 encoding/decoding (RFC1341)
- * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
+ * @brief Base64 encoding/decoding (RFC1341)
+ * @author Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -243,7 +318,7 @@ static const unsigned char base64_table[65] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /**
- * base64_encode - Base64 encode
+ * @brief base64_encode - Base64 encode
  * @src: Data to be encoded
  * @len: Length of the data to be encoded
  * @out_len: Pointer to output length variable, or %NULL if not used
@@ -254,6 +329,7 @@ static const unsigned char base64_table[65] =
  * nul terminated to make it easier to use as a C string. The nul terminator is
  * not included in out_len.
  */
+
 unsigned char * base64_encode(const unsigned char *src, size_t len,
 			      size_t *out_len)
 {
@@ -322,6 +398,7 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
  *
  * Caller is responsible for freeing the returned buffer.
  */
+
 unsigned char * base64_decode(const unsigned char *src, size_t len,
 			      size_t *out_len)
 {
@@ -384,6 +461,10 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 
 #ifndef NO_LZMA
 
+/**
+ * @brief Easylzma compression interface
+ */
+
 struct dataStream 
 {
     const unsigned char * inData;
@@ -392,6 +473,10 @@ struct dataStream
     unsigned char * outData;
     size_t outLen;
 };
+
+/**
+ * @brief Easylzma input callback function
+ */
 
 static int
 inputCallback(void *ctx, void *buf, size_t * size)
@@ -413,6 +498,10 @@ inputCallback(void *ctx, void *buf, size_t * size)
     return 0;
 }
 
+/**
+ * @brief Easylzma output callback function
+ */
+
 static size_t
 outputCallback(void *ctx, const void *buf, size_t size)
 {
@@ -427,6 +516,19 @@ outputCallback(void *ctx, const void *buf, size_t size)
 
     return size;
 }
+
+/**
+ * @brief Easylzma interface to perform compression
+ *
+ * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
+ * @param[in] inData: input stream buffer pointer
+ * @param[in] inLen: input stream buffer length
+ * @param[in] outData: output stream buffer pointer
+ * @param[in] outLen: output stream buffer length
+ * @param[in] level: positive number: use default compression level (5); 
+ *             negative interger: set compression level (-1, less, to -9, more compression)
+ * @return return the fine grained lzma error code.
+ */
 
 int
 simpleCompress(elzma_file_format format, const unsigned char * inData,
@@ -474,6 +576,18 @@ simpleCompress(elzma_file_format format, const unsigned char * inData,
 
     return rc;
 }
+
+
+/**
+ * @brief Easylzma interface to perform decompression
+ *
+ * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
+ * @param[in] inData: input stream buffer pointer
+ * @param[in] inLen: input stream buffer length
+ * @param[in] outData: output stream buffer pointer
+ * @param[in] outLen: output stream buffer length
+ * @return return the fine grained lzma error code.
+ */
 
 int
 simpleDecompress(elzma_file_format format, const unsigned char * inData,
