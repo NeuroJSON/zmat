@@ -91,7 +91,17 @@ if(nargin>2)
     zipmethod=varargin{3};
 end
 
-[varargout{1:nargout}]=zipmat(input,iscompress,zipmethod);
+if(~isempty(input))
+    [varargout{1:nargout}]=zipmat(input,iscompress,zipmethod);
+else
+    varargout{1}='';
+    if(nargout>1)
+        varargout{2}=struct('type',class(varargin{1}),'size',0,...
+            'byte',length(typecast(cast(1,class(input)),'uint8')),...
+            'method',zipmethod,'status',0,'level',iscompress);
+        
+    end
+end
 
 if(exist('inputinfo','var') && isfield(inputinfo,'type'))
         varargout{1}=typecast(varargout{1},inputinfo.type);

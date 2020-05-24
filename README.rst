@@ -137,9 +137,14 @@ zmat.m
        input: a char, non-complex numeric or logical vector or array
        iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input, 
               if 0, it decompresses/decodes the input. Default value is 1.
-              if one defines iscompress as the info struct (2nd output of
-              zmat) during encoding, zmat will perform a
-              decoding/decompression operation and recover the original
+ 
+              if iscompress is set to a negative integer, (-iscompress) specifies
+              the compression level. For zlib/gzip, default level is 6 (1-9); for 
+              lzma/lzip, default level is 5 (1-9); for lz4hc, default level is 8 (1-16).
+              the default compression level is used if iscompress is set to 1.
+ 
+              if one defines iscompress as the info struct (2nd output of zmat), zmat 
+              will perform a decoding/decompression operation and recover the original
               input using the info stored in the info structure.
        method: (optional) compression method, currently, zmat supports the below methods
               'zlib': zlib/zip based data compression (default)
@@ -161,6 +166,8 @@ zmat.m
              'status': the zlib/lzma/lz4 compression/decompression function return value, 
                      including potential error codes; see documentation of the respective 
                      libraries for details
+             'level': a copy of the iscompress flag; if non-zero, specifying compression 
+                     level, see above
  
   example:
  
@@ -202,7 +209,7 @@ Next, you need to make sure your system has ``gcc``, ``g++``,
 please install gcc, MATLAB and GNU Octave and add the paths to 
 these utilities to the system PATH environment variable.
 
-To compile zmat, you may choose one of the two methods:
+To compile zmat, you may choose one of the three methods:
 
 Method 1: please open MATLAB or Octave, and run the below commands
 
@@ -211,7 +218,33 @@ Method 1: please open MATLAB or Octave, and run the below commands
       cd zmat/src
       compilezmat
 
-Method 2: please open a terminal, and run the below shall commands
+Method 2: Compile with cmake (3.3 or later) 
+
+Please open a terminal, and run the below shall commands
+
+.. code-block:: shell
+      cd zmat/src
+      rm -rf build
+      mkdir build && cd build
+      cmake ../
+      make clean
+      make
+
+if MATLAB was not installed in a standard path, you may change ``cmake ../`` to
+.. code-block:: shell
+      cmake Matlab_ROOT_DIR=/path/to/matlab/root ../
+
+by default, this will first compile ``libzmat.a`` and then create the ``.mex`` file 
+that is statically linked with ``libzmat.a``. If one prefers to create a dynamic
+library ``libzmat.so`` and then a dynamically linked ``.mex`` file, this can
+be done by
+
+if the output 
+.. code-block:: shell
+      cmake Matlab_ROOT_DIR=/path/to/matlab/root -DSTATIC_LIB=off ../
+
+
+Method 3: please open a terminal, and run the below shall commands
 
 .. code-block:: shell
 
