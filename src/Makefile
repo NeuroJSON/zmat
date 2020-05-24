@@ -6,9 +6,9 @@
 
 BACKEND ?=
 
-ROOTDIR ?= ..
-ZMATDIR  ?= $(ROOTDIR)
-MCXSRC :=$(ZMATDIR)/src
+ROOTDIR ?=..
+ZMATDIR ?=$(ROOTDIR)
+LIBDIR  ?=$(ROOTDIR)/lib
 
 MKDIR      :=mkdir
 
@@ -82,6 +82,7 @@ ifeq ($(MAKECMDGOALS),lib)
    BINARY     :=libzmat.a
    AROUTPUT   :=
    LINKOPT    :=
+   OUTPUT_DIR :=$(LIBDIR)
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
       OUTPUTFLAG :=
    endif
@@ -90,6 +91,7 @@ endif
 ifeq ($(MAKECMDGOALS),dll)
    OUTPUTFLAG :=-o
    BINARY     :=libzmat.so
+   OUTPUT_DIR :=$(LIBDIR)
 
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
       ARFLAGS    :=-shared -Wl,-install_name,$(BINARY).1 -lz
@@ -157,7 +159,7 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	$(CUDACC) -c $(CUCCOPT) -o $@  $<
 
 clean:
-	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX) zmat$(OBJSUFFIX)
+	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX) zmat$(OBJSUFFIX) $(LIBDIR)/*
 
 .PHONY: all mex oct lib dll
 
