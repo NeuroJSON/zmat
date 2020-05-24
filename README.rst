@@ -223,6 +223,7 @@ Method 2: Compile with cmake (3.3 or later)
 Please open a terminal, and run the below shall commands
 
 .. code-block:: shell
+
       cd zmat/src
       rm -rf build
       mkdir build && cd build
@@ -231,7 +232,9 @@ Please open a terminal, and run the below shall commands
       make
 
 if MATLAB was not installed in a standard path, you may change ``cmake ../`` to
+
 .. code-block:: shell
+
       cmake Matlab_ROOT_DIR=/path/to/matlab/root ../
 
 by default, this will first compile ``libzmat.a`` and then create the ``.mex`` file 
@@ -239,8 +242,8 @@ that is statically linked with ``libzmat.a``. If one prefers to create a dynamic
 library ``libzmat.so`` and then a dynamically linked ``.mex`` file, this can
 be done by
 
-if the output 
 .. code-block:: shell
+
       cmake Matlab_ROOT_DIR=/path/to/matlab/root -DSTATIC_LIB=off ../
 
 
