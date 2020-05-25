@@ -1,10 +1,10 @@
 ##############################################################################                                                      
-ZMAT: A lightweight C-library and MATLAB/Octave toolbox for inline data compression
+ZMAT: A portable C-library and MATLAB toolbox for zlib/gzip/lzma/lz4/lz4hc data compression
 ##############################################################################
 
 * Copyright (C) 2019,2020  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.9.8 (Archie-the-goat - alpha)
+* Version: 0.9.8 (Archie-the-goat - beta)
 * URL: http://github.com/fangq/zmat
 
 #################
@@ -30,7 +30,7 @@ compression ratio; `zlib/gzip` have the best balance between speed
 and compression time.
 
 The `libzmat` library, including the static library (`libzmat.a`) and the
-dynamic library `libzmat.so` or `libzmat.dll`, provides a single function to 
+dynamic library `libzmat.so` or `libzmat.dll`, provides a simple interface to 
 conveniently compress or decompress a memory buffer:
 
 .. code:: c
@@ -42,29 +42,32 @@ conveniently compress or decompress a memory buffer:
         unsigned char **outputbuf,  /* output buffer */
         const int zipid,            /* 0-zlib,1-gzip,2-base64,3-lzma,4-lzip,5-lz4,6-lz4hc */
         int *status,                /*return status for error handling*/
-        const int iscompress        /* 1 compress (default level); -1 to -9 compression level, 0 decompress */
+        const int level             /* 1 compress (default level); -1 to -9 compression level, 0 decompress */
       );
 
-The library is lightweight and compact and can be directly embedded in the source code 
-to provide maximal portability.
+The library is highly portable and can be directly embedded in the source code 
+to provide maximal portability. In the ``test`` folder, we provided sample codes
+to call ``zmat_run/zmat_encode/zmat_decode`` for stream-level compression and 
+decompression in C and Fortran90. The Fortran90 C-binding module can be found 
+in the ``fortran90`` folder.
 
 The ZMat MATLAB function accepts 3 types of inputs: char-based strings, numerical arrays
 or vectors, or logical arrays/vectors. Any other input format will 
-result in an error unless you typecast the input into ```int8/uint8```
+result in an error unless you typecast the input into ``int8/uint8``
 format. A multi-dimensional numerical array is accepeted, and the
 original input's type/dimension info is stored in the 2nd output
 ``"info"``. If one calls ``zmat`` with both the encoded data (in byte vector)
 and the ``"info"`` structure, zmat will first decode the binary data 
 and then restore the original input's type and size.
 
-ZMat uses `zlib` - an open-source and widely used library for data
+ZMat uses ``zlib`` - an open-source and widely used library for data
 compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
 installed in your system library path (defined by the environment
 variables ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, respectively).
 
 The pre-compiled mex binaries for MATLAB are stored inside the 
-subfolder named `private`. Those precompiled for GNU Octave are
-stored in the subfolder named `octave`, with one operating system
+subfolder named ``private``. Those precompiled for GNU Octave are
+stored in the subfolder named ``octave``, with one operating system
 per subfolder.
 
 If you do not want to compile zmat yourself, you can download the
@@ -81,15 +84,15 @@ Installation
 
 The installation of ZMat is no different from any other simple
 MATLAB toolboxes. You only need to download/unzip the  package
-to a folder, and add the folder's path (that contains zmat.m and 
-the "private" folder) to MATLAB's path list by using the 
+to a folder, and add the folder's path (that contains ``zmat.m`` and 
+the ``"private"`` folder) to MATLAB's path list by using the 
 following command:
 
 .. code:: matlab
 
     addpath('/path/to/zmat');
 
-For Octave, one needs to copy the zipmat.mat file inside the "``octave``",
+For Octave, one needs to copy the ``zipmat.mat`` file inside the "``octave``",
 from the subfolder matching the OS into the "``private``" subfolder.
 
 If you want to add this path permanently, you need to type "``pathtool``", 
@@ -110,7 +113,7 @@ MATLAB will execute this file every time it starts. For Octave, the file
 you need to edit is ``~/.octaverc`` , where "``~``" is your home directory.
 
 ================
-Using ZMat
+Using ZMat in MATLAB
 ================
 
 ZMat provides a single mex function, ``zipmat.mex*`` -- for both compressing/encoding
@@ -142,6 +145,9 @@ zmat.m
               the compression level. For zlib/gzip, default level is 6 (1-9); for 
               lzma/lzip, default level is 5 (1-9); for lz4hc, default level is 8 (1-16).
               the default compression level is used if iscompress is set to 1.
+ 
+              zmat removes the trailing newline when iscompress=2 and methpod='base64'
+              all newlines are removed when iscompress=3 and methpod='base64'
  
               if one defines iscompress as the info struct (2nd output of zmat), zmat 
               will perform a decoding/decompression operation and recover the original
@@ -211,14 +217,46 @@ these utilities to the system PATH environment variable.
 
 To compile zmat, you may choose one of the three methods:
 
-Method 1: please open MATLAB or Octave, and run the below commands
+1. Method 1: please open MATLAB or Octave, and run the below commands
 
 .. code-block:: matlab
 
       cd zmat/src
       compilezmat
 
-Method 2: Compile with cmake (3.3 or later) 
+The above script utilizes the MinGW-w64 MATLAB Compiler plugin.
+
+To install the MinGW-w64 compiler plugin for MATLAB, please follow
+the below steps
+
+- If you have MATLAB R2017b or later, you may skip this step.
+  To compile mcxlabcl in MATLAB R2017a or earlier on Windows, you must 
+  pre-install the MATLAB support for MinGW-w64 compiler 
+  https://www.mathworks.com/matlabcentral/fileexchange/52848-matlab-support-for-mingw-w64-c-c-compiler
+
+  Note: it appears that installing the above Add On is no longer working
+  and may give an error at the download stage. In this case, you should
+  install MSYS2 from https://www.msys2.org/. Once you install MSYS2,
+  run MSYS2.0 MinGW 64bit from Start menu, in the popup terminal window,
+  type
+
+.. code-block:: shell
+
+     pacman -Syu
+     pacman -S base-devel gcc git mingw-w64-x86_64-opencl-headers
+
+Then, start MATLAB, and in the command window, run
+
+.. code-block:: matlab
+
+     setenv('MW_MINGW64_LOC','C:\msys64\usr');
+
+- After installation of MATLAB MinGW support, you must type 
+  ``mex -setup C`` in MATLAB and select "MinGW64 Compiler (C)". 
+- Once you select the MingW C compiler, you should run ``mex -setup C++``
+  again in MATLAB and select "MinGW64 Compiler (C++)" to compile C++.
+
+2. Method 2: Compile with cmake (3.3 or later) 
 
 Please open a terminal, and run the below shall commands
 
@@ -247,7 +285,7 @@ be done by
       cmake Matlab_ROOT_DIR=/path/to/matlab/root -DSTATIC_LIB=off ../
 
 
-Method 3: please open a terminal, and run the below shall commands
+3. Method 3: please open a terminal, and run the below shall commands
 
 .. code-block:: shell
 
