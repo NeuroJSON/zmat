@@ -113,14 +113,9 @@ module zmatlib
     end function zmat_decode
 
 !------------------------------------------------------------------------------
-!> @brief Simplified interface to perform compression, same as zmat_run(...,1)
+!> @brief Deallocating the C-allocated output buffer, must be called after each zmat use
 !
-!> @param[in] inputsize: input stream buffer length
-!> @param[in] inputstr: input stream buffer pointer
-!> @param[out] outputsize: output stream buffer length
-!> @param[out] outputbuf: output stream buffer pointer
-!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
-!> @return return the coarse grained zmat error code; detailed error code is in ret.
+!> @param[in,out] outputbuf: output stream buffer pointer
 !------------------------------------------------------------------------------
 
     subroutine zmat_free(outputbuf) bind(C)
