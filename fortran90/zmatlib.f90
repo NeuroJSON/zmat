@@ -27,7 +27,7 @@
 !------------------------------------------------------------------------------
 
 module zmatlib
-  use iso_c_binding, only: c_char,c_size_t,c_int,c_ptr, c_f_pointer
+  use iso_c_binding, only: c_char,c_size_t,c_int,c_ptr, c_loc, c_f_pointer
   implicit none
 
 !------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ module zmatlib
       integer(c_int), value :: zipid, level
       integer(c_size_t),  intent(out) :: outputsize
       integer(c_int),  intent(out) :: ret
-      character(kind=c_char),  intent(in)  :: inputbuf(*)
+      type(c_ptr), value, intent(in)  :: inputbuf
       type(c_ptr),intent(out) :: outputbuf
     end function zmat_run
 
@@ -87,7 +87,7 @@ module zmatlib
       integer(c_int), value :: zipid
       integer(c_size_t),  intent(out) :: outputsize
       integer(c_int),  intent(out) :: ret
-      character(kind=c_char),  intent(in)  :: inputbuf(*)
+      type(c_ptr), value, intent(in)  :: inputbuf
       type(c_ptr),intent(out) :: outputbuf
     end function zmat_encode
 
@@ -108,7 +108,7 @@ module zmatlib
       integer(c_int), value :: zipid
       integer(c_size_t),  intent(out) :: outputsize
       integer(c_int),  intent(out) :: ret
-      character(kind=c_char),  intent(in)  :: inputbuf(*)
+      type(c_ptr), value, intent(in)  :: inputbuf
       type(c_ptr),intent(out) :: outputbuf
     end function zmat_decode
 
