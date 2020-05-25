@@ -18,6 +18,7 @@ set(CMAKE_C_FLAGS "-g -Wall -O3 -fPIC")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../)
 
 # Add include directories
+include_directories(../include)
 include_directories(lz4)
 include_directories(easylzma)
 include_directories(easylzma/pavlov)

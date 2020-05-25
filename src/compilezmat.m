@@ -10,7 +10,7 @@ if(ispc)
     suffix='.obj';
 end
 if(~exist('OCTAVE_VERSION','builtin'))
-    CCFLAG='CFLAGS=''-O3 -g -Ieasylzma -Ieasylzma/pavlov -Ilz4 -fPIC'' -c';
+    CCFLAG='CFLAGS=''-O3 -g -I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4 -fPIC'' -c';
     LINKFLAG='CXXLIBS=''\$CLIBS -lz'' -output ../zipmat -outdir ../';
     for i=1:length(filelist)
         fprintf(1,'mex %s %s\n', CCFLAG, filelist{i});
