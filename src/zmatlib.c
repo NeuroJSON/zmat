@@ -50,6 +50,55 @@
 #include "zmatlib.h"
 #include "zlib.h"
 
+#ifndef NO_LZMA
+  #include "easylzma/compress.h"
+  #include "easylzma/decompress.h"
+#endif
+
+#ifndef NO_LZ4
+  #include "lz4/lz4.h"
+  #include "lz4/lz4hc.h"
+#endif
+
+#ifndef NO_LZMA
+/**
+ * @brief Easylzma interface to perform compression
+ *
+ * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
+ * @param[in] inData: input stream buffer pointer
+ * @param[in] inLen: input stream buffer length
+ * @param[in] outData: output stream buffer pointer
+ * @param[in] outLen: output stream buffer length
+ * @param[in] level: positive number: use default compression level (5); 
+ *             negative interger: set compression level (-1, less, to -9, more compression)
+ * @return return the fine grained lzma error code.
+ */
+
+int simpleCompress(elzma_file_format format,
+                   const unsigned char * inData,
+                   size_t inLen,
+                   unsigned char ** outData,
+                   size_t * outLen,
+		   int level);
+
+/**
+ * @brief Easylzma interface to perform decompression
+ *
+ * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
+ * @param[in] inData: input stream buffer pointer
+ * @param[in] inLen: input stream buffer length
+ * @param[in] outData: output stream buffer pointer
+ * @param[in] outLen: output stream buffer length
+ * @return return the fine grained lzma error code.
+ */
+
+int simpleDecompress(elzma_file_format format,
+                     const unsigned char * inData,
+                     size_t inLen,
+                     unsigned char ** outData,
+                     size_t * outLen);
+#endif
+
 /**
  * @brief Coarse grained error messages (encoder-specific detailed error codes are in the status parameter)
  *
@@ -305,6 +354,17 @@ int zmat_keylookup(char *origkey, const char *table[]){
     return -1;
 }
 
+/**
+ * @brief Free the output buffer to facilitate use in fortran
+ *
+ * @param[in,out] outputbuf: the outputbuf buffer's initial address to be freed
+ */
+
+void zmat_free(unsigned char **outputbuf){
+    if(*outputbuf)
+        free(*outputbuf);
+    *outputbuf=NULL;
+}
 
 /*
  * @brief Base64 encoding/decoding (RFC1341)

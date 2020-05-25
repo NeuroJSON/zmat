@@ -45,16 +45,6 @@
 #ifndef ZMAT_LIB_H
 #define ZMAT_LIB_H
 
-#ifndef NO_LZMA
-  #include "easylzma/compress.h"
-  #include "easylzma/decompress.h"
-#endif
-
-#ifndef NO_LZ4
-  #include "lz4/lz4.h"
-  #include "lz4/lz4hc.h"
-#endif
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -116,6 +106,14 @@ int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputs
 int zmat_decode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret);
 
 /**
+ * @brief Free the output buffer to facilitate use in fortran
+ *
+ * @param[in,out] outputbuf: the outputbuf buffer's initial address to be freed
+ */
+
+void zmat_free(unsigned char **outputbuf);
+
+/**
  * @brief Look up a string in a string list and return the index
  *
  * @param[in] origkey: string to be looked up
@@ -162,44 +160,6 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
 
 unsigned char * base64_decode(const unsigned char *src, size_t len,
 			      size_t *out_len);
-#ifndef NO_LZMA
-/**
- * @brief Easylzma interface to perform compression
- *
- * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
- * @param[in] inData: input stream buffer pointer
- * @param[in] inLen: input stream buffer length
- * @param[in] outData: output stream buffer pointer
- * @param[in] outLen: output stream buffer length
- * @param[in] level: positive number: use default compression level (5); 
- *             negative interger: set compression level (-1, less, to -9, more compression)
- * @return return the fine grained lzma error code.
- */
-
-int simpleCompress(elzma_file_format format,
-                   const unsigned char * inData,
-                   size_t inLen,
-                   unsigned char ** outData,
-                   size_t * outLen,
-		   int level);
-
-/**
- * @brief Easylzma interface to perform decompression
- *
- * @param[in] format: output format (0 for lzip format, 1 for lzma-alone format)
- * @param[in] inData: input stream buffer pointer
- * @param[in] inLen: input stream buffer length
- * @param[in] outData: output stream buffer pointer
- * @param[in] outLen: output stream buffer length
- * @return return the fine grained lzma error code.
- */
-
-int simpleDecompress(elzma_file_format format,
-                     const unsigned char * inData,
-                     size_t inLen,
-                     unsigned char ** outData,
-                     size_t * outLen);
-#endif
 
 #ifdef __cplusplus
 }
