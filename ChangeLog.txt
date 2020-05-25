@@ -1,5 +1,28 @@
 = Change Log =
 
+== ZMAT 0.9.8 (Archie-the-goat - beta), FangQ <q.fang (a) neu.edu> ==
+
+ 2020-05-25 [b83efba] trim base64 newline, update compilezmat, update win64 mex, release 1.0 beta
+ 2020-05-25 [ea83b12] move zmatlib.h header to the dedicated include folder
+ 2020-05-25 [b333987] add fortran 90 function interface and demo code
+ 2020-05-24 [f0cbcf5] add c example
+ 2020-05-24 [18215a2] fix compilation instruction format
+ 2020-05-24 [392d446] add doxygen documentation
+ 2020-05-24 [6a3e038] fix crashing if input is empty
+ 2020-05-24 [bc8349e] accept empty input, update help info, add cmake compilation
+ 2020-05-24 [211cddb] change windows mex file permission
+ 2020-05-23 [5261474] add cmake script
+ 2020-05-23 [5fac274] add makefile in the top folder
+ 2020-05-23 [cd45748] support compression level via iscompress, add code header
+ 2020-05-23 [be5bba0] Merge branch 'master' of https://github.com/fangq/zmat
+ 2020-05-23 [864e9d2] add cmake support
+ 2020-05-11 [62ecc75] Add description for libzmat and interface
+ 2020-05-11 [7252216] make compilezmat compatible with matlab 2010
+ 2020-05-11 [6cedd38] fix all warnings for easylzma
+ 2020-05-11 [1ac6464] include easylzma source tree directly for easy deployment and building
+ 2019-10-07 [a477939] compile static and dynamic libraries
+
+
 == ZMAT 0.9.0 (Gus-the-duck), FangQ <q.fang (a) neu.edu> ==
 
  2019-09-17 [73c6257] update windows mex files
