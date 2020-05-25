@@ -52,9 +52,9 @@ module zmatlib
 !
 !> @param[in] inputsize: input stream buffer length
 !> @param[in] inputstr: input stream buffer pointer
-!> @param[in] outputsize: output stream buffer length
-!> @param[in] outputbuf: output stream buffer pointer
-!> @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+!> @param[out] outputsize: output stream buffer length
+!> @param[out] outputbuf: output stream buffer pointer
+!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
 !> @param[in] iscompress: 0: decompression, 1: use default compression level; 
 !>	     negative interger: set compression level (-1, less, to -9, more compression)
 !> @return return the coarse grained zmat error code; detailed error code is in ret.
@@ -75,9 +75,9 @@ module zmatlib
 !
 !> @param[in] inputsize: input stream buffer length
 !> @param[in] inputstr: input stream buffer pointer
-!> @param[in] outputsize: output stream buffer length
-!> @param[in] outputbuf: output stream buffer pointer
-!> @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+!> @param[out] outputsize: output stream buffer length
+!> @param[out] outputbuf: output stream buffer pointer
+!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
 !> @return return the coarse grained zmat error code; detailed error code is in ret.
 !------------------------------------------------------------------------------
 
@@ -96,9 +96,9 @@ module zmatlib
 !
 !> @param[in] inputsize: input stream buffer length
 !> @param[in] inputstr: input stream buffer pointer
-!> @param[in] outputsize: output stream buffer length
-!> @param[in] outputbuf: output stream buffer pointer
-!> @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+!> @param[out] outputsize: output stream buffer length
+!> @param[out] outputbuf: output stream buffer pointer
+!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
 !> @return return the coarse grained zmat error code; detailed error code is in ret.
 !------------------------------------------------------------------------------
 
