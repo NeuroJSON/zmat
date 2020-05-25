@@ -58,6 +58,12 @@ call c_f_pointer(outputbuf, myout, [outputlen])
 print *, myout
 
 !------------------------------------------------------------------------------
+! step 6: free the c-allocated buffer
+!------------------------------------------------------------------------------
+
+call zmat_free(outputbuf)
+
+!------------------------------------------------------------------------------
 ! repeat step 3 for another variable: set whatever fortran variables
 !------------------------------------------------------------------------------
 dat = (/ (i, i = 1, 10) /)
@@ -77,5 +83,11 @@ res=zmat_run(inputlen,inputbuf,outputlen, outputbuf, zmBase64, ret, 1);
 
 call c_f_pointer(outputbuf, myout, [outputlen])
 print *, myout
+
+!------------------------------------------------------------------------------
+! repeat step 6: free the c-allocated buffer
+!------------------------------------------------------------------------------
+
+call zmat_free(outputbuf)
 
 end program

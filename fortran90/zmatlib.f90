@@ -112,5 +112,21 @@ module zmatlib
       type(c_ptr),intent(out) :: outputbuf
     end function zmat_decode
 
+!------------------------------------------------------------------------------
+!> @brief Simplified interface to perform compression, same as zmat_run(...,1)
+!
+!> @param[in] inputsize: input stream buffer length
+!> @param[in] inputstr: input stream buffer pointer
+!> @param[out] outputsize: output stream buffer length
+!> @param[out] outputbuf: output stream buffer pointer
+!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
+!> @return return the coarse grained zmat error code; detailed error code is in ret.
+!------------------------------------------------------------------------------
+
+    subroutine zmat_free(outputbuf) bind(C)
+      use iso_c_binding, only: c_ptr
+      type(c_ptr),intent(inout) :: outputbuf
+    end subroutine zmat_free
+
   end interface
 end module
