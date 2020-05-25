@@ -20,8 +20,8 @@ function varargout=zmat(varargin)
 %             lzma/lzip, default level is 5 (1-9); for lz4hc, default level is 8 (1-16).
 %             the default compression level is used if iscompress is set to 1.
 %
-%             zmat removes the trailing newline when iscompress=2 and methpod='base64'
-%             all newlines are removed when iscompress=3 and methpod='base64'
+%             zmat removes the trailing newline when iscompress=2 and method='base64'
+%             all newlines are removed when iscompress=3 and method='base64'
 %
 %             if one defines iscompress as the info struct (2nd output of zmat), zmat 
 %             will perform a decoding/decompression operation and recover the original
