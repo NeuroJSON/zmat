@@ -98,7 +98,7 @@ from the subfolder matching the OS into the "``private``" subfolder.
 If you want to add this path permanently, you need to type "``pathtool``", 
 browse to the zmat root folder and add to the list, then click "Save".
 Then, run "``rehash``" in MATLAB, and type "``which zmat``", if you see an 
-output, that means ZMax is installed for MATLAB/Octave.
+output, that means ZMat is installed for MATLAB/Octave.
 
 If you use MATLAB in a shared environment such as a Linux server, the
 best way to add path is to type 
@@ -108,7 +108,7 @@ best way to add path is to type
    mkdir ~/matlab/
    nano ~/matlab/startup.m
 
-and type ``addpath('/path/to/zmax')`` in this file, save and quit the editor.
+and type ``addpath('/path/to/zmat')`` in this file, save and quit the editor.
 MATLAB will execute this file every time it starts. For Octave, the file
 you need to edit is ``~/.octaverc`` , where "``~``" is your home directory.
 
