@@ -144,7 +144,7 @@ and that for installing the development environment is
 
 .. code:: shell
 
-   sudo apt-get install libzmat1 libzmat1-devel zmat-static
+   sudo apt-get install libzmat1 libzmat1-dev
 
 A Ubuntu (16.04/18.04) user can use the same commands as Debian to install these 
 packages but one must first run 
@@ -154,7 +154,8 @@ packages but one must first run
    sudo add-apt-repository ppa:fangq/ppa
    sudo apt-get update
 
-to enable the relevant PPA (personal package achieve) first.
+to enable the `relevant PPA <http://https://launchpad.net/~fangq/+archive/ubuntu/ppa>`_
+(personal package achieve) first.
 
 ================
 Using ZMat in MATLAB
