@@ -113,6 +113,50 @@ MATLAB will execute this file every time it starts. For Octave, the file
 you need to edit is ``~/.octaverc`` , where "``~``" is your home directory.
 
 ================
+Installing ZMat on Linux Distributions
+================
+
+One can directly install zmat on Fedora Linux 29 or later via the 
+below shell command
+
+.. code:: shell
+
+   sudo dnf install octave-zmat
+
+Similarly, the below command installs the ``libzmat`` libary for developing
+software using this library:
+
+.. code:: shell
+
+   sudo dnf install zmat zmat-devel zmat-static
+
+The above command installs the dynamic library, C/Fortran90 header files and
+static library, respectively
+
+Similarly, if one uses Debian ("unstable"), the command to install zmat 
+toolbox for Octave (and optionally for MATLAB) is
+
+.. code:: shell
+
+   sudo apt-get install octave-zmat matlab-zmat
+
+and that for installing the development environment is
+
+.. code:: shell
+
+   sudo apt-get install libzmat1 libzmat1-devel zmat-static
+
+A Ubuntu (16.04/18.04) user can use the same commands as Debian to install these 
+packages but one must first run 
+
+.. code:: shell
+
+   sudo add-apt-repository ppa:fangq/ppa
+   sudo apt-get update
+
+to enable the relevant PPA (personal package achieve) first.
+
+================
 Using ZMat in MATLAB
 ================
 
@@ -243,7 +287,7 @@ the below steps
 .. code-block:: shell
 
      pacman -Syu
-     pacman -S base-devel gcc git mingw-w64-x86_64-opencl-headers
+     pacman -S base-devel gcc git zlib-devel
 
 Then, start MATLAB, and in the command window, run
 
