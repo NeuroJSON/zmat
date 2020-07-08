@@ -1,0 +1,128 @@
+<deployment-project plugin="plugin.toolbox" plugin-version="1.0">
+  <configuration build-checksum="2471735789" file="zmat.prj" location="." name="zmat" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>zmat</param.appname>
+    <param.authnamewatermark>Qianqian Fang</param.authnamewatermark>
+    <param.email>fangqq@gmail.com</param.email>
+    <param.company>Northeastern University</param.company>
+    <param.summary>A portable data compression/decompression toolbox for MATLAB/Octave</param.summary>
+    <param.description>ZMat is a portable mex function to enable zlib/gzip/lzma/lzip/lz4/lz4hc 
+based data compression/decompression and base64 encoding/decoding support 
+in MATLAB and GNU Octave. It is fast and compact, can process a large 
+array within a fraction of a second. Among the 6 supported compression 
+methods, lz4 is the fastest for compression/decompression; lzma is the 
+slowest but has the highest compression ratio; zlib/gzip have the best 
+balance between speed and compression time.</param.description>
+    <param.screenshot>${PROJECT_ROOT}\images\zmat_logo.png</param.screenshot>
+    <param.version>0.9.8</param.version>
+    <param.output>${PROJECT_ROOT}\zmat.mltbx</param.output>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.guid>f0c22463-24da-449c-99b5-f6b4dca39e3c</param.guid>
+    <param.exclude.filters>fortran90
+include
+octave
+src
+.git*
+Makefile</param.exclude.filters>
+    <param.exclude.pcodedmfiles>true</param.exclude.pcodedmfiles>
+    <param.examples />
+    <param.demosxml />
+    <param.apps />
+    <param.registered.apps />
+    <param.docs />
+    <param.getting.started.guide />
+    <param.matlabpath.excludes />
+    <param.javaclasspath.excludes />
+    <param.exported.on.package>false</param.exported.on.package>
+    <param.required.addons />
+    <param.matlab.project.id />
+    <param.matlab.project.name />
+    <param.release.start />
+    <param.release.end />
+    <param.release.current.only>false</param.release.current.only>
+    <param.compatiblity.windows>true</param.compatiblity.windows>
+    <param.compatiblity.macos>true</param.compatiblity.macos>
+    <param.compatiblity.linux>true</param.compatiblity.linux>
+    <param.compatiblity.matlabonline>true</param.compatiblity.matlabonline>
+    <param.installation.map />
+    <param.additional.sw.names />
+    <param.additional.sw.licenses />
+    <param.additional.sw.win.url />
+    <param.additional.sw.mac.url />
+    <param.additional.sw.linux.url />
+    <unset>
+      <param.output />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.exclude.pcodedmfiles />
+      <param.examples />
+      <param.demosxml />
+      <param.apps />
+      <param.registered.apps />
+      <param.docs />
+      <param.getting.started.guide />
+      <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
+      <param.exported.on.package />
+      <param.required.addons />
+      <param.matlab.project.id />
+      <param.matlab.project.name />
+      <param.release.start />
+      <param.release.end />
+      <param.release.current.only />
+      <param.compatiblity.windows />
+      <param.compatiblity.macos />
+      <param.compatiblity.linux />
+      <param.compatiblity.matlabonline />
+      <param.installation.map />
+      <param.additional.sw.names />
+      <param.additional.sw.licenses />
+      <param.additional.sw.win.url />
+      <param.additional.sw.mac.url />
+      <param.additional.sw.linux.url />
+    </unset>
+    <fileset.rootdir>
+      <file>${PROJECT_ROOT}</file>
+    </fileset.rootdir>
+    <fileset.rootfiles>
+      <file>${PROJECT_ROOT}\AUTHORS.txt</file>
+      <file>${PROJECT_ROOT}\ChangeLog.txt</file>
+      <file>${PROJECT_ROOT}\example</file>
+      <file>${PROJECT_ROOT}\LICENSE.txt</file>
+      <file>${PROJECT_ROOT}\private</file>
+      <file>${PROJECT_ROOT}\README.rst</file>
+      <file>${PROJECT_ROOT}\test</file>
+      <file>${PROJECT_ROOT}\zmat.m</file>
+    </fileset.rootfiles>
+    <fileset.depfun.included />
+    <fileset.depfun.excluded />
+    <fileset.package />
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}" name="zmat.mltbx" optional="false">zmat.mltbx</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2020a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
