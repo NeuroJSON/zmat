@@ -43,4 +43,6 @@ addons:
 script:
     - ${MAKE} -C src lib
     - ${MAKE} -C src oct
-    - ${MAKE} -C src dll
+    - ${MAKE} -C src dll USERLINKOPT="-lz"
+    - octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic"
+
