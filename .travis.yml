@@ -3,7 +3,7 @@ language: c
 compiler:
   - gcc
 
-matrix:
+jobs:
   include:
     - os: linux
       name: Ubuntu 16.04
@@ -22,11 +22,11 @@ matrix:
       env:
       - BADGE=Windows
       - MAKE=mingw32-make
-#    - os: osx
-#      name: OSX
-#      env:
-#      - BADGE=OSX
-#      - MAKE=make
+    - os: osx
+      name: OSX
+      env:
+      - BADGE=OSX
+      - MAKE=make
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install liboctave-dev; fi
@@ -42,7 +42,9 @@ addons:
 
 script:
     - ${MAKE} -C src lib
-    - ${MAKE} -C src oct
     - ${MAKE} -C src dll USERLINKOPT="-lz"
-    - octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic"
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+         ${MAKE} -C src oct;
+         octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+      fi
 

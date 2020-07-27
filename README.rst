@@ -7,6 +7,9 @@ ZMAT: A portable C-library and MATLAB toolbox for zlib/gzip/lzma/lz4/lz4hc data 
 * Version: 0.9.8 (Archie-the-goat - beta)
 * URL: http://github.com/fangq/zmat
 
+.. image:: https://travis-ci.com/fangq/zmat.svg?branch=master
+    :target: https://travis-ci.com/fangq/zmat
+
 #################
 Table of Contents
 #################
