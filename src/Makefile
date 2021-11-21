@@ -107,7 +107,7 @@ endif
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   AR         :=gcc
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
-dll:   LINKOPT    :=
+dll:   LINKOPT    :=$(LDFLAGS)
 dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
@@ -152,7 +152,7 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 
 %$(OBJSUFFIX): %.c
 	@$(ECHO) Building $@
-	$(CC) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.cu
 	@$(ECHO) Building $@
