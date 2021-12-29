@@ -126,7 +126,7 @@ below shell command
 
    sudo dnf install octave-zmat
 
-Similarly, the below command installs the ``libzmat`` libary for developing
+Similarly, the below command installs the ``libzmat`` library for developing
 software using this library:
 
 .. code:: shell
