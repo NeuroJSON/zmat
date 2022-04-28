@@ -1,0 +1,1 @@
+autoload('zipmat',file_in_loadpath(['octave' filesep computer filesep 'zipmat.mex']))
