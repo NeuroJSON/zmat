@@ -1,1 +1,8 @@
-autoload('zipmat',file_in_loadpath(['octave' filesep computer filesep 'zipmat.mex']))
+file_in_loadpath('zipmat.mex')
+exist(file_in_loadpath('zipmat.mex'))
+
+if(exist(file_in_loadpath('zipmat.mex')))
+    autoload('zipmat',file_in_loadpath('zipmat.mex'))
+else
+    autoload('zipmat',file_in_loadpath(['octave' filesep computer filesep 'zipmat.mex']))
+end
