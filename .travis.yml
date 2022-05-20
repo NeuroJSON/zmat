@@ -17,6 +17,12 @@ jobs:
       env:
       - BADGE=Ubuntu_18.04
       - MAKE=make
+    - os: linux
+      name: Ubuntu 20.04
+      dist: focal
+      env:
+      - BADGE=Ubuntu_20.04
+      - MAKE=make
     - os: windows
       name: Windows
       env:
