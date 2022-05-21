@@ -161,6 +161,28 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 clean:
 	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX) zmat$(OBJSUFFIX) $(LIBDIR)/*
 
+pretty:
+	astyle \
+	    --style=attach \
+	    --indent=spaces=4 \
+	    --indent-modifiers \
+	    --indent-switches \
+	    --indent-preproc-block \
+	    --indent-preproc-define \
+	    --indent-col1-comments \
+	    --pad-oper \
+	    --pad-header \
+	    --align-pointer=type \
+	    --align-reference=type \
+	    --add-brackets \
+	    --convert-tabs \
+	    --lineend=linux \
+	    --preserve-date \
+	    --suffix=none \
+	    --formatted \
+	    --break-blocks \
+	   "*.c" "../include/*.h" "*.cpp"
+
 .PHONY: all mex oct lib dll
 
 .DEFAULT_GOAL := all
