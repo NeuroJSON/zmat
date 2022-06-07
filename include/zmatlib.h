@@ -1,14 +1,14 @@
 /***************************************************************************//**
-**  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression 
+**  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression
 **
 **  \author Qianqian Fang <q.fang at neu.edu>
 **  \copyright Qianqian Fang, 2019-2020
 **
 **  ZMat provides an easy-to-use interface for stream compression and decompression.
 **
-**  It can be compiled as a MATLAB/Octave mex function (zipmat.mex/zmat.m) and compresses 
+**  It can be compiled as a MATLAB/Octave mex function (zipmat.mex/zmat.m) and compresses
 **  arrays and strings in MATLAB/Octave. It can also be compiled as a lightweight
-**  C-library (libzmat.a/libzmat.so) that can be called in C/C++/FORTRAN etc to 
+**  C-library (libzmat.a/libzmat.so) that can be called in C/C++/FORTRAN etc to
 **  provide stream-level compression and decompression.
 **
 **  Currently, zmat/libzmat supports 6 different compression algorthms, including
@@ -21,7 +21,7 @@
 **  author: (C) 1995-2017 Jean-loup Gailly and Mark Adler
 **
 **  Depencency: LZ4 library: https://lz4.github.io/lz4/
-**  author: (C) 2011-2019, Yann Collet, 
+**  author: (C) 2011-2019, Yann Collet,
 **
 **  Depencency: Original LZMA library
 **  author: Igor Pavlov
@@ -72,12 +72,12 @@ enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc};
  * @param[in] outputsize: output stream buffer length
  * @param[in] outputbuf: output stream buffer pointer
  * @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
- * @param[in] iscompress: 0: decompression, 1: use default compression level; 
+ * @param[in] iscompress: 0: decompression, 1: use default compression level;
  *             negative interger: set compression level (-1, less, to -9, more compression)
  * @return return the coarse grained zmat error code; detailed error code is in ret.
  */
 
-int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret, const int iscompress);
+int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret, const int iscompress);
 
 /**
  * @brief Simplified interface to perform compression (use default compression level)
@@ -90,7 +90,7 @@ int zmat_run(const size_t inputsize, unsigned char *inputstr, size_t *outputsize
  * @return return the coarse grained zmat error code; detailed error code is in ret.
  */
 
-int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret);
+int zmat_encode(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret);
 
 /**
  * @brief Simplified interface to perform decompression
@@ -103,7 +103,7 @@ int zmat_encode(const size_t inputsize, unsigned char *inputstr, size_t *outputs
  * @return return the coarse grained zmat error code; detailed error code is in ret.
  */
 
-int zmat_decode(const size_t inputsize, unsigned char *inputstr, size_t *outputsize, unsigned char **outputbuf, const int zipid, int *ret);
+int zmat_decode(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret);
 
 /**
  * @brief Free the output buffer to facilitate use in fortran
@@ -111,7 +111,7 @@ int zmat_decode(const size_t inputsize, unsigned char *inputstr, size_t *outputs
  * @param[in,out] outputbuf: the outputbuf buffer's initial address to be freed
  */
 
-void zmat_free(unsigned char **outputbuf);
+void zmat_free(unsigned char** outputbuf);
 
 /**
  * @brief Look up a string in a string list and return the index
@@ -121,7 +121,7 @@ void zmat_free(unsigned char **outputbuf);
  * @return if found, return the index of the string in the dictionary, otherwise -1.
  */
 
-int  zmat_keylookup(char *origkey, const char *table[]);
+int  zmat_keylookup(char* origkey, const char* table[]);
 
 /**
  * @brief Convert error code to a string error message
@@ -129,7 +129,7 @@ int  zmat_keylookup(char *origkey, const char *table[]);
  * @param[in] id: zmat error code
  */
 
-char *zmat_error(int id);
+char* zmat_error(int id);
 
 /**
  * @brief base64_encode - Base64 encode
@@ -144,8 +144,8 @@ char *zmat_error(int id);
  * not included in out_len.
  */
 
-unsigned char * base64_encode(const unsigned char *src, size_t len,
-			      size_t *out_len);
+unsigned char* base64_encode(const unsigned char* src, size_t len,
+                             size_t* out_len);
 
 /**
  * base64_decode - Base64 decode
@@ -158,8 +158,8 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
  * Caller is responsible for freeing the returned buffer.
  */
 
-unsigned char * base64_decode(const unsigned char *src, size_t len,
-			      size_t *out_len);
+unsigned char* base64_decode(const unsigned char* src, size_t len,
+                             size_t* out_len);
 
 #ifdef __cplusplus
 }
