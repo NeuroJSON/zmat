@@ -99,7 +99,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
 
     try {
-        if (mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && ~mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])) {
+        if (mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && !mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])) {
             int ret = -1;
             mwSize inputsize = mxGetNumberOfElements(prhs[0]) * mxGetElementSize(prhs[0]);
             mwSize buflen[2] = {0};
