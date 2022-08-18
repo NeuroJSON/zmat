@@ -72,6 +72,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 #else
     const char* zipmethods[] = {"zlib", "gzip", "base64", "lzip", "lzma", "lz4", "lz4hc", ""};
 #endif
+    int use4bytedim = 0;
 
     /**
      * If no input is given for this function, it prints help information and return.
@@ -79,6 +80,22 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     if (nrhs == 0) {
         zmat_usage();
         return;
+    }
+
+    /**
+     * Octave and MATLAB had changed mwSize from 4 byte to size_t (8 byte on 64bit machines)
+     * in Octave 5/R2016. When running a mex/oct file compiled on newer libraries over an older
+     * MATLAB/Octave versions, this can cause empyt output. The flag use4bytedim defined
+     * in the below test is 1 when this situation happens, and adapt output accordingly.
+     */
+    if (sizeof(mwSize) == 8) {
+        mwSize dims[2] = {0, 0};
+        unsigned int* intdims = (unsigned int*)dims;
+        intdims[0] = 2;
+        intdims[1] = 3;
+        mxArray* tmp = mxCreateNumericArray(2, dims, mxUINT8_CLASS, mxREAL);
+        use4bytedim = (mxGetNumberOfElements(tmp) == 6);
+        mxDestroyArray(tmp);
     }
 
     if (nrhs >= 2) {
@@ -123,7 +140,15 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
             buflen[0] = 1;
             buflen[1] = outputsize;
-            plhs[0] = mxCreateNumericArray(2, buflen, mxUINT8_CLASS, mxREAL);
+
+            if (use4bytedim) {
+                unsigned int intdims[4] = {0};
+                intdims[0] = 1;
+                intdims[1] = (unsigned int)outputsize;
+                plhs[0] = mxCreateNumericArray(2, (mwSize*)intdims, mxUINT8_CLASS, mxREAL);
+            } else {
+                plhs[0] = mxCreateNumericArray(2, buflen, mxUINT8_CLASS, mxREAL);
+            }
 
             if (outputbuf) {
                 memcpy((unsigned char*)mxGetPr(plhs[0]), outputbuf, buflen[1]);
@@ -139,13 +164,28 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
                 inputdim[1] = mxGetNumberOfDimensions(prhs[0]);
                 inputsize = (unsigned int*)malloc(inputdim[1] * sizeof(unsigned int));
-                val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
 
-                for (int i = 0; i < inputdim[1]; i++) {
-                    inputsize[i] = dims[i];
+                if (use4bytedim) {
+                    unsigned int intinputdim[4] = {0}, *intdims = (unsigned int*)(mxGetDimensions(prhs[0]));
+                    intinputdim[0] = 1;
+                    intinputdim[1] = (unsigned int)inputdim[1];
+                    val = mxCreateNumericArray(2, (mwSize*)intinputdim, mxUINT32_CLASS, mxREAL);
+
+                    for (int i = 0; i < intinputdim[1]; i++) {
+                        inputsize[i] = intdims[i];
+                    }
+
+                    memcpy(mxGetPr(val), inputsize, intinputdim[1]*sizeof(unsigned int));
+                } else {
+                    val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
+
+                    for (int i = 0; i < inputdim[1]; i++) {
+                        inputsize[i] = dims[i];
+                    }
+
+                    memcpy(mxGetPr(val), inputsize, inputdim[1]*sizeof(mwSize));
                 }
 
-                memcpy(mxGetPr(val), inputsize, inputdim[1]*sizeof(unsigned int));
                 mxSetFieldByNumber(plhs[1], 0, 1, val);
 
                 val = mxCreateDoubleMatrix(1, 1, mxREAL);
