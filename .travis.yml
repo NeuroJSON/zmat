@@ -51,8 +51,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install qt octave findutils gcc; fi
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
         choco install octave.portable --version=5.2.0;
-        export PATH=/c/ProgramData/chocolatey/lib/octave.portable/tools/octave/bin:.:${PATH};
-        ls "/c/ProgramData/chocolatey/lib/octave.portable/tools/octave/bin";
+        export PATH=${PATH}:"C:\ProgramData\chocolatey\lib\octave.portable\tools\octave\bin";
+        ls "C:\ProgramData\chocolatey\lib\octave.portable\tools\octave\bin";
         mkoctfile --version;
         octave-cli --version;
     fi
