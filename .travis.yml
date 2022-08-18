@@ -51,7 +51,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
         choco install octave.portable --version=5.2.0;
         export PATH=${PATH}:"C:\ProgramData\chocolatey\lib\octave.portable\tools\octave\bin";
-        tree /c/ProgramData/chocolatey/lib/octave.portable;
+        tree /c/ProgramData/chocolatey/;
         octave --version;
     fi
 
