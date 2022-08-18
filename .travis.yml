@@ -6,6 +6,12 @@ compiler:
 jobs:
   include:
     - os: linux
+      name: Ubuntu 14.04
+      dist: trusty
+      env:
+      - BADGE=Ubuntu_14.04
+      - MAKE=make
+    - os: linux
       name: Ubuntu 16.04
       dist: xenial
       env:
