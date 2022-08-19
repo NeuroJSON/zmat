@@ -48,15 +48,10 @@ jobs:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install liboctave-dev; fi
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
-        choco install octave.portable --version=5.2.0;
-        env;
-        pwd;
-        echo $SHELL;
-        export PATH=${PATH}:"C:\ProgramData\chocolatey\lib\octave.portable\tools\octave\bin";
-        tree /c/ProgramData/chocolatey/;
-        octave --version;
-    fi
+#  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
+#        choco install octave.portable --version=4.2.1;
+#        export PATH=/c/ProgramData/chocolatey/lib/octave.portable/tools/octave/bin:.:${PATH};
+#    fi
 
 addons:
   apt:
@@ -68,11 +63,10 @@ script:
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
          octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
       fi
-    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-         octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
-      fi
     - ${MAKE} -C src lib
     - ${MAKE} -C src dll USERLINKOPT="-lz"
-    - ${MAKE} -C src oct;
-    - octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+         ${MAKE} -C src oct;
+         octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+      fi
 
