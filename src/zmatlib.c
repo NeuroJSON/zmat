@@ -190,6 +190,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = zs.total_out;
 
             if (*ret != Z_STREAM_END && *ret != Z_OK) {
+                deflateEnd(&zs);
                 return -3;
             }
 
@@ -268,7 +269,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
             zs.next_out =  (Bytef*)(*outputbuf);  /*(Bytef *)(); // output char array*/
 
-            while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && count <= 10) {
+            while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && *ret != Z_DATA_ERROR && count <= 10) {
                 *outputbuf = (unsigned char*)realloc(*outputbuf, (buflen[0] << count));
                 zs.next_out =  (Bytef*)(*outputbuf + (buflen[0] << (count - 1)));
                 zs.avail_out = (buflen[0] << (count - 1)); /* size of output*/
@@ -278,6 +279,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = zs.total_out;
 
             if (*ret != Z_STREAM_END && *ret != Z_OK) {
+                inflateEnd(&zs);
                 return -3;
             }
 

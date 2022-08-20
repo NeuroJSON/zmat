@@ -215,7 +215,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     } catch (const std::exception& err) {
         mexPrintf("C++ Error: %s\n", err.what());
     } catch (...) {
-        mexPrintf("Unknown Exception");
+        mexPrintf("Unknown Exception\n");
     }
 
     return;

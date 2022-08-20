@@ -112,6 +112,10 @@ if (strcmp(zipmethod, 'base64') && iscompress > 1)
 end
 
 if (exist('inputinfo', 'var') && isfield(inputinfo, 'type'))
-    varargout{1} = typecast(varargout{1}, inputinfo.type);
+    if(strcmp(inputinfo.type,'logical'))
+        varargout{1} = logical(varargout{1});
+    else
+        varargout{1} = typecast(varargout{1}, inputinfo.type);
+    end
     varargout{1} = reshape(varargout{1}, inputinfo.size);
 end
