@@ -180,7 +180,7 @@ pretty:
 	    --suffix=none \
 	    --formatted \
 	    --break-blocks \
-	   "*.c" "../include/*.h" "*.cpp"
+	   "*.c" "../include/*.h" "*.cpp" "../example/c/*.c"
 
 .PHONY: all mex oct lib dll
 
