@@ -205,7 +205,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             }
 
             if (errcode < 0) {
-                mexErrMsgTxt(zmat_error(-errcode));
+                mexWarnMsgTxt(zmat_error(-errcode));
             }
         } else {
             mexErrMsgTxt("the input must be a char, non-complex numerical or logical array");

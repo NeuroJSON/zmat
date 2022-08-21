@@ -104,7 +104,7 @@ int simpleDecompress(elzma_file_format format,
  *
  */
 
-char* zmat_errcode[] = {
+const char* zmat_errcode[] = {
     "No error", /*0*/
     "input can not be empty", /*-1*/
     "failed to initialize zlib", /*-2*/
@@ -123,9 +123,9 @@ char* zmat_errcode[] = {
 
 char* zmat_error(int id) {
     if (id >= 0 && id < (sizeof(zmat_errcode) / sizeof(zmat_errcode[0]))) {
-        return zmat_errcode[id];
+        return (char *)(zmat_errcode[id]);
     } else {
-        return "unknown error";
+        return "zmatlib: unknown error";
     }
 }
 
