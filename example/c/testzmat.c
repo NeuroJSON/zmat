@@ -51,6 +51,11 @@ int main(void) {
     /* error handling */
     if (ret) {
         printf("encoding failed, error code: %d: encoder error code %d\n", ret, status);
+
+        if (compressed) {
+            free(compressed);
+        }
+
         return ret;
     }
 
@@ -75,6 +80,11 @@ int main(void) {
     /* error handling */
     if (ret) {
         printf("decoding failed, error code: %d: decoder error code %d\n", ret, status);
+
+        if (decoded) {
+            free(decoded);
+        }
+
         return ret;
     }
 

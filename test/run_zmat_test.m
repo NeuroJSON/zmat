@@ -72,7 +72,7 @@ if (ismember('d', tests))
     fprintf('Test decompression\n');
     fprintf(sprintf('%s\n', char(ones(1, 79) * 61)));
 
-    test_zmat('zlib (empty)', 'zlib', [1, 2, 3, 4], '', 'level', 0);
+    test_zmat('zlib (scalar)', 'zlib', uint8([120 156 147 208 117 9 249 173 200 233 0 0 9 224 2 67]), typecast(pi, 'uint8'), 'level', 0);
 end
 %%
 if (ismember('err', tests))
@@ -87,6 +87,6 @@ if (ismember('err', tests))
     if (exist('string'))
         test_zmat('unsupported input (string)', 'zlib', string(sprintf('zmat\ntest')), 'input must be a char, non-complex numeric or logical vector or N-D array');
     end
-    test_zmat('unsupported input (cell)', 'zlib', zeros(1e9,1e9), 'input must be a char, non-complex numeric or logical vector or N-D array');
+    test_zmat('zlib wrong input format', 'zlib', [1, 2, 3, 4], [], 'level', 0, 'status', -3);
 end
 
