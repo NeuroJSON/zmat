@@ -13,7 +13,7 @@ methods, lz4 is the fastest for compression/decompression; lzma is the
 slowest but has the highest compression ratio; zlib/gzip have the best 
 balance between speed and compression time.</param.description>
     <param.screenshot>${PROJECT_ROOT}\images\zmat_logo.png</param.screenshot>
-    <param.version>0.9.8</param.version>
+    <param.version>0.9.9</param.version>
     <param.output>${PROJECT_ROOT}\zmat.mltbx</param.output>
     <param.products.name />
     <param.products.id />

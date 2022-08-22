@@ -123,7 +123,7 @@ const char* zmat_errcode[] = {
 
 char* zmat_error(int id) {
     if (id >= 0 && id < (sizeof(zmat_errcode) / sizeof(zmat_errcode[0]))) {
-        return (char *)(zmat_errcode[id]);
+        return (char*)(zmat_errcode[id]);
     } else {
         return "zmatlib: unknown error";
     }

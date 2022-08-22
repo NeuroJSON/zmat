@@ -1,5 +1,26 @@
 = Change Log =
 
+== ZMAT 0.9.9 (Archie-the-goat - RC1), FangQ <q.fang (a) neu.edu> ==
+
+ 2022-08-21*[3bc5d6f] allow zmat to return error status without throwing an error
+ 2022-08-20 [138be0b] test return status, clear memory in c example
+ 2022-08-20 [b914a67] zlib memory tweaks
+ 2022-08-20 [ccf0546] reformat c example
+ 2022-08-20*[eab19fb] add unit tests, zlib memory optimization
+ 2022-08-18 [5fe4360] test older octave (3.8)
+ 2022-08-18 [e542838] test built in portable octave mex file
+ 2022-08-18 [2cdc1b4] revert demo script to print outputs
+ 2022-08-18 [675c922] add ubuntu 22.04 in CI
+ 2022-08-18*[11b858b] allow oct file built with 5.x or newer to run in 4.x and 3.x
+ 2022-08-16 [8291ebe] fix a warning picked by fedora package building flags
+ 2022-08-15 [af61014] remove CXX=mkoctfile to prevent infinite loop in octave 7, fix #9
+ 2022-06-07 [617618d] complete reformat using miss_hit
+ 2022-05-21 [ef858a5] reformat C source code using astyle
+ 2022-05-19 [b7cf723] add ubuntu 20.04 in ci
+ 2022-05-19 [4b6a87e] update PKG_ADD to use locally compiled mex file first
+ 2022-04-28*[08bd437] autoload octave mex file when addpath, thanks to cdf and mmuetzel, https://octave.discourse.group/t/supporting-mexext/2578
+ 2021-11-20 [5f31756] port debian package patch to respect CFLAGS and LDFLAGS, fix #7
+
 == ZMAT 0.9.8 (Archie-the-goat - beta), FangQ <q.fang (a) neu.edu> ==
 
  2020-05-25 [b83efba] trim base64 newline, update compilezmat, update win64 mex, release 1.0 beta

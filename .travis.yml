@@ -61,12 +61,11 @@ addons:
 
 script:
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-         octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+         octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       fi
     - ${MAKE} -C src lib
     - ${MAKE} -C src dll USERLINKOPT="-lz"
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
          ${MAKE} -C src oct;
-         octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+         octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       fi
-

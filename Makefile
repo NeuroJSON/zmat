@@ -7,7 +7,7 @@
 PKGNAME=zmat
 LIBNAME=lib$(PKGNAME)
 MEXNAME=zipmat
-VERSION=0.9.0
+VERSION=0.9.9
 SOURCE=src
 
 all: mex oct lib dll

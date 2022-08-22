@@ -2,9 +2,9 @@
 ZMAT: A portable C-library and MATLAB toolbox for zlib/gzip/lzma/lz4/lz4hc data compression
 ##############################################################################
 
-* Copyright (C) 2019,2020  Qianqian Fang <q.fang at neu.edu>
+* Copyright (C) 2019,2020,2022  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.9.8 (Archie-the-goat - beta)
+* Version: 0.9.9 (Archie-the-goat - RC1)
 * URL: http://github.com/fangq/zmat
 
 .. image:: https://travis-ci.com/fangq/zmat.svg?branch=master
@@ -44,7 +44,7 @@ conveniently compress or decompress a memory buffer:
         size_t *outputsize,         /* output buffer data length */
         unsigned char **outputbuf,  /* output buffer */
         const int zipid,            /* 0-zlib,1-gzip,2-base64,3-lzma,4-lzip,5-lz4,6-lz4hc */
-        int *status,                /*return status for error handling*/
+        int *status,                /* return status for error handling */
         const int level             /* 1 compress (default level); -1 to -9 compression level, 0 decompress */
       );
 
@@ -136,8 +136,8 @@ software using this library:
 The above command installs the dynamic library, C/Fortran90 header files and
 static library, respectively
 
-Similarly, if one uses Debian ("unstable"), the command to install zmat 
-toolbox for Octave (and optionally for MATLAB) is
+Similarly, if one uses Debian (11) or Ubuntu 21.04 or newer, the command to
+install zmat toolbox for Octave (and optionally for MATLAB) is
 
 .. code:: shell
 
@@ -245,6 +245,17 @@ base64 encoding/decoding to strings.
 Please run these examples and understand how ZMat works before you use
 it to process your data.
 
+Under the ``"c"`` and ``"f90"`` folders, sample C/Fortran90 units calling
+the compression/decompression APIs provided by zmat are also provided.
+You may run ``"make"`` in each of the folders to build the binary and
+execute the output program.
+
+---------
+unit tests
+---------
+
+Under the ``"test"`` folder, you can run ``"run_zmat_test.m"`` script to
+run unit tests on the key features provided by zmat.
 
 ==========================
 Compile ZMat
