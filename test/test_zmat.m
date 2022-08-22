@@ -10,7 +10,7 @@ end
 try
     [res, info] = zmat(input, opt.level, method);
 catch ME
-    if(strcmp(ME.message, expected))
+    if(~isempty(strfind(ME.message, expected)))
         fprintf(1, 'Testing exception %s: ok\n\toutput:''%s''\n', testname, ME.message);
     else
         warning('Test exception %s: failed: expected ''%s'', obtained ''%s''', testname, expected, ME.message);

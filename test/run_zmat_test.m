@@ -44,7 +44,7 @@ if (ismember('c', tests))
     test_zmat('gzip (scalar)', 'gzip', 'test gzip', [31 139 8 0 0 0 0 0 0 3 43 73 45 46 81 72 175 202 44 0 0 35 1 18 68 9 0 0 0]);
     test_zmat('lzma (scalar)', 'lzma', uint32(1902), [93 0 0 16 0 4 0 0 0 0 0 0 0 0 55 1 188 0 10 215 98 63 255 251 13 160 0]);
     test_zmat('lzip (scalar)', 'lzip', single(89.8901), [76 90 73 80 0 20 0 93 177 210 100 7 58 15 255 255 252 63 0 0 133 75 237 40 4 0 0 0 0 0 0 0]);
-    test_zmat('lz4 (scalar)', 'lz4', exp(1), [128 106 87 20 139 10 191 5 64]);
+    test_zmat('lz4 (scalar)', 'lz4', 2.71828, [128 144 247 170 149 9 191 5 64]);
     test_zmat('lz4hc (scalar)', 'lz4hc', 0.0, [128 0 0 0 0 0 0 0 0]);
     test_zmat('base64 (scalar)', 'base64', uint8(100), [90 65 61 61 10]);
 
@@ -80,6 +80,7 @@ if (ismember('err', tests))
     fprintf('Test error messages\n');
     fprintf(sprintf('%s\n', char(ones(1, 79) * 61)));
 
+    test_zmat('empty method', '', [], 'the ''method'' field must be a non-empty string');
     test_zmat('unsupported method', 'ppp', [], 'the specified compression method is not supported');
     test_zmat('unsupported input (cell)', 'zlib', {}, 'input must be a char, non-complex numeric or logical vector or N-D array');
     test_zmat('unsupported input (handle)', 'zlib', @sin, 'input must be a char, non-complex numeric or logical vector or N-D array');
