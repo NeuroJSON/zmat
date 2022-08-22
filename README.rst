@@ -12,8 +12,8 @@ ZMAT: A portable C-library and MATLAB/Octave toolbox for zlib/gzip/lzma/lz4/lz4h
   supported by US National Institute of Health (NIH)
   grant `U24-NS124027 <https://reporter.nih.gov/project-details/10308329>`_
 
-.. image:: https://travis-ci.com/NeuroJSON/zmat.svg?branch=master
-    :target: https://travis-ci.com/NeuroJSON/zmat
+.. image:: https://travis-ci.com/fangq/zmat.svg?branch=master
+    :target: https://travis-ci.com/fangq/zmat
 
 #################
 Table of Contents
