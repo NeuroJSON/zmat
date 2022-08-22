@@ -85,7 +85,7 @@ if (ismember('err', tests))
     test_zmat('unsupported input (cell)', 'zlib', {}, 'input must be a char, non-complex numeric or logical vector or N-D array');
     test_zmat('unsupported input (handle)', 'zlib', @sin, 'input must be a char, non-complex numeric or logical vector or N-D array');
     test_zmat('unsupported input (complex)', 'gzip', 1+3i, 'input must be a char, non-complex numeric or logical vector or N-D array');
-    if (exist('string'))
+    if (exist('string') && ~ischar(string('test')))
         test_zmat('unsupported input (string)', 'zlib', string(sprintf('zmat\ntest')), 'input must be a char, non-complex numeric or logical vector or N-D array');
     end
     test_zmat('zlib wrong input format', 'zlib', [1, 2, 3, 4], [], 'level', 0, 'status', -3);
