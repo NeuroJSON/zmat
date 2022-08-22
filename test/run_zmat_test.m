@@ -3,12 +3,12 @@ function run_zmat_test(tests)
 % run_zmat_test
 %   or
 % run_zmat_test(tests)
-% run_zmat_test({'js','jso','bj','bjo'})
+% run_zmat_test({'c','d','err'})
 %
 % Unit testing for ZMat toolbox
 %
 % authors:Qianqian Fang (q.fang <at> neu.edu)
-% date: 2020/06/08
+% date: 2022/08/19
 %
 % input:
 %      tests: is a cell array of strings, possible elements include
@@ -19,11 +19,11 @@ function run_zmat_test(tests)
 % license:
 %     BSD or GPL version 3, see LICENSE_{BSD,GPLv3}.txt files for details
 %
-% -- this function is part of JSONLab toolbox (http://iso2mesh.sf.net/cgi-bin/index.cgi?zmat)
+% -- this function is part of ZMat toolbox (https://github.com/fangq/zmat)
 %
 
 if (nargin == 0)
-    tests = {'c', 'err'};
+    tests = {'c', 'd', 'err'};
 end
 
 %%
