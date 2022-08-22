@@ -8,7 +8,7 @@ Address: Dept. of Bioengineering
 URL: http://fanglab.org
 Email: <q.fang at neu.edu>
 
-ZMAT Website : https://github.com/fangq/zmat
+ZMAT Website : https://github.com/NeuroJSON/zmat
 
 
 

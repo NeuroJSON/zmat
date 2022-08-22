@@ -2,7 +2,7 @@
 **  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression
 **
 **  \author Qianqian Fang <q.fang at neu.edu>
-**  \copyright Qianqian Fang, 2019-2020
+**  \copyright Qianqian Fang, 2019,2020,2022
 **
 **  ZMat provides an easy-to-use interface for stream compression and decompression.
 **
@@ -16,6 +16,9 @@
 **     - lzma and lzip : high compression ratio LZMA based algorithms for .lzma and .lzip files
 **     - lz4 and lz4hc : real-time compression based on LZ4 and LZ4HC algorithms
 **     - base64        : base64 encoding and decoding
+**
+**  ZMat is part of the NeuroJSON project (https://neurojson.org)
+**  More information can be found at https://github.com/NeuroJSON/zmat
 **
 **  Depencency: ZLib library: https://www.zlib.net/
 **  author: (C) 1995-2017 Jean-loup Gailly and Mark Adler

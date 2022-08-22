@@ -1,11 +1,16 @@
+.. image:: https://neurojson.org/wiki/upload/neurojson_banner_long.png
+
 ##############################################################################                                                      
-ZMAT: A portable C-library and MATLAB toolbox for zlib/gzip/lzma/lz4/lz4hc data compression
+ZMAT: A portable C-library and MATLAB/Octave toolbox for zlib/gzip/lzma/lz4/lz4hc data compression
 ##############################################################################
 
 * Copyright (C) 2019,2020,2022  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
 * Version: 0.9.9 (Archie-the-goat - RC1)
-* URL: http://github.com/fangq/zmat
+* URL: https://github.com/NeuroJSON/zmat
+* Acknowledgement: This project is part of the `NeuroJSON project <https://neurojson.org>`_
+  supported by US National Institute of Health (NIH)
+  grant `U24-NS124027 <https://reporter.nih.gov/project-details/10308329>`_
 
 .. image:: https://travis-ci.com/fangq/zmat.svg?branch=master
     :target: https://travis-ci.com/fangq/zmat
@@ -71,7 +76,11 @@ variables ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, respectively).
 The pre-compiled mex binaries for MATLAB are stored inside the 
 subfolder named ``private``. Those precompiled for GNU Octave are
 stored in the subfolder named ``octave``, with one operating system
-per subfolder.
+per subfolder. The ``PKG_ADD`` script should automatically select
+the correct mex file when one types ``addpath`` in Octave.
+These precompiled mex files are expected to run out-of-box
+across a wide-range of MATLAB (tested as old as R2008) and Octave (tested
+as old as v3.8).
 
 If you do not want to compile zmat yourself, you can download the
 precompiled package by either clicking on the "Download ZIP" button
@@ -79,7 +88,7 @@ on the above URL, or use the below git command:
 
 .. code:: shell
 
-    git clone https://github.com/fangq/zmat.git
+    git clone https://github.com/NeuroJSON/zmat.git
 
 ================
 Installation
@@ -231,7 +240,7 @@ zmat.m
     ss=char(zmat('zmat test',1,'base64'))
     orig=char(zmat(ss,0,'base64'))
  
-  -- this function is part of the zmat toolbox (http://github.com/fangq/zmat)
+  -- this function is part of the zmat toolbox (http://github.com/NeuroJSON/zmat)
 
 ---------
 examples
@@ -267,7 +276,7 @@ command
 
 .. code:: shell
 
-      git clone https://github.com/fangq/zmat.git zmat
+      git clone https://github.com/NeuroJSON/zmat.git zmat
 
 Next, you need to make sure your system has ``gcc``, ``g++``,
 ``mex`` and ``mkoctfile`` (if compiling for Octave is needed). If not, 
@@ -372,13 +381,13 @@ following command:
 
 .. code:: shell
 
-      git clone https://github.com/fangq/zmat.git zmat
+      git clone https://github.com/NeuroJSON/zmat.git zmat
 
 or browsing the github site at
 
 .. code:: shell
 
-      https://github.com/fangq/zmat
+      https://github.com/NeuroJSON/zmat
  
 
 You can make changes to the files as needed. Once you are satisfied with your

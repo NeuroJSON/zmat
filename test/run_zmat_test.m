@@ -19,7 +19,7 @@ function run_zmat_test(tests)
 % license:
 %     BSD or GPL version 3, see LICENSE_{BSD,GPLv3}.txt files for details
 %
-% -- this function is part of ZMat toolbox (https://github.com/fangq/zmat)
+% -- this function is part of ZMat toolbox (https://github.com/NeuroJSON/zmat)
 %
 
 if (nargin == 0)

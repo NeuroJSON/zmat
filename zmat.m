@@ -57,7 +57,7 @@ function varargout = zmat(varargin)
 %   ss=char(zmat('zmat test',1,'base64'))
 %   orig=char(zmat(ss,0,'base64'))
 %
-% -- this function is part of the ZMAT toolbox (http://github.com/fangq/zmat)
+% -- this function is part of the ZMAT toolbox (https://github.com/NeuroJSON/zmat)
 %
 
 if (exist('zipmat') ~= 3 && exist('zipmat') ~= 2)

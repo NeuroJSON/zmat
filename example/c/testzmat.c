@@ -2,7 +2,7 @@
 **  \mainpage ZMat - A portable C-library and MATLAB/Octave toolbox for inline data compression
 **
 **  \author Qianqian Fang <q.fang at neu.edu>
-**  \copyright Qianqian Fang, 2019-2020
+**  \copyright Qianqian Fang, 2019,2020,2022
 **
 **  Demo on how to use zmatlib for simple compression and decompression in C
 **
