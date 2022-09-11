@@ -13,6 +13,7 @@ ZSTD_LIB_COMPRESSION ?= 1
 ZSTD_LIB_DECOMPRESSION ?= 1
 ZSTD_LIB_DICTBUILDER ?= 1
 ZSTD_LIB_DEPRECATED ?= 0
+ZSTD_LEGACY_SUPPORT ?= 0
 
 # Input variables for libzstd.mk
 ifeq ($(ZSTD_LIB_COMPRESSION), 0)
@@ -92,6 +93,7 @@ all: lib
 
 .PHONY: libzstd.a  # must be run every time
 libzstd.a: CPPFLAGS += $(CPPFLAGS_STATLIB)
+libzstd.a: CFLAGS += -fPIC
 
 SET_CACHE_DIRECTORY = \
    +$(MAKE) --no-print-directory $@ \
