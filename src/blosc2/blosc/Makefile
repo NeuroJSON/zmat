@@ -33,14 +33,15 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=-fPIC
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -O3 -msse2 #-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -O3 -msse2 -DHAVE_ZSTD -DHAVE_ZLIB -DHAVE_LZ4 $(DLLFLAG) #-g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=.mex*
 
 FILES=bitshuffle-sse2 blosc2 blosc2-stdio blosclz delta directories fastcopy \
-      frame schunk sframe shuffle shuffle-sse2 stune timestamp trunc-prec
+      frame schunk sframe shuffle shuffle-generic bitshuffle-generic \
+      shuffle-sse2 stune timestamp trunc-prec
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   ifeq ($(findstring x86_64,$(ARCH)), x86_64)
