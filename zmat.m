@@ -77,6 +77,8 @@ if (~(ischar(input) || islogical(input) || (isnumeric(input) && isreal(input))))
     error('input must be a char, non-complex numeric or logical vector or N-D array');
 end
 
+typesize=length(typecast(input(1), 'uint8'));
+
 if (ischar(input))
     input = uint8(input);
 end
@@ -94,13 +96,22 @@ if (nargin > 2)
     zipmethod = varargin{3};
 end
 
+opt=struct;
+if (nargin > 4 && ischar(varargin{4}) && bitand(length(varargin), 1)==1)
+    opt=cell2struct(varargin(5:2:end), varargin(4:2:end), 2);
+end
+
+nthread=getoption('nthread', 1, opt);
+shuffle=getoption('shuffle', 1, opt);
+typesize=getoption('typesize', typesize, opt);
+
 iscompress = round(iscompress);
 
 if ((strcmp(zipmethod, 'zlib') || strcmp(zipmethod, 'gzip')) && iscompress <= -10)
     iscompress = -9;
 end
 
-[varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod);
+[varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod, nthread, shuffle, typesize);
 
 if (strcmp(zipmethod, 'base64') && iscompress > 1)
     varargout{1} = char(varargout{1});
@@ -118,4 +129,10 @@ if (exist('inputinfo', 'var') && isfield(inputinfo, 'type'))
         varargout{1} = typecast(varargout{1}, inputinfo.type);
     end
     varargout{1} = reshape(varargout{1}, inputinfo.size);
+end
+
+function value=getoption(key, default, opt)
+value=default;
+if(isfield(opt, key))
+    value=opt.(key);
 end

@@ -11,6 +11,9 @@ ZMATDIR ?=$(ROOTDIR)
 LIBDIR  ?=$(ROOTDIR)/lib
 
 MKDIR      :=mkdir
+HAVE_LZMA  ?=yes
+HAVE_LZ4   ?=yes
+HAVE_BLOSC2?=yes
 
 MEX=mex
 AR=$(CC)
@@ -23,7 +26,7 @@ DOXY       := doxygen
 DOCDIR     := $(ZMATDIR)/doc
 DOXYCFG=zmat.cfg
 
-INCLUDEDIRS=-I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4
+INCLUDEDIRS=-I../include
 
 CUOMPLINK=
 
@@ -39,11 +42,7 @@ OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=.mex*
 
-FILES=zmatlib lz4/lz4 lz4/lz4hc easylzma/compress easylzma/decompress \
-easylzma/lzma_header easylzma/lzip_header easylzma/common_internal \
-easylzma/pavlov/LzmaEnc easylzma/pavlov/LzmaDec easylzma/pavlov/LzmaLib \
-easylzma/pavlov/LzFind easylzma/pavlov/Bra easylzma/pavlov/BraIA64 \
-easylzma/pavlov/Alloc easylzma/pavlov/7zCrc
+FILES=zmatlib
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   ifeq ($(findstring x86_64,$(ARCH)), x86_64)
@@ -75,6 +74,38 @@ else
      endif
   endif
 endif
+
+ifeq ($(HAVE_LZMA),no)
+  CFLAGS+=-DNO_LZMA
+else
+  INCLUDEDIRS+=-Ieasylzma -Ieasylzma/pavlov
+  FILES+=easylzma/compress easylzma/decompress \
+         easylzma/lzma_header easylzma/lzip_header easylzma/common_internal \
+         easylzma/pavlov/LzmaEnc easylzma/pavlov/LzmaDec easylzma/pavlov/LzmaLib \
+         easylzma/pavlov/LzFind easylzma/pavlov/Bra easylzma/pavlov/BraIA64 \
+         easylzma/pavlov/Alloc easylzma/pavlov/7zCrc
+endif
+
+ifeq ($(HAVE_BLOSC2),no)
+  CFLAGS+=-DNO_BLOSC2
+else
+  ifeq ($(HAVE_LZ4),no)
+    INCLUDEDIRS+=-Ilz4
+    FILES+= lz4/lz4 lz4/lz4hc
+  endif
+  LINKOPT+=-Lblosc2/lib -lblosc2 -Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+  INCLUDEDIRS+=-Iblosc2/include
+endif
+
+ifeq ($(HAVE_LZ4),no)
+  CFLAGS+=-DNO_LZ4
+else
+  INCLUDEDIRS+=-Ilz4
+  FILES+= lz4/lz4 lz4/lz4hc
+endif
+
+
+
 
 ifeq ($(MAKECMDGOALS),lib)
    AR         :=ar
@@ -135,18 +166,24 @@ OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 
 all dll lib mex oct: $(OUTPUT_DIR)/$(BINARY)
 
+blosc:
+	@if [ $(HAVE_BLOSC2) = "yes" ]; then\
+	    $(MAKE) -C blosc2 all;\
+	fi
+
 makedirs:
 	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi
 
 makedocdir:
 	@if test ! -d $(DOCDIR); then $(MKDIR) $(DOCDIR); fi
 
-$(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS)
+$(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS) blosc
 $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	@$(ECHO) Building $@
 	$(AR) $(ARFLAGS) $(OUTPUTFLAG) $@ $(OBJS) $(LINKOPT) $(USERLINKOPT)
 
 %$(OBJSUFFIX): %.cpp
+	@$(ECHO) Building $@
 	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
 
 %$(OBJSUFFIX): %.c
@@ -159,6 +196,7 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 
 clean:
 	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX) zmat$(OBJSUFFIX) $(LIBDIR)/*
+	-$(MAKE) -C blosc2 clean
 
 pretty:
 	astyle \

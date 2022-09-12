@@ -66,15 +66,53 @@ const char*  metadata[] = {"type", "size", "byte", "method", "status", "level"};
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     TZipMethod zipid = zmZlib;
     int iscompress = 1;
-#if defined(NO_LZ4) && defined(NO_LZMA)
-    const char* zipmethods[] = {"zlib", "gzip", "base64", ""};
-#elif !defined(NO_LZMA) && defined(NO_LZ4)
-    const char* zipmethods[] = {"zlib", "gzip", "base64", "lzip", "lzma", ""};
-#elif defined(NO_LZMA) && !defined(NO_LZ4)
-    const char* zipmethods[] = {"zlib", "gzip", "base64", "lz4", "lz4hc", ""};
-#else
-    const char* zipmethods[] = {"zlib", "gzip", "base64", "lzip", "lzma", "lz4", "lz4hc", ""};
+    const char* zipmethods[] = {
+        "zlib",
+	"gzip",
+	"base64",
+#if !defined(NO_LZMA)
+        "lzip",
+	"lzma",
 #endif
+#if !defined(NO_LZ4)
+        "lz4",
+	"lz4hc",
+#endif
+#if !defined(NO_BLOSC2)
+        "blosc2blosclz",
+	"blosc2lz4",
+	"blosc2lz4hc",
+	"blosc2zlib",
+	"blosc2zstd",
+#endif
+	""};
+
+    const TZipMethod  zipmethodid[] = {
+        zmZlib,
+	zmGzip,
+	zmBase64,
+#if !defined(NO_LZMA)
+        zmLzip,
+	zmLzma,
+#endif
+#if !defined(NO_LZ4)
+        zmLz4,
+	zmLz4hc,
+#endif
+#if !defined(NO_BLOSC2)
+        zmBlosc2Blosclz,
+	zmBlosc2Lz4,
+	zmBlosc2Lz4hc,
+	zmBlosc2Zlib,
+	zmBlosc2Zstd,
+#endif
+	zmUnknown};
+
+    int nthread = 1;  /*nthread, shuffle and typesize are only used by blosc2 compressors*/
+    int shuffle = 1;
+    int typesize = 4;
+    char clevel = 1;
+
     int use4bytedim = 0;
 
     /**
@@ -103,7 +141,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
     if (nrhs >= 2) {
         double* val = mxGetPr(prhs[1]);
-        iscompress = val[0];
+        clevel = val[0];
     }
 
     if (nrhs >= 3) {
@@ -116,7 +154,31 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         if ((zipid = (TZipMethod)zmat_keylookup((char*)mxArrayToString(prhs[2]), zipmethods)) < 0) {
             mexErrMsgTxt("the specified compression method is not supported");
         }
+
+	zipid = zipmethodid[(int)zipid];
     }
+
+    if (nrhs >= 4) {
+        double* val = mxGetPr(prhs[3]);
+        nthread = val[0];
+    }
+
+    if (nrhs >= 5) {
+        double* val = mxGetPr(prhs[4]);
+        shuffle = val[0];
+    }
+
+    if (nrhs >= 6) {
+        double* val = mxGetPr(prhs[5]);
+        typesize = val[0];
+    }
+    printf("iscompress=%X %d %d %d %X\n", clevel, nthread, shuffle, typesize, ((nthread & 0xFF) << 8));
+    if(clevel) {
+        iscompress = (clevel | ((nthread & 0xFF) << 8) | ((shuffle & 0xFF) << 16) | ((typesize & 0xFF) << 24));
+    } else {
+        iscompress = (clevel | ((nthread & 0xFF) << 8));
+    }
+    printf("iscompress=%X\n", iscompress);
 
     try {
         if (mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && !mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])) {
