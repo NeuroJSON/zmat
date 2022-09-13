@@ -152,9 +152,20 @@ char* zmat_error(int id) {
 int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret, const int iscompress) {
     z_stream zs;
     size_t buflen[2] = {0};
-    unsigned int nthread=1, shuffle=1, typesize=4;
-    char compressflag = iscompress & 0xFF;
+    unsigned int nthread = 1, shuffle = 1, typesize = 4;
+    int clevel;
+    union cflag {
+        int iscompress;
+        struct settings {
+            char clevel;
+            char nthread;
+            char shuffle;
+            char typesize;
+        } param;
+    } flags;
     *outputbuf = NULL;
+
+    flags.iscompress = iscompress;
 
     zs.zalloc = Z_NULL;
     zs.zfree = Z_NULL;
@@ -163,23 +174,13 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
     if (inputsize == 0) {
         return -1;
     }
-printf("flag=%X\n", iscompress);
-    if((iscompress & 0xFF00) >> 8) {
-        nthread = (iscompress & 0xFF00) >> 8;
-    }
-printf("nthread=%d\n", nthread);
-    if((iscompress & 0xFF0000) >> 16) {
-        shuffle = (iscompress & 0xFF0000) >> 16;
-    }
-printf("shuffle=%d\n", shuffle);
 
-    if((iscompress & 0xFF000000) >> 24) {
-        typesize = (iscompress & 0xFF000000) >> 24;
-    }
-printf("typesize=%d\n", typesize);
+    nthread = (flags.param.nthread == 0) ? 1 : flags.param.nthread;
+    shuffle = (flags.param.shuffle == 0) ? 1 : flags.param.shuffle;
+    typesize = (flags.param.typesize == 0) ? 4 : flags.param.typesize;
+    clevel = (flags.param.clevel == 0) ? 0 : flags.param.clevel;
 
-printf("flag=%X\n", compressflag);
-    if (compressflag) {
+    if (clevel) {
         /**
           * perform compression or encoding
           */
@@ -193,11 +194,11 @@ printf("flag=%X\n", compressflag);
               * zlib (.zip) or gzip (.gz) compression
               */
             if (zipid == zmZlib) {
-                if (deflateInit(&zs,  (compressflag > 0) ? Z_DEFAULT_COMPRESSION : (-compressflag)) != Z_OK) {
+                if (deflateInit(&zs,  (clevel > 0) ? Z_DEFAULT_COMPRESSION : (-clevel)) != Z_OK) {
                     return -2;
                 }
             } else {
-                if (deflateInit2(&zs, (compressflag > 0) ? Z_DEFAULT_COMPRESSION : (-compressflag), Z_DEFLATED, 15 | 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
+                if (deflateInit2(&zs, (clevel > 0) ? Z_DEFAULT_COMPRESSION : (-clevel), Z_DEFLATED, 15 | 16, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
                     return -2;
                 }
             }
@@ -225,7 +226,7 @@ printf("flag=%X\n", compressflag);
               * lzma (.lzma) or lzip (.lzip) compression
               */
             *ret = simpleCompress((elzma_file_format)(zipid - 3), (unsigned char*)inputstr,
-                                  inputsize, outputbuf, outputsize, compressflag);
+                                  inputsize, outputbuf, outputsize, clevel);
 
             if (*ret != ELZMA_E_OK) {
                 return -4;
@@ -246,7 +247,7 @@ printf("flag=%X\n", compressflag);
             if (zipid == zmLz4) {
                 *outputsize = LZ4_compress_default((const char*)inputstr, (char*)(*outputbuf), inputsize, *outputsize);
             } else {
-                *outputsize = LZ4_compress_HC((const char*)inputstr, (char*)(*outputbuf), inputsize, *outputsize, (compressflag > 0) ? 8 : (-compressflag));
+                *outputsize = LZ4_compress_HC((const char*)inputstr, (char*)(*outputbuf), inputsize, *outputsize, (clevel > 0) ? 8 : (-clevel));
             }
 
             *ret = *outputsize;
@@ -261,19 +262,21 @@ printf("flag=%X\n", compressflag);
             /**
               * blosc2 meta-compressor (support various filters and compression codecs)
               */
-	    const char *codecs[] ={"blosclz", "lz4", "lz4hc", "zlib", "zstd"};
-	    if (blosc1_set_compressor(codecs[zipid - zmBlosc2Blosclz]) == -1) {
-	        return -7;
-	    }
+            const char* codecs[] = {"blosclz", "lz4", "lz4hc", "zlib", "zstd"};
 
-	    blosc2_set_nthreads(nthread);
+            if (blosc1_set_compressor(codecs[zipid - zmBlosc2Blosclz]) == -1) {
+                return -7;
+            }
+
+            blosc2_set_nthreads(nthread);
 
             *outputsize = inputsize + BLOSC2_MAX_OVERHEAD;  /* blosc2 guarantees the compression will always succeed at this size */
 
             if (!(*outputbuf = (unsigned char*)malloc(*outputsize))) {
                 return -5;
             }
-            *ret = blosc1_compress((compressflag > 0) ? 5 : (-compressflag), shuffle, typesize, inputsize, (const void*)inputstr, (void*)(*outputbuf), *outputsize);
+
+            *ret = blosc1_compress((clevel > 0) ? 5 : (-clevel), shuffle, typesize, inputsize, (const void*)inputstr, (void*)(*outputbuf), *outputsize);
 
             *outputsize = *ret;
 

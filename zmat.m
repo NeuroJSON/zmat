@@ -77,7 +77,8 @@ if (~(ischar(input) || islogical(input) || (isnumeric(input) && isreal(input))))
     error('input must be a char, non-complex numeric or logical vector or N-D array');
 end
 
-typesize=length(typecast(input(1), 'uint8'));
+inputinfo=whos('input');
+typesize=inputinfo.bytes/numel(input);
 
 if (ischar(input))
     input = uint8(input);

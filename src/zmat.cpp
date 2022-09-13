@@ -65,55 +65,61 @@ const char*  metadata[] = {"type", "size", "byte", "method", "status", "level"};
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     TZipMethod zipid = zmZlib;
-    int iscompress = 1;
     const char* zipmethods[] = {
         "zlib",
-	"gzip",
-	"base64",
+        "gzip",
+        "base64",
 #if !defined(NO_LZMA)
         "lzip",
-	"lzma",
+        "lzma",
 #endif
 #if !defined(NO_LZ4)
         "lz4",
-	"lz4hc",
+        "lz4hc",
 #endif
 #if !defined(NO_BLOSC2)
         "blosc2blosclz",
-	"blosc2lz4",
-	"blosc2lz4hc",
-	"blosc2zlib",
-	"blosc2zstd",
+        "blosc2lz4",
+        "blosc2lz4hc",
+        "blosc2zlib",
+        "blosc2zstd",
 #endif
-	""};
+        ""
+    };
 
     const TZipMethod  zipmethodid[] = {
         zmZlib,
-	zmGzip,
-	zmBase64,
+        zmGzip,
+        zmBase64,
 #if !defined(NO_LZMA)
         zmLzip,
-	zmLzma,
+        zmLzma,
 #endif
 #if !defined(NO_LZ4)
         zmLz4,
-	zmLz4hc,
+        zmLz4hc,
 #endif
 #if !defined(NO_BLOSC2)
         zmBlosc2Blosclz,
-	zmBlosc2Lz4,
-	zmBlosc2Lz4hc,
-	zmBlosc2Zlib,
-	zmBlosc2Zstd,
+        zmBlosc2Lz4,
+        zmBlosc2Lz4hc,
+        zmBlosc2Zlib,
+        zmBlosc2Zstd,
 #endif
-	zmUnknown};
-
-    int nthread = 1;  /*nthread, shuffle and typesize are only used by blosc2 compressors*/
-    int shuffle = 1;
-    int typesize = 4;
-    char clevel = 1;
+        zmUnknown
+    };
 
     int use4bytedim = 0;
+
+    union cflag {
+        int iscompress;
+        struct settings {
+            char clevel;
+            char nthread;
+            char shuffle;
+            char typesize;
+        } param;
+    } flags = {0};
 
     /**
      * If no input is given for this function, it prints help information and return.
@@ -139,9 +145,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mxDestroyArray(tmp);
     }
 
+    flags.param.nthread = 1;
+    flags.param.shuffle = 1;
+    flags.param.typesize = 4;
+
     if (nrhs >= 2) {
         double* val = mxGetPr(prhs[1]);
-        clevel = val[0];
+        flags.param.clevel = (int)val[0];
     }
 
     if (nrhs >= 3) {
@@ -155,30 +165,23 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             mexErrMsgTxt("the specified compression method is not supported");
         }
 
-	zipid = zipmethodid[(int)zipid];
+        zipid = zipmethodid[(int)zipid];
     }
 
     if (nrhs >= 4) {
         double* val = mxGetPr(prhs[3]);
-        nthread = val[0];
+        flags.param.nthread = val[0];
     }
 
     if (nrhs >= 5) {
         double* val = mxGetPr(prhs[4]);
-        shuffle = val[0];
+        flags.param.shuffle = val[0];
     }
 
     if (nrhs >= 6) {
         double* val = mxGetPr(prhs[5]);
-        typesize = val[0];
+        flags.param.typesize = val[0];
     }
-    printf("iscompress=%X %d %d %d %X\n", clevel, nthread, shuffle, typesize, ((nthread & 0xFF) << 8));
-    if(clevel) {
-        iscompress = (clevel | ((nthread & 0xFF) << 8) | ((shuffle & 0xFF) << 16) | ((typesize & 0xFF) << 24));
-    } else {
-        iscompress = (clevel | ((nthread & 0xFF) << 8));
-    }
-    printf("iscompress=%X\n", iscompress);
 
     try {
         if (mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && !mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])) {
@@ -191,7 +194,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             int errcode = 0;
 
             if (inputsize > 0) {
-                errcode = zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, iscompress);
+                errcode = zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, flags.iscompress);
             }
 
             if (errcode < 0) {
@@ -265,7 +268,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                 mxSetFieldByNumber(plhs[1], 0, 4, val);
 
                 val = mxCreateDoubleMatrix(1, 1, mxREAL);
-                *mxGetPr(val) = iscompress;
+                *mxGetPr(val) = flags.param.clevel;
                 mxSetFieldByNumber(plhs[1], 0, 5, val);
             }
 

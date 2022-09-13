@@ -33,7 +33,7 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=-fPIC
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -O3 -msse2 -DHAVE_ZSTD -DHAVE_ZLIB -DHAVE_LZ4 $(DLLFLAG) #-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -Wextra -O3 -msse2 -DHAVE_ZSTD -DHAVE_ZLIB -DHAVE_LZ4 -DNDEBUG $(DLLFLAG) -std=gnu99 #-g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
