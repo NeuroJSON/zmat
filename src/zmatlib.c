@@ -280,7 +280,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
             *outputsize = *ret;
 
-            if (*outputsize < 0) {
+            if (*ret < 0) {
                 return -8;
             }
 
