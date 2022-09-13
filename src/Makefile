@@ -138,7 +138,7 @@ endif
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   AR         :=gcc
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
-dll:   LINKOPT    :=$(LDFLAGS)
+dll:   LINKOPT    +=$(LDFLAGS)
 dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
