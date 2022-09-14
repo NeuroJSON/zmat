@@ -42,6 +42,7 @@ jobs:
       - MAKE=mingw32-make
     - os: osx
       name: OSX
+      osx_image: xcode13.4
       env:
       - BADGE=OSX
       - MAKE=make
