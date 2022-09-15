@@ -15,9 +15,8 @@
 #include <string.h>
 
 /**
-  * if only zlib/gzip/base64 is used, one only need to add -I/path/to/zmatlib.h
-  * if lzma/lzip is used, one must add -I/path/to/src/easylzma/
-  * if lz4/lz4hc is used, one must add -I/path/to/src/lz4
+  * to compile, one should add -I/path/to/zmatlib.h to the compilation command and
+  * -L/path/to/libzmat.so(or .a) -lzmat -lz -lpthread to the linking command
   */
 
 #include "zmatlib.h"

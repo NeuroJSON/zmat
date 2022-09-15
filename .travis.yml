@@ -65,10 +65,11 @@ script:
          octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       fi
     - ${MAKE} -C src lib
+    - ${MAKE} -C example/c static
+
     - ${MAKE} -C src dll
     - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
-         ls -lt lib;
-         cp lib/*.dll example/c;
+         cp lib/* example/c;
       fi
     - ${MAKE} -C example/c all
     - if [ "$TRAVIS_OS_NAME" = "osx" ]; then

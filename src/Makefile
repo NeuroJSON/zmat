@@ -100,7 +100,7 @@ ifeq ($(MAKECMDGOALS),lib)
    ARFLAGS    :=cr
    BINARY     :=libzmat.a
    AROUTPUT   :=
-   LINKOPT    :=
+   LINKOPT    :=blosc2/lib/libblosc2.a blosc2/internal-complibs/zstd-1.5.2/libzstd.a
    OUTPUT_DIR :=$(LIBDIR)
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
       OUTPUTFLAG :=
