@@ -120,6 +120,7 @@ ifeq ($(MAKECMDGOALS),lib)
 endif
 
 ifeq ($(MAKECMDGOALS),dll)
+   AR         :=$(CC)
    OUTPUTFLAG :=-o
    BINARY     :=libzmat.so
    OUTPUT_DIR :=$(LIBDIR)
