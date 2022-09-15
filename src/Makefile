@@ -17,7 +17,8 @@ HAVE_BLOSC2?=yes
 
 MEX=mex
 AR=$(CC)
-ECHO       := echo
+ECHO       :=echo
+SYMBLINK   :=ln -s
 
 BINARY:=zipmat
 OUTPUT_DIR=$(ZMATDIR)
@@ -109,23 +110,18 @@ endif
 ifeq ($(MAKECMDGOALS),dll)
    AR         :=$(CC)
    OUTPUTFLAG :=-o
-   BINARY     :=libzmat.so
+   BINARY     :=libzmat.so.1
    OUTPUT_DIR :=$(LIBDIR)
    LINKOPT    +=-lz
 
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
-      ARFLAGS    :=-shared -Wl,-install_name,$(BINARY).1 -lz
+      ARFLAGS    :=-shared -Wl,-install_name,$(BINARY) -lz
    else
-      ARFLAGS    :=-shared -Wl,-soname,$(BINARY).1 -lz
+      ARFLAGS    :=-shared -Wl,-soname,$(BINARY) -lz
    endif
 endif
 
-ifeq ($(MAKECMDGOALS),dll)
-   BINARY     :=libzmat.so
-endif
-
 dll:   CPPOPT     +=$(DLLFLAG)
-#dll:   AR         :=gcc
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
 dll:   LINKOPT    +=$(LDFLAGS)
 dll:   AROUTPUT   :=-o
@@ -155,6 +151,7 @@ OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 
 all dll lib mex oct: $(OUTPUT_DIR)/$(BINARY)
 
+dll: linkdll
 blosc:
 	@if [ $(HAVE_BLOSC2) = "yes" ]; then\
 	    $(MAKE) -C blosc2 all;\
@@ -162,6 +159,9 @@ blosc:
 
 makedirs:
 	@if test ! -d $(OUTPUT_DIR); then $(MKDIR) $(OUTPUT_DIR); fi
+
+linkdll: makedirs
+	-$(SYMBLINK) $(BINARY) $(basename $(OUTPUT_DIR)/$(BINARY))
 
 makedocdir:
 	@if test ! -d $(DOCDIR); then $(MKDIR) $(DOCDIR); fi
