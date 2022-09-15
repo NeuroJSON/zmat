@@ -67,14 +67,14 @@ script:
     - ${MAKE} -C src lib
     - ${MAKE} -C src dll
     - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
-         cp lib/*.dll example/c
+         cp lib/*.dll example/c;
       fi
     - ${MAKE} -C example/c all
     - LD_LIBRARY_PATH=lib example/c/testzmat
     - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
-         DYLD_LIBRARY_PATH=lib example/c/testzmat
+         DYLD_LIBRARY_PATH=lib example/c/testzmat;
       else
-         LD_LIBRARY_PATH=lib example/c/testzmat
+         LD_LIBRARY_PATH=lib example/c/testzmat;
       fi
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
          ${MAKE} -C src oct;
