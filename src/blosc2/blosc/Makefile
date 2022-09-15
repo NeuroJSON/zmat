@@ -31,7 +31,6 @@ ARCH = $(shell uname -m)
 PLATFORM = $(shell uname -s)
 
 DLLFLAG=-fPIC
-OMP=-fopenmp
 
 CPPOPT=-g -Wall -Wextra -O3 -msse2 -DHAVE_ZSTD -DHAVE_ZLIB -DHAVE_LZ4 -DNDEBUG $(DLLFLAG) -std=gnu99 #-g -Wall -std=c99 # -DUSE_OS_TIMER
 
@@ -44,23 +43,15 @@ FILES=bitshuffle-sse2 blosc2 blosc2-stdio blosclz delta directories fastcopy \
       shuffle-sse2 stune timestamp trunc-prec
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
-  ifeq ($(findstring x86_64,$(ARCH)), x86_64)
-      LINKOPT=-L"$(CUDA_PATH)/lib/x64" $(CUDART)
-  else
-      LINKOPT=-L"$(CUDA_PATH)/lib/Win32" $(CUDART)
-  endif
-  INCLUDEDIRS +=-I"$(CUDA_PATH)/lib/include"
-  CPPOPT =-c -D_CRT_SECURE_NO_DEPRECATE -DWIN32
+  CPPOPT =-c -DWIN32
   OBJSUFFIX=.obj
   EXESUFFIX=
   DLLFLAG=
-  OMP=-fopenmp
   MEX=cmd /c mex
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
   CPPOPT+=
-  CUCCOPT+=-Xcompiler $(OMP)
   ifeq ($(findstring x86_64,$(ARCH)), x86_64)
      CPPOPT +=
   endif
@@ -95,7 +86,7 @@ ifeq ($(MAKECMDGOALS),dll)
 endif
 
 dll:   CPPOPT     +=$(DLLFLAG)
-dll:   AR         :=gcc
+dll:   AR         :=$(CC)
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
 dll:   LINKOPT    :=$(LDFLAGS)
 dll:   AROUTPUT   :=-o

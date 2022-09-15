@@ -45,13 +45,7 @@ EXESUFFIX=.mex*
 FILES=zmatlib
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
-  ifeq ($(findstring x86_64,$(ARCH)), x86_64)
-      LINKOPT=-L"$(CUDA_PATH)/lib/x64" $(CUDART)
-  else
-      LINKOPT=-L"$(CUDA_PATH)/lib/Win32" $(CUDART)
-  endif
-  INCLUDEDIRS +=-I"$(CUDA_PATH)/lib/include"
-  CPPOPT =-c -D_CRT_SECURE_NO_DEPRECATE -DWIN32
+  CPPOPT =-c
   OBJSUFFIX=.obj
   EXESUFFIX=
   DLLFLAG=
@@ -65,13 +59,6 @@ else
   ifeq ($(findstring x86_64,$(ARCH)), x86_64)
      CPPOPT +=
      CUCCOPT +=-m64
-     ifeq "$(wildcard /usr/local/cuda/lib64)" "/usr/local/cuda/lib64"
-        ifeq ($(BACKEND),cuda)
-           LINKOPT=-L/usr/local/cuda/lib64 $(CUDART) -lm -lstdc++
-        else ifeq ($(BACKEND),cudastatic)
-           LINKOPT=-L/usr/local/cuda/lib64 $(CUDART) -lm -static-libgcc -static-libstdc++
-        endif
-     endif
   endif
 endif
 
@@ -124,6 +111,7 @@ ifeq ($(MAKECMDGOALS),dll)
    OUTPUTFLAG :=-o
    BINARY     :=libzmat.so
    OUTPUT_DIR :=$(LIBDIR)
+   LINKOPT    +=-lz
 
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
       ARFLAGS    :=-shared -Wl,-install_name,$(BINARY).1 -lz
@@ -137,7 +125,7 @@ ifeq ($(MAKECMDGOALS),dll)
 endif
 
 dll:   CPPOPT     +=$(DLLFLAG)
-dll:   AR         :=gcc
+#dll:   AR         :=gcc
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
 dll:   LINKOPT    +=$(LDFLAGS)
 dll:   AROUTPUT   :=-o

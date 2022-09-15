@@ -4,10 +4,12 @@
 
 BLOSC_SRC=blosc
 ZSTD_SRC=internal-complibs/zstd-1.5.2
-LIBBLOSC2=$(BLOSC_SRC)/libblosc2.a
+LIBBLOSC2=$(BLOSC_SRC)/lib/libblosc2.a
 
 
-all: $(LIBBLOSC2) zstd
+all: lib zstd
+
+lib: $(LIBBLOSC2)
 
 $(LIBBLOSC2):
 	-$(MAKE) -C $(BLOSC_SRC) lib
