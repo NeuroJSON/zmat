@@ -78,7 +78,11 @@ if (~(ischar(input) || islogical(input) || (isnumeric(input) && isreal(input))))
 end
 
 inputinfo=whos('input');
-typesize=inputinfo.bytes/numel(input);
+if(~isempty(input))
+    typesize=inputinfo.bytes/numel(input);
+else
+    typesize=0;
+end
 
 if (ischar(input))
     input = uint8(input);
