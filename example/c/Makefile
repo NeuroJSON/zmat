@@ -1,6 +1,6 @@
-LIBTYPE  ?= dynamic
+LIBTYPE?=-static
 
 all:
-	$(CC) -g -Wall -pedantic testzmat.c -o testzmat -I../../include -L../../lib -Wl,-B$(LIBTYPE) -lzmat -Wl,-Bdynamic -lz -lpthread
+	$(CC) -g -Wall -pedantic testzmat.c -o testzmat -I../../include -L../../lib $(LIBTYPE) -lzmat -lz -lpthread
 clean:
 	-rm -f testzmat
