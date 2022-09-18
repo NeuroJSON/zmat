@@ -67,6 +67,7 @@
 
 #ifndef NO_ZSTD
     #include "zstd.h"
+    unsigned long long ZSTD_decompressBound(const void* src, size_t srcSize);
 #endif
 
 
