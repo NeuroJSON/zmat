@@ -289,7 +289,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
 #endif
 #ifndef NO_BLOSC2
-        } else if (zipid >= zmBlosc2Blosclz || zipid <= zmBlosc2Zstd) {
+        } else if (zipid >= zmBlosc2Blosclz && zipid <= zmBlosc2Zstd) {
             /**
               * blosc2 meta-compressor (support various filters and compression codecs)
               */
@@ -424,7 +424,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = ZSTD_decompressBound(inputstr, inputsize);
 
             if (*outputsize == ZSTD_CONTENTSIZE_ERROR || !(*outputbuf = (unsigned char*)malloc(*outputsize))) {
-                *ret = -5;
+                *ret = (*outputsize == ZSTD_CONTENTSIZE_ERROR) ? -9 : -5;
                 return *ret;
             }
 
@@ -433,12 +433,12 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = *ret;
 
             if (ZSTD_isError(*ret)) {
-                return -6;
+                return -9;
             }
 
 #endif
 #ifndef NO_BLOSC2
-        } else if (zipid >= zmBlosc2Blosclz || zipid <= zmBlosc2Zstd) {
+        } else if (zipid >= zmBlosc2Blosclz && zipid <= zmBlosc2Zstd) {
             /**
               * blosc2 meta-compressor (support various filters and compression codecs)
               */
