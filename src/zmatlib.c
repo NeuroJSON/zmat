@@ -275,7 +275,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                 return -5;
             }
 
-            *ret = ZSTD_compress((char*)(*outputbuf), *outputsize, (const char*)inputstr, inputsize, (clevel > 0) ? 8 : (-clevel));
+            *ret = ZSTD_compress((char*)(*outputbuf), *outputsize, (const char*)inputstr, inputsize, (clevel > 0) ? ZSTD_CLEVEL_DEFAULT : (-clevel));
 
             if (ZSTD_isError(*ret)) {
                 return -9;

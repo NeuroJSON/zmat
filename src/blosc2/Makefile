@@ -9,9 +9,7 @@ LIBBLOSC2=$(BLOSC_SRC)/lib/libblosc2.a
 
 all: lib zstd
 
-lib: $(LIBBLOSC2)
-
-$(LIBBLOSC2):
+lib:
 	-$(MAKE) -C $(BLOSC_SRC) lib
 zstd:
 	-$(MAKE) -C $(ZSTD_SRC) libzstd.a
@@ -19,5 +17,6 @@ clean:
 	-$(MAKE) -C $(BLOSC_SRC) clean
 	-$(MAKE) -C $(ZSTD_SRC) clean
 
-.DEFAULT_GOAL := all
+.PHONY: all lib zstd clean
 
+.DEFAULT_GOAL := all

@@ -30,3 +30,4 @@ clean:
 
 .DEFAULT_GOAL := mex
 
+.PHONY: all lib dll mex oct example clean
