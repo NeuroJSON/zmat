@@ -65,6 +65,11 @@
     #include "blosc2.h"
 #endif
 
+#ifndef NO_ZSTD
+    #include "zstd.h"
+#endif
+
+
 #ifndef NO_LZMA
 /**
  * @brief Easylzma interface to perform compression
@@ -119,6 +124,7 @@ const char* zmat_errcode[] = {
     "lz4 error, see info.status for error flag, often a result of mismatch in compression method",/*-6*/
     "unsupported blosc2 codec",/*-7*/
     "blosc2 error, see info.status for error flag, often a result of mismatch in compression method",/*-8*/
+    "zstd error, see info.status for error flag, often a result of mismatch in compression method",/*-9*/
     "unsupported method" /*-999*/
 };
 
@@ -141,9 +147,9 @@ char* zmat_error(int id) {
  *
  * @param[in] inputsize: input stream buffer length
  * @param[in] inputstr: input stream buffer pointer
- * @param[in] outputsize: output stream buffer length
- * @param[in] outputbuf: output stream buffer pointer
- * @param[in] ret: encoder/decoder specific detailed error code (if error occurs)
+ * @param[in, out] outputsize: output stream buffer length
+ * @param[in, out] outputbuf: output stream buffer pointer
+ * @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
  * @param[in] iscompress: 0: decompression, 1: use default compression level;
  *             negative interger: set compression level (-1, less, to -9, more compression)
  * @return return the coarse grained zmat error code; detailed error code is in ret.
@@ -257,6 +263,30 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             }
 
 #endif
+#ifndef NO_ZSTD
+        } else if (zipid == zmZstd) {
+            /**
+              * zstd compression
+              */
+            *outputsize = ZSTD_compressBound(inputsize);
+
+            if (!(*outputbuf = (unsigned char*)malloc(*outputsize))) {
+                return -5;
+            }
+
+            *ret = ZSTD_compress((char*)(*outputbuf), *outputsize, (const char*)inputstr, inputsize, (clevel > 0) ? 8 : (-clevel));
+
+            if (ZSTD_isError(*ret)) {
+                return -9;
+            }
+
+            *outputsize = *ret;
+
+            if (!(*outputbuf = (unsigned char*)realloc(*outputbuf, *outputsize))) {
+                return -5;
+            }
+
+#endif
 #ifndef NO_BLOSC2
         } else if (zipid >= zmBlosc2Blosclz || zipid <= zmBlosc2Zstd) {
             /**
@@ -278,11 +308,11 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
             *ret = blosc1_compress((clevel > 0) ? 5 : (-clevel), shuffle, typesize, inputsize, (const void*)inputstr, (void*)(*outputbuf), *outputsize);
 
-            *outputsize = *ret;
-
             if (*ret < 0) {
                 return -8;
             }
+
+            *outputsize = *ret;
 
             if (!(*outputbuf = (unsigned char*)realloc(*outputbuf, *outputsize))) {
                 return -5;
@@ -381,6 +411,27 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = *ret;
 
             if (*ret < 0) {
+                return -6;
+            }
+
+#endif
+#ifndef NO_ZSTD
+        } else if (zipid == zmZstd) {
+            /**
+              * zstd decompression
+              */
+            *outputsize = ZSTD_decompressBound(inputstr, inputsize);
+
+            if (*outputsize == ZSTD_CONTENTSIZE_ERROR || !(*outputbuf = (unsigned char*)malloc(*outputsize))) {
+                *ret = -5;
+                return *ret;
+            }
+
+            *ret = ZSTD_decompress((void*)(*outputbuf), *outputsize, (const void*)inputstr, inputsize);
+
+            *outputsize = *ret;
+
+            if (ZSTD_isError(*ret)) {
                 return -6;
             }
 

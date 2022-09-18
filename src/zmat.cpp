@@ -77,6 +77,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         "lz4",
         "lz4hc",
 #endif
+#if !defined(NO_ZSTD)
+        "zstd",
+#endif
 #if !defined(NO_BLOSC2)
         "blosc2blosclz",
         "blosc2lz4",
@@ -98,6 +101,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 #if !defined(NO_LZ4)
         zmLz4,
         zmLz4hc,
+#endif
+#if !defined(NO_ZSTD)
+        zmZstd,
 #endif
 #if !defined(NO_BLOSC2)
         zmBlosc2Blosclz,

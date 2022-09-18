@@ -63,15 +63,16 @@ extern "C"
  * 4: lzma
  * 5: lz4
  * 6: lz4hc
- * 7: blosc2blosclz
- * 8: blosc2lz4
- * 9: blosc2lz4hc
- * 10: blosc2zlib
- * 11: blosc2zstd
+ * 7: zstd
+ * 8: blosc2blosclz
+ * 9: blosc2lz4
+ * 10: blosc2lz4hc
+ * 11: blosc2zlib
+ * 12: blosc2zstd
  * -1: unknown
  */
 
-enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1};
+enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1};
 
 /**
  * @brief Main interface to perform compression/decompression

@@ -3,6 +3,7 @@ function varargout = zmat(varargin)
 % output=zmat(input)
 %    or
 % [output, info]=zmat(input, iscompress, method)
+% [output, info]=zmat(input, iscompress, method, options ...)
 % output=zmat(input, info)
 %
 % A portable data compression/decompression toolbox for MATLAB/GNU Octave
@@ -33,7 +34,17 @@ function varargout = zmat(varargin)
 %             'lzma': lzma formatted data compression
 %             'lz4':  lz4 formatted data compression
 %             'lz4hc':lz4hc (LZ4 with high-compression ratio) formatted data compression
+%             'zstd':  zstd formatted data compression
+%             'blosc2blosclz':  blosc2 meta-compressor with blosclz compression
+%             'blosc2lz4':  blosc2 meta-compressor with lz4 compression
+%             'blosc2lz4hc':  blosc2 meta-compressor with lz4hc compression
+%             'blosc2zlib:  blosc2 meta-compressor with zlib/zip compression
+%             'blosc2zstd':  blosc2 meta-compressor with zstd compression
 %             'base64': encode or decode use base64 format
+%     options: a series of ('name', value) pairs, supported options include
+%             'nthread': followed by an integer specifying number of threads for blosc2 meta-compressors
+%             'typesize': followed by an integer specifying the number of bytes per data element (used for shuffle)
+%             'shuffle': shuffle methods in blosc2 meta-compressor, 0 disable, 1, byte-shuffle
 %
 % output:
 %      output: a uint8 row vector, storing the compressed or decompressed data;
@@ -135,6 +146,8 @@ if (exist('inputinfo', 'var') && isfield(inputinfo, 'type'))
     end
     varargout{1} = reshape(varargout{1}, inputinfo.size);
 end
+
+%--------------------------------------------------------------------------------
 
 function value=getoption(key, default, opt)
 value=default;

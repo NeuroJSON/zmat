@@ -13,6 +13,7 @@ LIBDIR  ?=$(ROOTDIR)/lib
 MKDIR      :=mkdir
 HAVE_LZMA  ?=yes
 HAVE_LZ4   ?=yes
+HAVE_ZSTD  ?=yes
 HAVE_BLOSC2?=yes
 
 MEX=mex
@@ -81,6 +82,10 @@ else
     INCLUDEDIRS+=-Ilz4
     FILES+= lz4/lz4 lz4/lz4hc
   endif
+  ifeq ($(HAVE_ZSTD),no)
+    INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
+    LINKOPT+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+  endif
   LINKOPT+=-Lblosc2/lib -lblosc2 -Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
   INCLUDEDIRS+=-Iblosc2/include
 endif
@@ -92,7 +97,12 @@ else
   FILES+= lz4/lz4 lz4/lz4hc
 endif
 
-
+ifeq ($(HAVE_ZSTD),no)
+  CFLAGS+=-DNO_ZSTD
+else
+  INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
+  LINKOPT+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+endif
 
 
 ifeq ($(MAKECMDGOALS),lib)
