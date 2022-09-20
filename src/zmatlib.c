@@ -450,7 +450,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                 return *ret;
             }
 
-            while ((*ret = blosc1_decompress((const char*)inputstr, (char*)(*outputbuf), *outputsize)) <= 0 && count <= 10) {
+            while ((*ret = blosc1_decompress((const char*)inputstr, (char*)(*outputbuf), *outputsize)) <= 0 && count <= 16) {
                 *outputsize = (inputsize << count);
 
                 if (!(*outputbuf = (unsigned char*)realloc(*outputbuf, *outputsize))) {

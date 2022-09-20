@@ -117,8 +117,13 @@ if (nargin > 4 && ischar(varargin{4}) && bitand(length(varargin), 1)==1)
     opt=cell2struct(varargin(5:2:end), varargin(4:2:end), 2);
 end
 
+shuffle=0;
+if(strfind(zipmethod,'blosc2'))
+    shuffle=1;
+end
+
 nthread=getoption('nthread', 1, opt);
-shuffle=getoption('shuffle', 1, opt);
+shuffle=getoption('shuffle', shuffle, opt);
 typesize=getoption('typesize', typesize, opt);
 
 iscompress = round(iscompress);
