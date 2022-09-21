@@ -182,9 +182,9 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
         return -1;
     }
 
-    nthread = (flags.param.nthread == 0) ? 1 : flags.param.nthread;
-    shuffle = (flags.param.shuffle == 0) ? 1 : flags.param.shuffle;
-    typesize = (flags.param.typesize == 0) ? 4 : flags.param.typesize;
+    nthread = (flags.param.nthread == 0 || flags.param.nthread == -1) ? 1 : flags.param.nthread;
+    shuffle = (flags.param.shuffle == 0 || flags.param.shuffle == -1) ? 1 : flags.param.shuffle;
+    typesize = (flags.param.typesize == 0 || flags.param.typesize == -1) ? 4 : flags.param.typesize;
     clevel = (flags.param.clevel == 0) ? 0 : flags.param.clevel;
 
     if (clevel) {
