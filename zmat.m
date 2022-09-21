@@ -136,11 +136,6 @@ end
 
 if (strcmp(zipmethod, 'base64') && iscompress > 1)
     varargout{1} = char(varargout{1});
-    if (iscompress == 2)
-        varargout{1} = regexprep(varargout{1}, '\n$', '');
-    elseif (iscompress > 2)
-        varargout{1} = regexprep(varargout{1}, '\n', '');
-    end
 end
 
 if (exist('inputinfo', 'var') && isfield(inputinfo, 'type'))

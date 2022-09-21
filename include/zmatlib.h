@@ -146,6 +146,7 @@ char* zmat_error(int id);
  * @src: Data to be encoded
  * @len: Length of the data to be encoded
  * @out_len: Pointer to output length variable, or %NULL if not used
+ * @mode: 0 or 1, newline every 72 char and at end; 2: no new line at end, 3: no newline
  * Returns: Allocated buffer of out_len bytes of encoded data,
  * or %NULL on failure
  *
@@ -155,7 +156,7 @@ char* zmat_error(int id);
  */
 
 unsigned char* base64_encode(const unsigned char* src, size_t len,
-                             size_t* out_len);
+                             size_t* out_len, int mode);
 
 /**
  * base64_decode - Base64 decode

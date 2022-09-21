@@ -195,7 +195,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             /**
               * base64 encoding
               */
-            *outputbuf = base64_encode((const unsigned char*)inputstr, inputsize, outputsize);
+            *outputbuf = base64_encode((const unsigned char*)inputstr, inputsize, outputsize, clevel);
         } else if (zipid == zmZlib || zipid == zmGzip) {
             /**
               * zlib (.zip) or gzip (.gz) compression
@@ -578,11 +578,11 @@ static const unsigned char base64_table[65] =
  */
 
 unsigned char* base64_encode(const unsigned char* src, size_t len,
-                             size_t* out_len) {
+                             size_t* out_len, int mode) {
     unsigned char* out, *pos;
     const unsigned char* end, *in;
     size_t olen;
-    int line_len;
+    size_t line_len;
 
     olen = len * 4 / 3 + 4; /* 3-byte blocks to 4-byte */
     olen += olen / 72; /* line feeds */
@@ -611,7 +611,7 @@ unsigned char* base64_encode(const unsigned char* src, size_t len,
         in += 3;
         line_len += 4;
 
-        if (line_len >= 72) {
+        if (mode < 3 && line_len >= 72) {
             *pos++ = '\n';
             line_len = 0;
         }
@@ -633,7 +633,7 @@ unsigned char* base64_encode(const unsigned char* src, size_t len,
         line_len += 4;
     }
 
-    if (line_len) {
+    if (mode < 2 && line_len) {
         *pos++ = '\n';
     }
 
