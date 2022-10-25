@@ -49,7 +49,12 @@
 #include <assert.h>
 
 #include "zmatlib.h"
-#include "zlib.h"
+
+#ifndef NO_MINIZ
+    #include "miniz.h"
+#else
+    #include "zlib.h"
+#endif
 
 #ifndef NO_LZMA
     #include "easylzma/compress.h"

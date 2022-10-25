@@ -11,6 +11,7 @@ ZMATDIR ?=$(ROOTDIR)
 LIBDIR  ?=$(ROOTDIR)/lib
 
 MKDIR      :=mkdir
+HAVE_MINIZ ?=no
 HAVE_LZMA  ?=yes
 HAVE_LZ4   ?=yes
 HAVE_ZSTD  ?=yes
@@ -62,6 +63,14 @@ else
      CPPOPT +=
      CUCCOPT +=-m64
   endif
+endif
+
+ifeq ($(HAVE_MINIZ),no)
+  CFLAGS+=-DNO_MINIZ
+  LINKOPT+=-lz
+else
+  INCLUDEDIRS+=-Iminiz
+  FILES+=miniz/miniz
 endif
 
 ifeq ($(HAVE_LZMA),no)
@@ -122,14 +131,15 @@ ifeq ($(MAKECMDGOALS),dll)
    OUTPUTFLAG :=-o
    BINARY     :=libzmat.so.1
    OUTPUT_DIR :=$(LIBDIR)
-   LINKOPT    +=-lz
 
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
-      ARFLAGS    :=-shared -Wl,-install_name,$(BINARY) -lz
+      ARFLAGS    :=-shared -Wl,-install_name,$(BINARY)
    else
-      ARFLAGS    :=-shared -Wl,-soname,$(BINARY) -lz
+      ARFLAGS    :=-shared -Wl,-soname,$(BINARY)
    endif
 endif
+
+export HAVE_MINIZ HAVE_LZ4 HAVE_ZSTD
 
 dll:   CPPOPT     +=$(DLLFLAG)
 dll:   ARFLAGS    ?=-shared -Wl,-soname,$(BINARY).1
@@ -146,7 +156,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -lz -static-libgcc -static-libstdc++' -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS -static-libgcc -static-libstdc++' -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
