@@ -50,7 +50,6 @@ ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
   DLLFLAG=
-  USERLINKOPT+=-lz
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
@@ -84,7 +83,7 @@ else
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
     LINKOPT+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
   endif
-  LINKOPT+=-Lblosc2/lib -lblosc2 -Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+  LINKOPT+=-Lblosc2/lib -lblosc2 -Lblosc2/internal-complibs/zstd-1.5.2 -lzstd -lz
   INCLUDEDIRS+=-Iblosc2/include
 endif
 

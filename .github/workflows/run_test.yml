@@ -79,7 +79,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="mex -f mexopts_msys2_gcc.xml"
+            make -C src mex CC=gcc CXX=g++ MEX="mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
           else
             make -C src mex CC=gcc CXX=g++
           fi
