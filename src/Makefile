@@ -16,7 +16,7 @@ HAVE_LZ4   ?=yes
 HAVE_ZSTD  ?=yes
 HAVE_BLOSC2?=yes
 
-MEX=mex
+MEX?=mex
 AR=$(CC)
 ECHO       :=echo
 SYMBLINK   :=ln -s
@@ -46,13 +46,11 @@ EXESUFFIX=.mex*
 
 FILES=zmatlib
 
-ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
+ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
-  OBJSUFFIX=.obj
   EXESUFFIX=
   DLLFLAG=
-  OMP=-fopenmp
-  MEX=cmd /c mex
+  LINKOPT+=-lz
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else

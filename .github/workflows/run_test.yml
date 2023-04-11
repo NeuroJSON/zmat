@@ -70,7 +70,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v1
       - name: Build MATLAB mex
         run: |
-          make -C src mex CC=gcc CXX=g++
+          make -C src mex CC=gcc CXX=g++  MEX="mex -f mexopts_msys2_gcc.xml"
       - name: Run MATLAB examples
         uses: matlab-actions/run-command@v1
         with:
