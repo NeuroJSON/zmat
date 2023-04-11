@@ -50,7 +50,7 @@ ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
   DLLFLAG=
-  LINKOPT+=-lz
+  USERLINKOPT+=-lz
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
