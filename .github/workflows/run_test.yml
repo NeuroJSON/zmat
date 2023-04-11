@@ -28,6 +28,7 @@ jobs:
             7z x octave_7.3.0.7z -ooctave -y
             echo "$PWD/octave/octave-7.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
             echo 'C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\' >> $GITHUB_PATH
+            echo 'MW_MINGW64_LOC=/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/' >> $GITHUB_ENV
           fi
       - name: Build static library
         run: |
