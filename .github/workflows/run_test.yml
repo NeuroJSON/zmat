@@ -32,7 +32,7 @@ jobs:
       - name: Build static library
         run: |
           make -C src lib CC=gcc CXX=g++
-          make -C example/c all LIBTYPE=
+          make -C example/c all CC=gcc CXX=g++ LIBTYPE=
           if [ "$TRAVIS_OS_NAME" = "macOS" ]; then
              DYLD_LIBRARY_PATH=lib example/c/testzmat;
           else
@@ -41,7 +41,7 @@ jobs:
       - name: Build dynamic library
         run: |
           make -C src dll CC=gcc CXX=g++
-          make -C example/c all LIBTYPE=
+          make -C example/c all  CC=gcc CXX=g++ LIBTYPE=
           if [ "$RUNNER_OS" = "macOS" ]; then
              DYLD_LIBRARY_PATH=lib example/c/testzmat;
           else
