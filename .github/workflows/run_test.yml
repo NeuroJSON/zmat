@@ -49,7 +49,7 @@ jobs:
           fi
       - name: Build octave mex
         run: |
-          make -C src oct CC=gcc CXX=g++
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
       - name: Run octave test
         run: |
           octave-cli --version
@@ -79,7 +79,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
+            make -C src mex CC=gcc CXX=g++ MEX="cmd /c mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
           else
