@@ -26,11 +26,12 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             curl --retry 3 -kL http://cdimage.debian.org/mirror/gnu.org/gnu/octave/windows/octave-7.3.0-w64-64.7z --output octave_7.3.0.7z
             7z x octave_7.3.0.7z -ooctave -y
-            echo "$PWD/octave/octave-7.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
             echo 'C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\' >> $GITHUB_PATH
+            echo "$PWD/octave/octave-7.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
           fi
       - name: Build static library
         run: |
+          which g++
           make -C src lib CC=gcc CXX=g++
           make -C example/c all CC=gcc CXX=g++ LIBTYPE=
           if [ "$TRAVIS_OS_NAME" = "macOS" ]; then
@@ -79,7 +80,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="cmd /c mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
+            make -C src mex CC=gcc CXX=g++ MEX="cmd //c mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
           else
