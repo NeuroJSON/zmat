@@ -31,7 +31,6 @@ jobs:
           fi
       - name: Build static library
         run: |
-          which cc
           which gcc
           which g++
           make -C src lib CC=gcc CXX=g++
