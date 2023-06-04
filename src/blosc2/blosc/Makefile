@@ -32,7 +32,19 @@ PLATFORM = $(shell uname -s)
 
 DLLFLAG=-fPIC
 
-CPPOPT=-g -Wall -Wextra -O3 -msse2 -DHAVE_ZSTD -DHAVE_ZLIB -DHAVE_LZ4 -DNDEBUG $(DLLFLAG) -std=gnu99 #-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -Wextra -O3 -msse2 -DNDEBUG $(DLLFLAG) -std=gnu99 #-g -Wall -std=c99 # -DUSE_OS_TIMER
+
+ifeq ($(HAVE_ZLIB),yes)
+  CPPOPT+=-DHAVE_ZLIB
+endif
+
+ifeq ($(HAVE_ZSTD),yes)
+  CPPOPT+=-DHAVE_ZSTD
+endif
+
+ifeq ($(HAVE_LZ4),yes)
+  CPPOPT+=-DHAVE_LZ4
+endif
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
