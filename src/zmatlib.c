@@ -49,7 +49,12 @@
 #include <assert.h>
 
 #include "zmatlib.h"
-#include "zlib.h"
+
+#ifndef NO_ZLIB
+    #include "zlib.h"
+#else
+    #include "miniz.h"
+#endif
 
 #ifndef NO_LZMA
     #include "easylzma/compress.h"
@@ -337,15 +342,24 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
               * zlib (.zip) or gzip (.gz) decompression
               */
             int count = 1;
+#ifdef NO_ZLIB
+            tinfl_decompressor inflator;
+#endif
 
             if (zipid == zmZlib) {
                 if (inflateInit(&zs) != Z_OK) {
                     return -2;
                 }
             } else {
+#ifdef NO_ZLIB
+                tinfl_init(&inflator);
+#else
+
                 if (inflateInit2(&zs, 15 | 32) != Z_OK) {
                     return -2;
                 }
+
+#endif
             }
 
             buflen[0] = inputsize * 20;
@@ -357,14 +371,33 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
             zs.next_out =  (Bytef*)(*outputbuf);  /* output char array*/
 
-            while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && *ret != Z_DATA_ERROR && count <= 10) {
-                *outputbuf = (unsigned char*)realloc(*outputbuf, (buflen[0] << count));
-                zs.next_out =  (Bytef*)(*outputbuf + (buflen[0] << (count - 1)));
-                zs.avail_out = (buflen[0] << (count - 1)); /* size of output*/
-                count++;
+#ifdef NO_ZLIB
+
+            if (zipid == zmZlib) {
+#endif
+
+                while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && *ret != Z_DATA_ERROR && count <= 10) {
+                    *outputbuf = (unsigned char*)realloc(*outputbuf, (buflen[0] << count));
+                    zs.next_out =  (Bytef*)(*outputbuf + (buflen[0] << (count - 1)));
+                    zs.avail_out = (buflen[0] << (count - 1)); /* size of output*/
+                    count++;
+                }
+
+                *outputsize = zs.total_out;
+#ifdef NO_ZLIB
+            } else {
+
+                size_t insize = inputsize;
+
+                while ((*ret = tinfl_decompress(&inflator, inputstr + 10, &insize, *outputbuf, *outputbuf, outputsize, 0)) != TINFL_STATUS_DONE && *ret != Z_DATA_ERROR && count <= 10) {
+                    *outputbuf = (unsigned char*)realloc(*outputbuf, (buflen[0] << count));
+                    zs.next_out =  (Bytef*)(*outputbuf + (buflen[0] << (count - 1)));
+                    zs.avail_out = (buflen[0] << (count - 1)); /* size of output*/
+                    count++;
+                }
             }
 
-            *outputsize = zs.total_out;
+#endif
 
             if (*ret != Z_STREAM_END && *ret != Z_OK) {
                 inflateEnd(&zs);
