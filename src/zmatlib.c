@@ -728,7 +728,7 @@ unsigned char* base64_encode(const unsigned char* src, size_t len,
         in += 3;
         line_len += 4;
 
-        if (mode < 3 && line_len >= 72) {
+        if (mode > 1 && line_len >= 72) {
             *pos++ = '\n';
             line_len = 0;
         }
@@ -750,7 +750,7 @@ unsigned char* base64_encode(const unsigned char* src, size_t len,
         line_len += 4;
     }
 
-    if (mode < 2 && line_len) {
+    if (mode > 2 && line_len) {
         *pos++ = '\n';
     }
 
