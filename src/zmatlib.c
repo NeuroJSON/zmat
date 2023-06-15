@@ -448,7 +448,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 #endif
             }
 
-            buflen[0] = inputsize * 20;
+            buflen[0] = inputsize * 4;
             *outputbuf = (unsigned char*)malloc(buflen[0]);
 
             zs.avail_in = inputsize; /* size of input, string + terminator*/
@@ -462,10 +462,10 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             if (zipid == zmZlib) {
 #endif
 
-                while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && *ret != Z_DATA_ERROR && count <= 10) {
+                while ((*ret = inflate(&zs, Z_SYNC_FLUSH)) != Z_STREAM_END && *ret != Z_DATA_ERROR && count <= 12) {
                     *outputbuf = (unsigned char*)realloc(*outputbuf, (buflen[0] << count));
-                    zs.next_out =  (Bytef*)(*outputbuf + (buflen[0] << (count - 1)));
-                    zs.avail_out = (buflen[0] << (count - 1)); /* size of output*/
+                    zs.next_out =  (Bytef*)(*outputbuf + zs.total_out);
+                    zs.avail_out = (buflen[0] << count) - zs.total_out; /* size of output*/
                     count++;
                 }
 
