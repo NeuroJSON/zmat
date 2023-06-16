@@ -51,7 +51,11 @@ jobs:
           fi
       - name: Build octave mex
         run: |
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-lmingw32 -v"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+              make -C src oct CC=gcc CXX=g++ USERLINKOPT="-lmingw32 -v"
+          else
+              make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
+          fi
       - name: Run octave test
         run: |
           octave-cli --version
