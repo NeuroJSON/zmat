@@ -67,6 +67,7 @@ jobs:
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           make clean
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
+          objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -100,7 +101,8 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="cmd //c mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"' COMPFLAGS=' '
+            make -C src mex CC=gcc CXX=g++ MEX="cmd //c mex -f mexopts_msys2_gcc.xml" LINKOPT='-L"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\x86_64-w64-mingw32\lib"'
+            objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
           else
