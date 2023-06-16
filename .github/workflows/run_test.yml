@@ -65,6 +65,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
+          make clean
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
