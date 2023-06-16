@@ -51,7 +51,7 @@ jobs:
           fi
       - name: Build octave mex
         run: |
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-lmingw32 -v"
       - name: Run octave test
         run: |
           octave-cli --version
