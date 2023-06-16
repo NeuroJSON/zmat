@@ -101,8 +101,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cd src
-            make mex CC=gcc CXX=g++ MEX="cmd //c mex.bat -f mexopts_msys2_gcc.xml" COMPFLAGS=""
+            make -C src mex CC=gcc CXX=g++ MEX="cmd //c mex -v -f mexopts_msys2_gcc.xml" COMPFLAGS=""
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
