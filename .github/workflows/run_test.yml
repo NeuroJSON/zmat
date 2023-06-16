@@ -66,7 +66,7 @@ jobs:
         run: |
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           make clean
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -Wl,-Bdynamic -v"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -v"
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
