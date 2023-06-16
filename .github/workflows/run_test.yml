@@ -60,7 +60,7 @@ jobs:
           fi
       - name: Build octave mex (Windows only)
         if: ${{ runner.os == 'Windows' }}
-        shell: msys2
+        shell: msys2 {0}
         run: |
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-v"
       - name: Build octave mex (Linux and Mac)
