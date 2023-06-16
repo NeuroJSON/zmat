@@ -65,7 +65,6 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          make clean
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -v"
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
@@ -106,7 +105,7 @@ jobs:
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
           else
-            make -C src mex CC=gcc CXX=g++
+            make -C src mex CC=gcc CXX=g++ CXXLIBS="-static-libgcc"
           fi
       - name: Run MATLAB examples
         uses: matlab-actions/run-command@v1
