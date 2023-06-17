@@ -45,6 +45,8 @@ jobs:
         run: |
             choco install es
             es libz.a
+            es liboctinterp.dll.a
+            es libwinpthread
       - name: Build static library
         run: |
           which gcc
@@ -106,7 +108,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v '" CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
+            make -C src mex CC=gcc CXX=g++ MEX="cmd //s //c mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v " CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
