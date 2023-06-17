@@ -34,7 +34,7 @@
         COMPILER="$CXX"
         DEFINES="-m64 $MATLABMEX"
         MATLABMEX="-DMATLAB_MEX_FILE "
-        CFLAGS="$COMPFLAGS -fexceptions -fno-omit-frame-pointer"
+        CFLAGS="-fexceptions -fno-omit-frame-pointer"
         CXXFLAGS="$CFLAGS"
         INCLUDE="-I&quot;$MINGWROOT\usr\include&quot; -I&quot;$MATLABROOT/extern/include&quot; -I&quot;$MATLABROOT/simulink/include&quot;"
         CXXOPTIMFLAGS="-O -DNDEBUG"
