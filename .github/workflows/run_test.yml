@@ -72,7 +72,6 @@ jobs:
         run: |
           make -C src oct CC=gcc CXX=g++
       - name: Run octave test
-        if: ${{ runner.os != 'Windows' }}
         run: |
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
@@ -101,7 +100,7 @@ jobs:
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v '" CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"'
+            CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"' make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v '"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
