@@ -64,7 +64,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector /ucrt64/lib/libwinpthread.a /ucrt64/lib/libz.a -v"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -static -v"
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
@@ -96,10 +96,11 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           echo 'MW_MINGW64_LOC=/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/' >> $GITHUB_ENV
+          echo 'COMPFLAGS=""' >> $GITHUB_ENV
       - name: Build MATLAB mex
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            make -C src mex CC=gcc CXX=g++ MEX="cmd //s //c mex  -f mexopts_msys2_gcc.xml -L'C:\msys64\mingw64\lib'" COMPFLAGS="" USERLINKOPT="-v " CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
+            COMPFLAGS=" " make -C src mex CC=gcc CXX=g++ MEX="cmd //s //c mex  -f mexopts_msys2_gcc.xml -L'C:\msys64\mingw64\lib'" COMPFLAGS=" " USERLINKOPT="-v " CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
