@@ -40,7 +40,6 @@ jobs:
             mingw-w64-ucrt-x86_64-winpthreads-git
             mingw-w64-ucrt-x86_64-python-mingw-ldd
             base-devel
-            zlib-devel
       - name: Build static library
         run: |
           which gcc
