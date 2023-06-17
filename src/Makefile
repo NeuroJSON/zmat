@@ -92,9 +92,9 @@ else
   endif
   ifeq ($(HAVE_ZSTD),no)
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-    LINKOPT+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+    LINKOPT+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
   endif
-  LINKOPT+=-Lblosc2/lib -lblosc2 -Lblosc2/internal-complibs/zstd-1.5.2 -lzstd $(LIBZLIB)
+  LINKOPT+=-L"./blosc2/lib" -lblosc2 -L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd $(LIBZLIB)
   INCLUDEDIRS+=-Iblosc2/include
 endif
 
@@ -109,7 +109,7 @@ ifeq ($(HAVE_ZSTD),no)
   CFLAGS+=-DNO_ZSTD
 else
   INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-  LINKOPT+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+  LINKOPT+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
 endif
 
 
