@@ -101,7 +101,7 @@ jobs:
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             pwd
-            CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"' make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v '"
+            CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"' make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-Lsrc/blosc2/lib -v '"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
