@@ -64,7 +64,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
-          export PATH="/ucrt64/bin/":"$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
+          export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -v"
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
@@ -101,7 +101,7 @@ jobs:
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             pwd
-            CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"' make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-Lsrc/blosc2/lib -v '"
+            CXXLIBS='-L"./blosc2/lib" -L"./blosc2/internal-complibs/zstd-1.5.2"' make -C src mex CC=gcc CXX=g++ MEX="cmd //c 'mex  -f mexopts_msys2_gcc.xml" COMPFLAGS="" USERLINKOPT="-v '"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
