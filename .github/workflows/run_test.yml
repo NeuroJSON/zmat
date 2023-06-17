@@ -8,7 +8,8 @@ jobs:
     strategy:
       # tested octave versions: ubuntu-20.04 = 5.2, ubuntu-22.04 = 6.4, macos-11 = 8.1, windows-2019 = 7.3
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-11, windows-2019]
+        os: [windows-2019]
+        #os: [ubuntu-20.04, ubuntu-22.04, macos-11, windows-2019]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -40,6 +41,11 @@ jobs:
             mingw-w64-ucrt-x86_64-winpthreads-git
             mingw-w64-ucrt-x86_64-python-mingw-ldd
             base-devel
+      - name: Install file search tool everything
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+            choco install es
+            es libz.a
       - name: Build static library
         run: |
           which gcc
@@ -65,7 +71,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fno-stack-protector /ucrt64/lib/libwinpthread.a /ucrt64/lib/libz.a -v"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector /ucrt64/lib/libwinpthread.a /ucrt64/lib/libz.a -v"
           ldd zipmat.mex
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
@@ -81,7 +87,8 @@ jobs:
     name: MATLAB test
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
+        os: [windows-2019]
+        #os: [ubuntu-20.04, macos-11, windows-2019]
     defaults:
       run:
         shell: bash
