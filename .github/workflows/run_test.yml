@@ -65,7 +65,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -L/ucrt64/lib -Wl,-Bstatic  -loctinterp.dll -Wl,-Bdynamic -v"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -L/ucrt64/lib -Wl,-Bstatic  -lz -Wl,-Bdynamic -v"
           objdump -p zipmat.mex | grep "DLL Name:"
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
