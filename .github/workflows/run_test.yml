@@ -8,7 +8,7 @@ jobs:
     strategy:
       # tested octave versions: ubuntu-20.04 = 5.2, ubuntu-22.04 = 6.4, macos-11 = 8.1, windows-2019 = 7.3
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-11, windows-2019]
+        os: [windows-2019]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -38,6 +38,13 @@ jobs:
             mingw-w64-ucrt-x86_64-zlib
             mingw-w64-ucrt-x86_64-winpthreads-git
             base-devel
+      - name: Install file search tool everything
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+            choco install es
+            es zlib1
+            es libz.a
+            es liboctinterp.dll
       - name: Build static library
         run: |
           which gcc
@@ -87,7 +94,7 @@ jobs:
     name: MATLAB test
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
+        os: [windows-2019]
     defaults:
       run:
         shell: bash
