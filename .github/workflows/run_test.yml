@@ -64,6 +64,7 @@ jobs:
         run: |
           export PATH="/c/msys64/mingw64/bin":"$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector $PWD/octave/octave-7.3.0-w64-64/mingw64/lib/octave/7.3.0/liboctinterp.dll.a -L/c/msys64/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v"
+          ls /c/msys64/mingw64/lib/z*.dll
           cp /ucrt64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           echo "$PWD/octave/octave-7.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
@@ -71,7 +72,14 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           make -C src oct CC=gcc CXX=g++
-      - name: Run octave test
+      - name: Run octave test (Windows only)
+        if: ${{ runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: |
+          octave-cli --version
+          octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
+      - name: Run octave test (Linux and Mac)
+        if: ${{ runner.os != 'Windows' }}
         run: |
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
