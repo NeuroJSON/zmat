@@ -10,10 +10,10 @@ end
 try
     [res, info] = zmat(input, opt.level, method);
     if(strcmp(method,'gzip') && opt.level && length(res)>=10)
-        res(10)=0;  % the 10th byte of the gzip header is OS
+        res(10)=0;  % the 10th byte of the gzip header is OS ID
     end
 catch ME
-    if(~isempty(strfind(ME.message, expected)))
+    if(ischar(expected) && ~isempty(strfind(ME.message, expected)))
         fprintf(1, 'Testing exception %s: ok\n\toutput:''%s''\n', testname, ME.message);
     else
         warning('Test exception %s: failed: expected ''%s'', obtained ''%s''', testname, expected, ME.message);
