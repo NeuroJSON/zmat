@@ -32,7 +32,7 @@ if (ismember('c', tests))
     fprintf('Test compression\n');
     fprintf(sprintf('%s\n', char(ones(1, 79) * 61)));
 
-    test_zmat('zlib (empty)', 'zlib', [], zeros(1,0));
+    test_zmat('zlib (empty)', 'zlib', '', zeros(1,0));
     test_zmat('gzip (empty)', 'gzip', '', zeros(1,0));
     test_zmat('lzma (empty)', 'lzma', zeros(0,0), zeros(1,0));
     test_zmat('lzip (empty)', 'lzip', [], zeros(1,0));
