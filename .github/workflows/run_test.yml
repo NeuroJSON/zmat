@@ -76,6 +76,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
+          export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       - name: Run octave test (Linux and Mac)
