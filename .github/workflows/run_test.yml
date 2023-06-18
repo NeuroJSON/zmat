@@ -72,7 +72,6 @@ jobs:
         run: |
           make -C src oct CC=gcc CXX=g++
       - name: Run octave test
-        shell: msys2 {0}
         run: |
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
