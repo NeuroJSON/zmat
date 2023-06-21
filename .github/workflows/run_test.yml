@@ -68,12 +68,21 @@ jobs:
           export PATH="/mingw64/bin":"$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           which gcc
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v" CXXLIBS="$PWD/octave/octave-7.3.0-w64-64/mingw64/lib/octave/7.3.0/liboctinterp.dll.a"
+          cp /mingw64/bin/zlib1.dll .
+          rm -rf octave
           objdump -p zipmat.mex | grep "DLL Name:"
           echo "$PWD/octave/octave-7.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
           make -C src oct CC=gcc CXX=g++
+      - name: Run octave test (Windows only)
+        if: ${{ runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: |
+          export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
+          octave-cli --version
+          octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       - name: Run octave test (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -94,6 +103,7 @@ jobs:
         run: |
           mv zipmat.mex zmat/octave/${{ env.OCTAVE_ARCH }}
           if [[ "$RUNNER_OS" == "Windows" ]]; then
+            cp /mingw64/bin/zlib1.dll zmat/octave/${{ env.OCTAVE_ARCH }}
             7z a -tzip packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           else
             zip -FSr --symlink packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
@@ -139,6 +149,7 @@ jobs:
           echo 'COMPFLAGS=""' >> $GITHUB_ENV
       - name: Build MATLAB mex
         run: |
+          rm -rf private
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             make -C src mex CC=gcc CXX=g++ MEX="cmd //s //c mex  -f mexopts_msys2_gcc.xml " USERLINKOPT="-v " CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
             objdump -p zipmat.mexw* | grep "DLL Name:"
