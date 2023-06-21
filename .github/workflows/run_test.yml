@@ -8,7 +8,7 @@ jobs:
     strategy:
       # tested octave versions: ubuntu-20.04 = 5.2, ubuntu-22.04 = 6.4, macos-11 = 8.1, windows-2019 = 7.3
       matrix:
-        os: [windows-2019]
+        os: [ubuntu-20.04, ubuntu-22.04, macos-11, windows-2019]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -49,6 +49,8 @@ jobs:
           else
              LD_LIBRARY_PATH=lib example/c/testzmat;
           fi
+          octave-cli --eval "fprintf(1,['OCTAVE_ARCH=' regexprep(computer('arch'), 'darwin[0-9.]+-', 'darwin-')])"
+          octave-cli --eval "fprintf(1,['OCTAVE_ARCH=' regexprep(computer('arch'), 'darwin[0-9.]+-', 'darwin-')])" >> $GITHUB_ENV
       - name: Build dynamic library
         run: |
           make -C src dll CC=gcc CXX=g++
@@ -71,24 +73,42 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           make -C src oct CC=gcc CXX=g++
-      - name: Run octave test (Windows only)
-        if: ${{ runner.os == 'Windows' }}
-        shell: msys2 {0}
-        run: |
-          export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          octave-cli --version
-          octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       - name: Run octave test (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
+      - name: Create package folder
+        run: |
+          mkdir packages
+          mkdir zmat
+          mkdir -p zmat/octave/${{ env.OCTAVE_ARCH }}
+          cp *.{m,txt,rst} zmat/
+          cp PKG_ADD* zmat/
+          cp -a example zmat/
+          cp -a test zmat/
+      - name: Create release tag
+        run: perl -e "print 'RELEASE_TAG='. lc('${{ runner.os }}-${{ runner.arch }}-github-latest')" >> $GITHUB_ENV
+      - name: Zip zmat
+        run: |
+          mv zipmat.mex zmat/octave/${{ env.OCTAVE_ARCH }}
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            7z a -tzip packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
+          else
+            zip -FSr --symlink packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip zmat
+          fi
+      - name: Upload zmat package
+        if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-11' || matrix.os == 'windows-2019' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-zmat-packages
+          path: packages/zmat-octave-${{ env.RELEASE_TAG }}.zip
 
   matlab_test:
     name: MATLAB test
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [ubuntu-20.04, macos-11, windows-2019]
     defaults:
       run:
         shell: bash
@@ -130,3 +150,57 @@ jobs:
         uses: matlab-actions/run-command@v1
         with:
           command: addpath(pwd);cd test;run_zmat_test
+      - name: Create package folder
+        run: |
+          mkdir packages
+          mkdir zmat
+          mkdir -p zmat/private
+          cp *.{m,txt,rst} zmat/
+          cp -a example zmat/
+          cp -a test zmat/
+      - name: Create release tag
+        run: perl -e "print 'RELEASE_TAG='. lc('${{ runner.os }}-${{ runner.arch }}-github-latest')" >> $GITHUB_ENV
+      - name: Zip zmat
+        run: |
+          mv zipmat.mex* zmat/private
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            7z a -tzip packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip zmat
+          else
+            zip -FSr --symlink packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip zmat
+          fi
+      - name: Upload zmat package
+        if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-11' || matrix.os == 'windows-2019' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-zmat-packages
+          path: packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip
+
+ upload_package:
+    name: Upload Packages
+    needs: build_all
+    runs-on: ubuntu-20.04
+    if: ${{ github.repository_owner == 'fangq' && github.event_name != 'pull_request'}}
+    steps:
+      - name: Download zmat
+        uses: actions/download-artifact@v3
+        with:
+          name: all-zmat-packages
+          path: packages
+      - name: Create all-in-one zmat package
+        run: |
+          cd packages
+          unzip -n 'zmat*.zip'
+          tree .
+          zip -FSr --symlink zmat-allinone-github-latest.zip zmat
+          rm -rf zmat
+      - name: Display structure of downloaded files
+        run: ls -R packages
+      - name: Copy package to server
+        if: ${{ github.repository_owner == 'fangq' && github.event_name != 'pull_request'}}
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.MCX_SERVER }}
+          username: ${{ secrets.MCX_SERVER_USER }}
+          ssh_private_key: ${{ secrets.MCX_SERVER_SSH_KEY }}
+          local_path: "packages/*"
+          remote_path: ${{ secrets.MCX_CI_PATH }}
