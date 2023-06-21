@@ -83,7 +83,7 @@ jobs:
           fi
       - name: Run octave test
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
+          if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           else
           octave-cli --version
