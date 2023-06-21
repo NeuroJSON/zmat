@@ -76,8 +76,16 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           make -C src oct CC=gcc CXX=g++
-      - name: Run octave test (Linux and Mac)
+          if [ "$RUNNER_OS" = "macOS" ]; then
+              otool -L zipmat.mex
+          else
+              ldd zipmat.mex
+          fi
+      - name: Run octave test
         run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+              export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
+          else
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       - name: Create package folder
@@ -147,8 +155,10 @@ jobs:
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-10 CXX=g++10
+            otool -L zipmat.mex*
           else
             make -C src mex CC=gcc CXX=g++ CXXLIBS="-static-libgcc"
+            ldd zipmat.mex*
           fi
       - name: Run MATLAB examples
         uses: matlab-actions/run-command@v1
