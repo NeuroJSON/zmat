@@ -96,7 +96,7 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             7z a -tzip packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           else
-            zip -FSr --symlink packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip zmat
+            zip -FSr --symlink packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           fi
       - name: Upload zmat package
         if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-11' || matrix.os == 'windows-2019' }}
@@ -180,7 +180,7 @@ jobs:
     name: Upload Packages
     needs: [octave_test, matlab_test]
     runs-on: ubuntu-20.04
-    if: ${{ github.repository_owner == 'fangq' && github.event_name != 'pull_request'}}
+    if: ${{ github.repository_owner == 'NeuroJSON' && github.event_name != 'pull_request'}}
     steps:
       - name: Download zmat
         uses: actions/download-artifact@v3
