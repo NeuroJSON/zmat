@@ -123,7 +123,7 @@ makedocdir:
 $(OUTPUT_DIR)/$(BINARY): makedirs $(OBJS)
 $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	@$(ECHO) Building $@
-	$(AR) $(ARFLAGS) $(OUTPUTFLAG) $@ $(OBJS) $(LINKOPT) $(USERLINKOPT)
+	$(AR) $(ARFLAGS) $(OUTPUTFLAG) $@ $(OBJS) $(LINKOPT)
 
 %$(OBJSUFFIX): %.cpp
 	$(CXX) $(INCLUDEDIRS) $(CPPOPT) -c -o $@ $<
