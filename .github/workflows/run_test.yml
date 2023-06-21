@@ -175,7 +175,7 @@ jobs:
           name: all-zmat-packages
           path: packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip
 
- upload_package:
+  upload_package:
     name: Upload Packages
     needs: build_all
     runs-on: ubuntu-20.04
