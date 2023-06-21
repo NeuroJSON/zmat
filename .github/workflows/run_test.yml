@@ -45,7 +45,7 @@ jobs:
           which g++
           make -C src lib CC=gcc CXX=g++
           make -C example/c all CC=gcc CXX=g++ LIBTYPE=
-          if [ "$TRAVIS_OS_NAME" = "macOS" ]; then
+          if [ "$RUNNER_OS" == "macOS" ]; then
              DYLD_LIBRARY_PATH=lib example/c/testzmat;
           else
              LD_LIBRARY_PATH=lib example/c/testzmat;
@@ -56,7 +56,7 @@ jobs:
         run: |
           make -C src dll CC=gcc CXX=g++
           make -C example/c all  CC=gcc CXX=g++ LIBTYPE=
-          if [ "$RUNNER_OS" = "macOS" ]; then
+          if [ "$RUNNER_OS" == "macOS" ]; then
              DYLD_LIBRARY_PATH=lib example/c/testzmat;
           else
              LD_LIBRARY_PATH=lib example/c/testzmat;
@@ -76,7 +76,7 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           make -C src oct CC=gcc CXX=g++
-          if [ "$RUNNER_OS" = "macOS" ]; then
+          if [ "$RUNNER_OS" == "macOS" ]; then
               otool -L zipmat.mex
           else
               ldd zipmat.mex
@@ -85,7 +85,7 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
-          else
+          fi
           octave-cli --version
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
       - name: Create package folder
