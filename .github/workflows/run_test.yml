@@ -177,7 +177,7 @@ jobs:
 
   upload_package:
     name: Upload Packages
-    needs: build_all
+    needs: [octave_test, matlab_test]
     runs-on: ubuntu-20.04
     if: ${{ github.repository_owner == 'fangq' && github.event_name != 'pull_request'}}
     steps:
