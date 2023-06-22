@@ -146,7 +146,7 @@ dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' mkoctfile zmat.cpp
+oct:   AR= CXXFLAGS='-O3' LFLAGS='-g $(MEXLDFLAG)' LDFLAGS='$(LFLAGS)' mkoctfile zmat.cpp
 oct:   BINARY=zmat.mex
 oct:   ARFLAGS    :=
 oct:   LINKOPT+=--mex $(INCLUDEDIRS)
