@@ -173,8 +173,9 @@ jobs:
           mkdir packages
           mkdir zmat
           mkdir -p zmat/private
+          mkdir -p zmat/example
           cp *.{m,txt,rst} zmat/
-          cp -a example zmat/
+          cp -a example/*.m zmat/example
           cp -a test zmat/
       - name: Create release tag
         run: perl -e "print 'RELEASE_TAG='. lc('${{ runner.os }}-${{ runner.arch }}-github-latest')" >> $GITHUB_ENV
@@ -220,5 +221,5 @@ jobs:
           server: ${{ secrets.MCX_SERVER }}
           username: ${{ secrets.MCX_SERVER_USER }}
           ssh_private_key: ${{ secrets.MCX_SERVER_SSH_KEY }}
-          local_path: "packages/*"
+          local_path: "packages/zmat-allinone-github-latest.zip"
           remote_path: ${{ secrets.MCX_CI_PATH }}
