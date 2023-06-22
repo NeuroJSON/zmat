@@ -74,10 +74,11 @@ jobs:
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
-          make -C src oct CC=gcc CXX=g++
           if [ "$RUNNER_OS" == "macOS" ]; then
+              make -C src oct CC=gcc CXX=g++ OCTAVE_LINK_OPTS="-static"
               otool -L zipmat.mex
           else
+              make -C src oct CC=gcc CXX=g++ OCTAVE_LINK_OPTS="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -lpthread -lm -Wl,-Bdynamic"
               ldd zipmat.mex
           fi
       - name: Run octave test
