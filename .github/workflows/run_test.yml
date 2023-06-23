@@ -160,6 +160,8 @@ jobs:
             make -C src mex CC=gcc-10 CXX=g++10 MEXLINKOPT="-static-libstdc++"
             otool -L zipmat.mex*
           else
+            env
+            export LD_PRELOAD=''
             make -C src mex CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++"
             ldd zipmat.mex*
           fi
