@@ -92,9 +92,9 @@ else
   endif
   ifeq ($(HAVE_ZSTD),no)
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-    LINKOPT+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
+    LIBZLIB+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
   endif
-  LINKOPT+=-L"./blosc2/lib" -lblosc2 -L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd $(LIBZLIB)
+  LIBZLIB+=-L"./blosc2/lib" -lblosc2
   INCLUDEDIRS+=-Iblosc2/include
 endif
 
@@ -109,7 +109,7 @@ ifeq ($(HAVE_ZSTD),no)
   CFLAGS+=-DNO_ZSTD
 else
   INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-  LINKOPT+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
+  LIBZLIB+=-L"./blosc2/internal-complibs/zstd-1.5.2" -lzstd
 endif
 
 
@@ -154,7 +154,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx CXXLIBS='$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)' -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx LINKLIBS='-L$$MATLABROOT/bin/$$ARCH -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)' CXXLIBS='$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)' -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
