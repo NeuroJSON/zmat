@@ -161,7 +161,7 @@ jobs:
             otool -L zipmat.mex*
           else
             export LD_PRELOAD=''
-            make -C src mex CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++" MEX="mex -v"
+            make -C src mex CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -Wl,-Bdynamic" MEX="mex -v"
             ldd zipmat.mex*
           fi
           strip -S zipmat.mex*
