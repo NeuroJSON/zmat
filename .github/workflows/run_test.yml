@@ -157,10 +157,10 @@ jobs:
             make -C src mex CC=gcc CXX=g++ MEX="cmd //s //c mex  -f mexopts_msys2_gcc.xml " USERLINKOPT="-v " CXXLIBS="-Lblosc2/lib -L/blosc2/internal-complibs/zstd-1.5.2"
             objdump -p zipmat.mexw* | grep "DLL Name:"
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            make -C src mex CC=gcc-10 CXX=g++10
+            make -C src mex CC=gcc-10 CXX=g++10 LIBZLIB="-Wl,-Bstatic -lz -Wl,-Bdynamic"
             otool -L zipmat.mex*
           else
-            make -C src mex CC=gcc CXX=g++ CXXLIBS="-static-libgcc"
+            make -C src mex CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++" LIBZLIB="-Wl,-Bstatic -lz -Wl,-Bdynamic"
             ldd zipmat.mex*
           fi
           strip -S zipmat.mex*

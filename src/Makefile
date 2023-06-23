@@ -16,7 +16,7 @@ HAVE_LZMA  ?=yes
 HAVE_LZ4   ?=yes
 HAVE_ZSTD  ?=yes
 HAVE_BLOSC2?=yes
-LIBZLIB    =-lz
+LIBZLIB    ?=-lz
 
 export HAVE_ZLIB HAVE_LZ4 HAVE_ZSTD
 
@@ -154,7 +154,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx LDFLAGS="-L$$TMW_ROOT$$MATLABROOT/sys/os/$$ARCH $$LDFLAGS $(MEXLINKOPT) $(LIBZLIB) -static-libgcc -static-libstdc++" -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
