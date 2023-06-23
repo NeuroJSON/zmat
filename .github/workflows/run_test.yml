@@ -221,5 +221,5 @@ jobs:
           server: ${{ secrets.MCX_SERVER }}
           username: ${{ secrets.MCX_SERVER_USER }}
           ssh_private_key: ${{ secrets.MCX_SERVER_SSH_KEY }}
-          local_path: "packages/zmat-allinone-github-latest.zip"
+          local_path: "packages/*"
           remote_path: ${{ secrets.MCX_CI_PATH }}
