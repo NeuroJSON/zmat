@@ -79,7 +79,7 @@ jobs:
               make -C src oct CC=gcc CXX=g++ MEXLDFLAG="-static"
               otool -L zipmat.mex
           else
-              make -C src oct CC=gcc CXX=g++ MEXLDFLAG="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lpthread -lm -Wl,-Bdynamic"
+              make -C src oct CC=gcc CXX=g++ MEXLDFLAG="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lm -Wl,-Bdynamic"
               ldd zipmat.mex
           fi
           strip -S zipmat.mex
