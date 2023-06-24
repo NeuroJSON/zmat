@@ -54,7 +54,7 @@ ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
   DLLFLAG=
-  MEXLINKLIBS=-L"\$$LIBLOC" -llibmx -llibmex
+  MEXLINKLIBS="\$$LINKLIBS"
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
