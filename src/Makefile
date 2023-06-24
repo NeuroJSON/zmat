@@ -94,7 +94,7 @@ else
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
     LIBZLIB+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
   endif
-  LIBZLIB+=-Lblosc2/lib -lblosc2 -lpthread
+  LIBZLIB+=-Lblosc2/lib -lblosc2 -lpthread -lz
   INCLUDEDIRS+=-Iblosc2/include
 endif
 
@@ -154,7 +154,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS) $(LIBZLIB)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH\" -L\"\$$MATLABROOT/bin/\$$ARCH\" -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
+mex:   LINKOPT+=-cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH\" -L\"\$$MATLABROOT/bin/\$$ARCH\" -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
