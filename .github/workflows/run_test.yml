@@ -79,7 +79,7 @@ jobs:
               make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static"
               otool -L zipmat.mex
           else
-              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lm -lz -lpthread -Wl,-Bdynamic"
+              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lm -lpthread -Wl,-Bdynamic"
               ldd zipmat.mex
           fi
           strip -S zipmat.mex
