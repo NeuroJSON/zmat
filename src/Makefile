@@ -34,7 +34,7 @@ DOXYCFG=zmat.cfg
 
 INCLUDEDIRS=-I../include
 
-MEXLINKLIBS=-L"$$MATLABROOT/extern/lib/$$ARCH" -lmx -lmex
+MEXLINKLIBS=-L'$$MATLABROOT/extern/lib/$$ARCH' -lmx -lmex
 
 ARCH = $(shell uname -m)
 PLATFORM = $(shell uname -s)
