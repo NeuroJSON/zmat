@@ -34,7 +34,7 @@ DOXYCFG=zmat.cfg
 
 INCLUDEDIRS=-I../include
 
-CUOMPLINK=
+MEXLINKLIBS=-L"$$MATLABROOT/extern/lib/$$ARCH" -lmx -lmex
 
 ARCH = $(shell uname -m)
 PLATFORM = $(shell uname -s)
@@ -50,10 +50,13 @@ EXESUFFIX=.mex*
 
 FILES=zmatlib
 
+MEXLINKLIBS=
+
 ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
   DLLFLAG=
+  MEXLINKLIBS=-L"$$MATLABROOT/extern/lib/$$MW_TARGET_ARCH/mingw64" -llibmx -llibmex
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
@@ -154,7 +157,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS) $(LIBZLIB)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+=-cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH\" -L\"\$$MATLABROOT/bin/\$$ARCH\" -L\"\$$MATLABROOT\\extern\\lib\\\$$MW_TARGET_ARCH\\mingw64\" -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
+mex:   LINKOPT+=-cxx LINKLIBS="$(MEXLINKLIBS) $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
