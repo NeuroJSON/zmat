@@ -154,7 +154,7 @@ oct:   LINKOPT+=--mex $(INCLUDEDIRS) $(LIBZLIB)
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+=-cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH\" -L\"\$$MATLABROOT/bin/\$$ARCH\" -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
+mex:   LINKOPT+=-cxx  CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
