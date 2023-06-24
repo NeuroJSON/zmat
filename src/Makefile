@@ -146,15 +146,15 @@ dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' LDFLAGS='$(MEXLINKOPT) $(LIBZLIB)' mkoctfile zmat.cpp
+oct:   AR= CXXFLAGS='-O3' LDFLAGS='$(MEXLINKOPT)' mkoctfile zmat.cpp
 oct:   BINARY=zmat.mex
 oct:   ARFLAGS    :=
-oct:   LINKOPT+=--mex $(INCLUDEDIRS)
+oct:   LINKOPT+=--mex $(INCLUDEDIRS) $(LIBZLIB)
 
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
 mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
-mex:   LINKOPT+= -cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
+mex:   LINKOPT+= -cxx LINKLIBS="-L\"\$$MATLABROOT/extern/lib/\$$ARCH\" -lmx -lmex $(MEXLINKOPT) $(LIBZLIB)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
 
