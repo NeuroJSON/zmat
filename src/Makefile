@@ -50,8 +50,6 @@ EXESUFFIX=.mex*
 
 FILES=zmatlib
 
-MEXLINKLIBS=
-
 ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
