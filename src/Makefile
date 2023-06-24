@@ -54,7 +54,7 @@ ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
   CPPOPT =-c
   EXESUFFIX=
   DLLFLAG=
-  MEXLINKLIBS=-L"$$MATLABROOT/extern/lib/$$MW_TARGET_ARCH/mingw64" -llibmx -llibmex
+  MEXLINKLIBS=-L"$$LIBPATH/$$MW_TARGET_ARCH" -llibmx -llibmex
 else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
 
 else
