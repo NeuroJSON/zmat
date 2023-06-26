@@ -67,7 +67,7 @@ jobs:
         run: |
           export PATH="/mingw64/bin":"$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           which gcc
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v '$PWD/octave/octave-7.3.0-w64-64/mingw64/lib/octave/7.3.0/liboctinterp.dll.a'"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s '$PWD/octave/octave-7.3.0-w64-64/mingw64/lib/octave/7.3.0/liboctinterp.dll.a'"
           cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           strip zipmat.mex
@@ -76,21 +76,24 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           if [ "$RUNNER_OS" == "macOS" ]; then
-              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static"
+              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static" USERLINKOPT="-v -s"
               otool -L zipmat.mex
           else
-              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lm -lpthread -Wl,-Bdynamic"
+              make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lm -lpthread -Wl,-Bdynamic" USERLINKOPT="-v -s"
               ldd zipmat.mex
           fi
           strip -S zipmat.mex
       - name: Run octave test
-        if: ${{ runner.os != 'Windows' }}
         run: |
+          octave-cli --version
           if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           fi
-          octave-cli --version
-          octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
+          if [ "$RUNNER_OS" == "Linux" ]; then
+              octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
+          else
+              octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})";
+          fi
       - name: Create package folder
         run: |
           mkdir packages
