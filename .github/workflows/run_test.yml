@@ -97,7 +97,7 @@ jobs:
               octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})";
           else
               cp test/*.m .
-              octave-cli --eval "addpath(pwd);which zipmat;run_zmat_test";
+              octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
           fi
       - name: Create package folder
         run: |
