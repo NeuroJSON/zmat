@@ -95,7 +95,7 @@ else
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
     LIBZLIB+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
   endif
-  LIBZLIB+=-Lblosc2/lib -lblosc2 -lpthread -lz
+  LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread -lz
   INCLUDEDIRS+=-Iblosc2/include
 endif
 
