@@ -67,6 +67,7 @@ jobs:
         run: |
           export PATH="/mingw64/bin":"$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           which gcc
+          gcc -v
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s '$PWD/octave/octave-7.3.0-w64-64/mingw64/lib/octave/7.3.0/liboctinterp.dll.a'"
           cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
@@ -75,6 +76,7 @@ jobs:
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
+          gcc -v
           if [ "$RUNNER_OS" == "macOS" ]; then
               make -C src oct CC=gcc CXX=g++ MEXLINKOPT="-static" USERLINKOPT="-v -s"
               otool -L zipmat.mex
@@ -91,8 +93,10 @@ jobs:
           fi
           if [ "$RUNNER_OS" == "Linux" ]; then
               octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
-          else
+          elif [ "$RUNNER_OS" == "macOS" ]; then
               octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})";
+          else
+              octave-cli --eval "addpath(pwd);which zipmat;zmat('test',1,'lzma')";
           fi
       - name: Create package folder
         run: |
