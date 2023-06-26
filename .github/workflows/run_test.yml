@@ -96,7 +96,8 @@ jobs:
           elif [ "$RUNNER_OS" == "macOS" ]; then
               octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})";
           else
-              octave-cli --eval "addpath(pwd);addpath([pwd filesep 'test']);which zipmat;run_zmat_test";
+              cp test/*.m .
+              octave-cli --eval "addpath(pwd);which zipmat;run_zmat_test";
           fi
       - name: Create package folder
         run: |
