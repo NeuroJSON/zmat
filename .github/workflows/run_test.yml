@@ -92,12 +92,11 @@ jobs:
               export PATH="$PWD/octave/octave-7.3.0-w64-64/mingw64/bin":$PATH
           fi
           if [ "$RUNNER_OS" == "Linux" ]; then
-              octave-cli --eval "addpath(pwd);cd test;run_zmat_test";
+              octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
           elif [ "$RUNNER_OS" == "macOS" ]; then
-              octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})";
+              octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})"
           else
-              cp test/*.m .
-              octave-cli --eval "addpath(pwd);cd example;demo_zmat_basic";
+              octave-cli --eval "addpath(pwd);which zipmat;disp(char(zmat(zmat('test zlib'),0,'zlib')));disp(char(zmat(zmat('test gzip',1,'gzip'),0,'gzip')));disp(char(zmat(zmat('test lzma',1,'lzma'),0,'lzma')));disp(char(zmat(zmat('test blosc2lz4',1,'blosc2lz4'),0,'blosc2lz4')));"
           fi
       - name: Create package folder
         run: |
