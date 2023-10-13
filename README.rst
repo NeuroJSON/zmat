@@ -1,10 +1,10 @@
 .. image:: https://neurojson.org/wiki/upload/neurojson_banner_long.png
 
 ##############################################################################                                                      
-ZMAT: A portable C-library and MATLAB/Octave toolbox for zlib/gzip/lzma/lz4/lz4hc data compression
+ZMAT: A portable C-library and MATLAB/Octave toolbox for zlib/gzip/lzma/lz4/zstd/blosc2 data compression
 ##############################################################################
 
-* Copyright (C) 2019,2020,2022  Qianqian Fang <q.fang at neu.edu>
+* Copyright (C) 2019-2023  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
 * Version: 0.9.9 (Archie-the-goat - RC1)
 * URL: https://github.com/NeuroJSON/zmat
@@ -27,18 +27,31 @@ Introduction
 ============
 
 ZMat provides both an easy-to-use C-based data compression library - 
-`libzmat` as well a portable mex function to enable `zlib/gzip/lzma/lzip/lz4/lz4hc`
-based data compression/decompression and `base64` encoding/decoding support 
+``libzmat`` as well a portable mex function to enable ``zlib/gzip/lzma/lz4/zstd/blosc2``
+based data compression/decompression and ``base64`` encoding/decoding support 
 in MATLAB and GNU Octave. It is fast and compact, can process a 
 large array within a fraction of a second. 
 
-Among the 6 supported compression methods, `lz4` is the fastest for 
-compression/decompression; `lzma` is the slowest but has the highest 
-compression ratio; `zlib/gzip` have the best balance between speed 
-and compression time.
+Among all the supported compression methods, or codecs, ``lz4`` is among the fastest for
+both compression/decompression; ``lzma`` is the slowest but offers the highest 
+compression ratio; ``zlib/gzip`` have excellent balance between speed 
+and compression time; ``zstd`` can be fast, although not as fast as ``lz4``,
+at the low-compression levels, and can offer higher compression ratios
+than ``zlib/gzip``, although not as high as ``lzma``, at high compression
+levels. We understand there are many other existing general purpose data
+compression algorithms. We prioritize the support of these compression
+algorithms because they have widespread use.
 
-The `libzmat` library, including the static library (`libzmat.a`) and the
-dynamic library `libzmat.so` or `libzmat.dll`, provides a simple interface to 
+Starting in v0.9.9, we added support to a high-performance meta-compressor,
+called ``blosc2`` (https://blosc.org). The ``blosc2`` compressor is not single
+compression method, but a container format that supports a diverse set of 
+strategies to losslessly compress data, especially optimized for storing and
+retrieving N-D numerical data of uniform binary types. Users can choose
+between ``blosc2blosclz``, ``blosc2lz4``, ``blosc2lz4hc``, ``blosc2zlib`` and
+``blosc2zstd``, to access these blosc2 codecs.
+
+The ``libzmat`` library, including the static library (``libzmat.a``) and the
+dynamic library ``libzmat.so`` or ``libzmat.dll``, provides a simple interface to 
 conveniently compress or decompress a memory buffer:
 
 .. code:: c
@@ -48,12 +61,31 @@ conveniently compress or decompress a memory buffer:
         unsigned char *inputstr,    /* input buffer */
         size_t *outputsize,         /* output buffer data length */
         unsigned char **outputbuf,  /* output buffer */
-        const int zipid,            /* 0-zlib,1-gzip,2-base64,3-lzma,4-lzip,5-lz4,6-lz4hc */
+        const int zipid,            /* 0: zlib, 1: gzip, 2: base64, 3: lzma, 4: lzip, 5: lz4, 6: lz4hc 
+                                       7: zstd, 8: blosc2blosclz, 9: blosc2lz4, 10: blosc2lz4hc,
+                                       11: blosc2zlib, 12: blosc2zstd */
         int *status,                /* return status for error handling */
-        const int level             /* 1 compress (default level); -1 to -9 compression level, 0 decompress */
+        const int clevel            /* 1 to compress (default level); 0 to decompress, -1 to -9 (-22 for zstd): setting compression level */
       );
 
-The library is highly portable and can be directly embedded in the source code 
+When ``blosc2`` codes are used, users can set additional compression flags, including
+number of threads, byte-shuffling length, can be set via the ``flags.param`` interface
+in the following data structure, and pass on ``flags.iscompress`` as the last 
+input to ``zmat_run``.
+
+.. code:: c
+
+    union cflag {
+        int iscompress;      /* combined flag used to pass on to zmat_run */
+        struct settings {    /* unpacked flags */
+            char clevel;     /* compression level */
+            char nthread;    /* number of compression/decompression threads */
+            char shuffle;    /* byte shuffle length */
+            char typesize;   /* for ND-array, the byte-size for each array element */
+        } param;
+    } flags = {0};
+
+The zmat library is highly portable and can be directly embedded in the source code 
 to provide maximal portability. In the ``test`` folder, we provided sample codes
 to call ``zmat_run/zmat_encode/zmat_decode`` for stream-level compression and 
 decompression in C and Fortran90. The Fortran90 C-binding module can be found 
@@ -62,7 +94,7 @@ in the ``fortran90`` folder.
 The ZMat MATLAB function accepts 3 types of inputs: char-based strings, numerical arrays
 or vectors, or logical arrays/vectors. Any other input format will 
 result in an error unless you typecast the input into ``int8/uint8``
-format. A multi-dimensional numerical array is accepeted, and the
+format. A multi-dimensional numerical array is accepted, and the
 original input's type/dimension info is stored in the 2nd output
 ``"info"``. If one calls ``zmat`` with both the encoded data (in byte vector)
 and the ``"info"`` structure, zmat will first decode the binary data 
@@ -186,27 +218,28 @@ zmat.m
   output=zmat(input)
      or
   [output, info]=zmat(input, iscompress, method)
+  [output, info]=zmat(input, iscompress, method, options ...)
   output=zmat(input, info)
  
   A portable data compression/decompression toolbox for MATLAB/GNU Octave
-  
+ 
   author: Qianqian Fang <q.fang at neu.edu>
   initial version created on 04/30/2019
  
   input:
        input: a char, non-complex numeric or logical vector or array
-       iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input, 
+       iscompress: (optional) if iscompress is 1, zmat compresses/encodes the input,
               if 0, it decompresses/decodes the input. Default value is 1.
  
               if iscompress is set to a negative integer, (-iscompress) specifies
-              the compression level. For zlib/gzip, default level is 6 (1-9); for 
+              the compression level. For zlib/gzip, default level is 6 (1-9); for
               lzma/lzip, default level is 5 (1-9); for lz4hc, default level is 8 (1-16).
               the default compression level is used if iscompress is set to 1.
  
-              zmat removes the trailing newline when iscompress=2 and methpod='base64'
-              all newlines are removed when iscompress=3 and methpod='base64'
+              zmat removes the trailing newline when iscompress=2 and method='base64'
+              all newlines are kept when iscompress=3 and method='base64'
  
-              if one defines iscompress as the info struct (2nd output of zmat), zmat 
+              if one defines iscompress as the info struct (2nd output of zmat), zmat
               will perform a decoding/decompression operation and recover the original
               input using the info stored in the info structure.
        method: (optional) compression method, currently, zmat supports the below methods
@@ -216,20 +249,30 @@ zmat.m
               'lzma': lzma formatted data compression
               'lz4':  lz4 formatted data compression
               'lz4hc':lz4hc (LZ4 with high-compression ratio) formatted data compression
+              'zstd':  zstd formatted data compression
+              'blosc2blosclz':  blosc2 meta-compressor with blosclz compression
+              'blosc2lz4':  blosc2 meta-compressor with lz4 compression
+              'blosc2lz4hc':  blosc2 meta-compressor with lz4hc compression
+              'blosc2zlib:  blosc2 meta-compressor with zlib/zip compression
+              'blosc2zstd':  blosc2 meta-compressor with zstd compression
               'base64': encode or decode use base64 format
+      options: a series of ('name', value) pairs, supported options include
+              'nthread': followed by an integer specifying number of threads for blosc2 meta-compressors
+              'typesize': followed by an integer specifying the number of bytes per data element (used for shuffle)
+              'shuffle': shuffle methods in blosc2 meta-compressor, 0 disable, 1, byte-shuffle
  
   output:
-       output: a uint8 row vector, storing the compressed or decompressed data; 
+       output: a uint8 row vector, storing the compressed or decompressed data;
               empty when an error is encountered
        info: (optional) a struct storing additional info regarding the input data, may have
              'type': the class of the input array
              'size': the dimensions of the input array
              'byte': the number of bytes per element in the input array
              'method': a copy of the 3rd input indicating the encoding method
-             'status': the zlib/lzma/lz4 compression/decompression function return value, 
-                     including potential error codes; see documentation of the respective 
+             'status': the zlib/lzma/lz4 compression/decompression function return value,
+                     including potential error codes; see documentation of the respective
                      libraries for details
-             'level': a copy of the iscompress flag; if non-zero, specifying compression 
+             'level': a copy of the iscompress flag; if non-zero, specifying compression
                      level, see above
  
   example:
@@ -240,7 +283,7 @@ zmat.m
     ss=char(zmat('zmat test',1,'base64'))
     orig=char(zmat(ss,0,'base64'))
  
-  -- this function is part of the zmat toolbox (http://github.com/NeuroJSON/zmat)
+  -- this function is part of the zmat toolbox (https://github.com/NeuroJSON/zmat)
 
 ---------
 examples
