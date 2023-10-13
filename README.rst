@@ -6,14 +6,14 @@ ZMAT: A portable C-library and MATLAB/Octave toolbox for zlib/gzip/lzma/lz4/zstd
 
 * Copyright (C) 2019-2023  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 0.9.9 (Archie-the-goat - RC1)
+* Version: 0.9.9 (Foxy the Fantastic Mr. Fox - RC1)
 * URL: https://github.com/NeuroJSON/zmat
 * Acknowledgement: This project is part of the `NeuroJSON project <https://neurojson.org>`_
   supported by US National Institute of Health (NIH)
   grant `U24-NS124027 <https://reporter.nih.gov/project-details/10308329>`_
 
-.. image:: https://travis-ci.com/fangq/zmat.svg?branch=master
-    :target: https://travis-ci.com/fangq/zmat
+.. image:: https://github.com/NeuroJSON/zmat/actions/workflows/run_test.yml/badge.svg
+    :target: https://github.com/NeuroJSON/zmat/actions/workflows/run_test.yml
 
 #################
 Table of Contents
@@ -253,7 +253,7 @@ zmat.m
               'blosc2blosclz':  blosc2 meta-compressor with blosclz compression
               'blosc2lz4':  blosc2 meta-compressor with lz4 compression
               'blosc2lz4hc':  blosc2 meta-compressor with lz4hc compression
-              'blosc2zlib:  blosc2 meta-compressor with zlib/zip compression
+              'blosc2zlib':  blosc2 meta-compressor with zlib/zip compression
               'blosc2zstd':  blosc2 meta-compressor with zstd compression
               'base64': encode or decode use base64 format
       options: a series of ('name', value) pairs, supported options include
@@ -401,7 +401,8 @@ be done by
 .. code-block:: shell
 
       cd zmat/src
-      make clean mex
+      make clean
+      make mex
 
 to create the mex file for MATLAB, and run ``make clean oct`` to compile
 the mex file for Octave. 
@@ -416,9 +417,9 @@ Contribution and feedback
 ==========================
 
 ZMat is an open-source project. This means you can not only use it and modify
-it as you wish, but also you can contribute your changes back to JSONLab so
+it as you wish, but also you can contribute your changes back to ZMat so
 that everyone else can enjoy the improvement. For anyone who want to contribute,
-please download JSONLab source code from its source code repositories by using the
+please download ZMat source code from its source code repositories by using the
 following command:
 
 
@@ -438,10 +439,10 @@ changes, and ready to share it with others, please submit your changes as a
 "pull request" on github.  The project maintainer, Dr. Qianqian Fang will
 review the changes and choose to accept the patch.
 
-We appreciate any suggestions and feedbacks from you. Please use the iso2mesh
-mailing list to report any questions you may have regarding ZMat:
+We appreciate any suggestions and feedbacks from you. Please use the NeuroJSON
+forum to report any questions you may have regarding ZMat:
 
-`iso2mesh-users <https://groups.google.com/forum/#!forum/iso2mesh-users>`_
+`NeuroJSON forum <https://github.com/orgs/NeuroJSON/discussions>`_
 
 (Subscription to the mailing list is needed in order to post messages).
 
@@ -464,3 +465,10 @@ ZMat is linked against 4 open-source data compression libraries
 4. LZ4 library: https://lz4.github.io/lz4/
   *  Copyright (C) 2011-2019, Yann Collet.
   *  License: BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+5. C-blosc2: https://blosc.org/
+  *  Copyright (c) 2009-2018 Francesc Alted <francesc@blosc.org>
+  *  Copyright (c) 2019-present The Blosc Development Team <blosc@blosc.org>
+  *  License: BSD 3-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+6. ZStd: https://facebook.github.io/zstd/
+  *  Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.
+  *  License: BSD 3-Clause License (http://www.opensource.org/licenses/bsd-license.php)
