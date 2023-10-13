@@ -100,7 +100,7 @@ if (ismember('c', tests))
     test_zmat('zstd (level=1)', 'base64', zmat(eye(10),-1,'zstd'), 'KLUv/WAgAp0AAEgAAAAAAADwPwACAL+2UAGZwBE=');
     test_zmat('zstd (level=3)', 'base64', zmat(eye(10),-3,'zstd'), 'KLUv/WAgAo0AACgAAPA/AAMAv7ZQAQEzLIAF');
     test_zmat('zstd (level=9)', 'base64', zmat(eye(10),-9,'zstd'), 'KLUv/WAgAo0AACgAAPA/AAMAv7ZQAQEzLIAF');
-    test_zmat('zstd (level=19)', 'base64', zmat(eye(10),-19,'zstd'), 'KLUv/WAgAoUAACAA8D8AAwDFtlABBmgEcAU=');
+    test_zmat('zstd (level=19)', 'base64', zmat(eye(10),-19,'zstd'), 'KLUv/WAgAp0AAEgAAAAAAADwPwACAMW2UAFGwRE=');
     test_zmat('blosc2blosclz (typesize=2)', 'base64', zmat(uint32(magic(4)),1,'blosc2blosclz','typesize',2), 'BQEFAkAAAABAAAAATAAAAAAAAAAAAQAAAAAAAAAAAAAkAAAAIAAAABAABQAJAAQAAgALAAcADgADAAoABgAPAA0ACAAMAAEAAAAAAA==');
     test_zmat('blosc2blosclz (typesize=4)', 'base64', zmat(uint32(magic(4)),1,'blosc2blosclz','typesize',4), 'BQEXBEAAAABAAAAAYAAAAAAAAAAAAQAAAAAAAAAAAAAQAAAABQAAAAkAAAAEAAAAAgAAAAsAAAAHAAAADgAAAAMAAAAKAAAABgAAAA8AAAANAAAACAAAAAwAAAABAAAA');
     test_zmat('blosc2blosclz (typesize=8)', 'base64', zmat(uint32(magic(4)),1,'blosc2blosclz','typesize',8), 'BQEXCEAAAABAAAAAYAAAAAAAAAAAAQAAAAAAAAAAAAAQAAAABQAAAAkAAAAEAAAAAgAAAAsAAAAHAAAADgAAAAMAAAAKAAAABgAAAA8AAAANAAAACAAAAAwAAAABAAAA');
