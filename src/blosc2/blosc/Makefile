@@ -23,7 +23,12 @@ DOXY       := doxygen
 DOCDIR     := $(ZMATDIR)/doc
 DOXYCFG=zmat.cfg
 
-INCLUDEDIRS=-I../../lz4 -I../include -I../internal-complibs/zstd-1.5.2
+INCLUDEDIRS=-I../../lz4 -I../include -I../internal-complibs/zstd
+
+ifeq ($(HAVE_ZLIB),miniz)
+  HAVE_ZLIB=yes
+  INCLUDEDIRS+=-I../../miniz
+endif
 
 CUOMPLINK=
 

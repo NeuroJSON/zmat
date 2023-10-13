@@ -3,7 +3,7 @@
 ############################################################
 
 BLOSC_SRC=blosc
-ZSTD_SRC=internal-complibs/zstd-1.5.2
+ZSTD_SRC=internal-complibs/zstd
 LIBBLOSC2=$(BLOSC_SRC)/lib/libblosc2.a
 
 export

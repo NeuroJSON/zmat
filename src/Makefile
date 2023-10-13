@@ -11,7 +11,7 @@ ZMATDIR ?=$(ROOTDIR)
 LIBDIR  ?=$(ROOTDIR)/lib
 
 MKDIR      :=mkdir
-HAVE_ZLIB  ?=yes
+HAVE_ZLIB  ?=miniz
 HAVE_LZMA  ?=yes
 HAVE_LZ4   ?=yes
 HAVE_ZSTD  ?=yes
@@ -66,8 +66,8 @@ else
   endif
 endif
 
-ifeq ($(HAVE_ZLIB),no)
-  CFLAGS+=-DNO_ZLIB
+ifneq ($(HAVE_ZLIB),yes)
+  CFLAGS+=-DNO_ZLIB -D_LARGEFILE64_SOURCE=1
   INCLUDEDIRS+=-Iminiz
   FILES+=miniz/miniz
   LIBZLIB=
@@ -92,8 +92,8 @@ else
     FILES+= lz4/lz4 lz4/lz4hc
   endif
   ifeq ($(HAVE_ZSTD),no)
-    INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-    LIBZLIB+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+    INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
+    LIBZLIB+=-Lblosc2/internal-complibs/zstd -lzstd
   endif
   LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread -lz
   INCLUDEDIRS+=-Iblosc2/include
@@ -109,8 +109,8 @@ endif
 ifeq ($(HAVE_ZSTD),no)
   CFLAGS+=-DNO_ZSTD
 else
-  INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd-1.5.2
-  LIBZLIB+=-Lblosc2/internal-complibs/zstd-1.5.2 -lzstd
+  INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
+  LIBZLIB+=-Lblosc2/internal-complibs/zstd -lzstd
 endif
 
 
@@ -119,7 +119,7 @@ ifeq ($(MAKECMDGOALS),lib)
    ARFLAGS    :=cr
    BINARY     :=libzmat.a
    AROUTPUT   :=
-   LINKOPT    :=blosc2/blosc/*$(OBJSUFFIX) blosc2/internal-complibs/zstd-1.5.2/obj/*/static/*$(OBJSUFFIX)
+   LINKOPT    :=blosc2/blosc/*$(OBJSUFFIX) blosc2/internal-complibs/zstd/obj/*/static/*$(OBJSUFFIX)
    OUTPUT_DIR :=$(LIBDIR)
    ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
       OUTPUTFLAG :=
