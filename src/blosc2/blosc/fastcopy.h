@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -17,4 +17,4 @@ unsigned char *fastcopy(unsigned char *out, const unsigned char *from, unsigned 
 /* Same as fastcopy() but without overwriting origin or destination when they overlap */
 unsigned char* copy_match(unsigned char *out, const unsigned char *from, unsigned len);
 
-#endif //BLOSC_FASTCOPY_H
+#endif /* BLOSC_FASTCOPY_H */

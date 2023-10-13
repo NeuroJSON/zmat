@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -11,7 +11,9 @@
 #ifndef BLOSC_FRAME_H
 #define BLOSC_FRAME_H
 
-#include <stdio.h>
+#include "blosc2.h"
+
+#include <stdbool.h>
 #include <stdint.h>
 
 // Different types of frames
@@ -26,6 +28,7 @@
 #define FRAME_FLAGS (FRAME_LEN + 8 + 1)  // 25
 #define FRAME_TYPE (FRAME_FLAGS + 1)  // 26
 #define FRAME_CODECS (FRAME_FLAGS + 2)  // 27
+#define FRAME_OTHER_FLAGS (FRAME_FLAGS + 3)  // 28
 #define FRAME_NBYTES (FRAME_FLAGS + 4 + 1)  // 30
 #define FRAME_CBYTES (FRAME_NBYTES + 8 + 1)  // 39
 #define FRAME_TYPESIZE (FRAME_CBYTES + 8 + 1) // 48
@@ -94,6 +97,15 @@ blosc2_frame_s* frame_new(const char* urlpath);
 int64_t frame_from_schunk(blosc2_schunk* schunk, blosc2_frame_s* frame);
 
 /**
+ * @brief Set `avoid_cframe_free` from @param frame to @param avoid_cframe_free.
+ *
+ * @param frame The frame to set the property to.
+ * @param avoid_cframe_free The value to set in @param frame.
+ * @warning If you set it to `true` you will be responsible of freeing it.
+ */
+void frame_avoid_cframe_free(blosc2_frame_s* frame, bool avoid_cframe_free);
+
+/**
  * @brief Free all memory from a frame.
  *
  * @param frame The frame to be freed.
@@ -155,4 +167,4 @@ int frame_update_trailer(blosc2_frame_s* frame, blosc2_schunk* schunk);
 int64_t frame_fill_special(blosc2_frame_s* frame, int64_t nitems, int special_value,
                        int32_t chunksize, blosc2_schunk* schunk);
 
-#endif //BLOSC_FRAME_H
+#endif /* BLOSC_FRAME_H */

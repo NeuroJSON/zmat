@@ -8,15 +8,16 @@
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#ifndef BLOSC_DELTA_H
-#define BLOSC_DELTA_H
+#ifndef BLOSC_B2ND_UTILS_H
+#define BLOSC_B2ND_UTILS_H
 
 #include <stdint.h>
 
-void delta_encoder(const uint8_t* dref, int32_t offset, int32_t nbytes,
-                   int32_t typesize, const uint8_t* src, uint8_t* dest);
+int b2nd_copy_buffer(int8_t ndim,
+                     uint8_t itemsize,
+                     void *src, const int64_t *src_pad_shape,
+                     int64_t *src_start, const int64_t *src_stop,
+                     void *dst, const int64_t *dst_pad_shape,
+                     int64_t *dst_start);
 
-void delta_decoder(const uint8_t* dref, int32_t offset, int32_t nbytes,
-                   int32_t typesize, uint8_t* dest);
-
-#endif /* BLOSC_DELTA_H */
+#endif /* BLOSC_B2ND_UTILS_H */

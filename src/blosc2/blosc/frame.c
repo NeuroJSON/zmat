@@ -1,37 +1,32 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <sys/stat.h>
-#include "blosc2.h"
-#include "blosc-private.h"
-#include "context.h"
 #include "frame.h"
 #include "sframe.h"
-#include <inttypes.h>
+#include "context.h"
+#include "blosc-private.h"
+#include "blosc2.h"
 
 #if defined(_WIN32)
 #include <windows.h>
-  #include <malloc.h>
-
-/* stdint.h only available in VS2010 (VC++ 16.0) and newer */
-  #if defined(_MSC_VER) && _MSC_VER < 1600
-    #include "win32/stdint-windows.h"
-  #else
-    #include <stdint.h>
-  #endif
-
+#include <malloc.h>
 #endif  /* _WIN32 */
+
+#include <sys/stat.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* If C11 is supported, use it's built-in aligned allocation. */
 #if __STDC_VERSION__ >= 201112L
@@ -143,8 +138,8 @@ void *new_header_frame(blosc2_schunk *schunk, blosc2_frame_s *frame) {
     return NULL;
   }
 
-  // Reserved flags
-  *h2p = 0;
+  // Other flags
+  *h2p = schunk->splitmode - 1;
   h2p += 1;
   if (h2p - h2 >= FRAME_HEADER_MINLEN) {
     return NULL;
@@ -361,7 +356,8 @@ void *new_header_frame(blosc2_schunk *schunk, blosc2_frame_s *frame) {
 
 int get_header_info(blosc2_frame_s *frame, int32_t *header_len, int64_t *frame_len, int64_t *nbytes, int64_t *cbytes,
                     int32_t *blocksize, int32_t *chunksize, int64_t *nchunks, int32_t *typesize, uint8_t *compcode,
-                    uint8_t *compcode_meta, uint8_t *clevel, uint8_t *filters, uint8_t *filters_meta, const blosc2_io *io) {
+                    uint8_t *compcode_meta, uint8_t *clevel, uint8_t *filters, uint8_t *filters_meta,
+                    uint8_t *splitmode, const blosc2_io *io) {
   uint8_t* framep = frame->cframe;
   uint8_t header[FRAME_HEADER_MINLEN];
 
@@ -379,18 +375,22 @@ int get_header_info(blosc2_frame_s *frame, int32_t *header_len, int64_t *frame_l
     int64_t rbytes = 0;
     void* fp = NULL;
     if (frame->sframe) {
-      fp = sframe_open_index(frame->urlpath, "rb",
-                             io);
+      fp = sframe_open_index(frame->urlpath, "rb", io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb", io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset, SEEK_SET);
     }
-    if (fp != NULL) {
-      rbytes = io_cb->read(header, 1, FRAME_HEADER_MINLEN, fp);
-      io_cb->close(fp);
-    }
-    (void) rbytes;
+    rbytes = io_cb->read(header, 1, FRAME_HEADER_MINLEN, fp);
+    io_cb->close(fp);
     if (rbytes != FRAME_HEADER_MINLEN) {
       return BLOSC2_ERROR_FILE_READ;
     }
@@ -446,6 +446,13 @@ int get_header_info(blosc2_frame_s *frame, int32_t *header_len, int64_t *frame_l
     }
   }
 
+  // Other flags
+  uint8_t other_flags = framep[FRAME_OTHER_FLAGS];
+  if (splitmode != NULL) {
+    *splitmode = other_flags & 0x4u;
+    from_big(splitmode, framep + FRAME_OTHER_FLAGS, sizeof(*splitmode));
+    *splitmode += 1;
+  }
 
   if (compcode_meta != NULL) {
     from_big(compcode_meta, framep + FRAME_CODEC_META, sizeof(*compcode_meta));
@@ -519,6 +526,10 @@ int update_frame_len(blosc2_frame_s* frame, int64_t len) {
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
+    }
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+      return BLOSC2_ERROR_FILE_OPEN;
     }
     io_cb->seek(fp, frame->file_offset + FRAME_LEN, SEEK_SET);
     int64_t swap_len;
@@ -685,7 +696,7 @@ int frame_update_trailer(blosc2_frame_s* frame, blosc2_schunk* schunk) {
   int64_t nchunks;
   int ret = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                             &blocksize, &chunksize, &nchunks,
-                            NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             frame->schunk->storage->io);
   if (ret < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -725,7 +736,7 @@ int frame_update_trailer(blosc2_frame_s* frame, blosc2_schunk* schunk) {
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
     }
     if (fp == NULL) {
-      BLOSC_TRACE_ERROR("Cannot open the frame for reading and writing.");
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
       return BLOSC2_ERROR_FILE_OPEN;
     }
     io_cb->seek(fp, frame->file_offset + trailer_offset, SEEK_SET);
@@ -809,6 +820,10 @@ blosc2_frame_s* frame_from_file_offset(const char* urlpath, const blosc2_io *io,
         urlpath_cpy = malloc(strlen(urlpath) + 1);
         strcpy(urlpath_cpy, urlpath);
         fp = io_cb->open(urlpath, "rb", io->params);
+    }
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", urlpath);
+      return NULL;
     }
     io_cb->seek(fp, offset, SEEK_SET);
     int64_t rbytes = io_cb->read(header, 1, FRAME_HEADER_MINLEN, fp);
@@ -946,6 +961,10 @@ int64_t frame_from_schunk(blosc2_schunk *schunk, blosc2_frame_s *frame) {
     // Compress the chunk of offsets
     off_chunk = malloc(off_nbytes + BLOSC2_MAX_OVERHEAD);
     blosc2_context *cctx = blosc2_create_cctx(BLOSC2_CPARAMS_DEFAULTS);
+    if (cctx == NULL) {
+      BLOSC_TRACE_ERROR("Error while creating the compression context");
+      return BLOSC2_ERROR_NULL_POINTER;
+    }
     cctx->typesize = sizeof(int64_t);
     off_cbytes = blosc2_compress_ctx(cctx, data_tmp, off_nbytes, off_chunk,
                                      off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -988,6 +1007,10 @@ int64_t frame_from_schunk(blosc2_schunk *schunk, blosc2_frame_s *frame) {
     }
     else {
       fp = io_cb->open(frame->urlpath, "wb", frame->schunk->storage->io->params);
+    }
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error creating file in: %s", frame->urlpath);
+      return BLOSC2_ERROR_FILE_OPEN;
     }
     io_cb->write(h2, h2len, 1, fp);
   }
@@ -1113,10 +1136,18 @@ uint8_t* get_coffsets(blosc2_frame_s *frame, int32_t header_len, int64_t cbytes,
   if (frame->sframe) {
     fp = sframe_open_index(frame->urlpath, "rb",
                            frame->schunk->storage->io);
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+      return NULL;
+    }
     io_cb->seek(fp, header_len + 0, SEEK_SET);
   }
   else {
     fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+      return NULL;
+    }
     io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
   }
   int64_t rbytes = io_cb->read(coffsets, 1, coffsets_cbytes, fp);
@@ -1149,7 +1180,7 @@ int64_t* blosc2_frame_get_offsets(blosc2_schunk *schunk) {
   int64_t nchunks;
   int ret = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                             &blocksize, &chunksize, &nchunks,
-                            NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             frame->schunk->storage->io);
   if (ret < 0) {
     BLOSC_TRACE_ERROR("Cannot get the header info for the frame.");
@@ -1164,6 +1195,10 @@ int64_t* blosc2_frame_get_offsets(blosc2_schunk *schunk) {
   // Decompress offsets
   blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
   blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+  if (dctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the decompression context");
+    return NULL;
+  }
   int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes,
                                               offsets, off_nbytes);
   blosc2_free_ctx(dctx);
@@ -1202,9 +1237,17 @@ int frame_update_header(blosc2_frame_s* frame, blosc2_schunk* schunk, bool new) 
     if (frame->sframe) {
       fp = sframe_open_index(frame->urlpath, "rb+",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset, SEEK_SET);
     }
     if (fp != NULL) {
@@ -1247,11 +1290,13 @@ int frame_update_header(blosc2_frame_s* frame, blosc2_schunk* schunk, bool new) 
     else {
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
     }
-    if (fp != NULL) {
-      io_cb->seek(fp, frame->file_offset, SEEK_SET);
-      io_cb->write(h2, h2len, 1, fp);
-      io_cb->close(fp);
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+      return BLOSC2_ERROR_FILE_OPEN;
     }
+    io_cb->seek(fp, frame->file_offset, SEEK_SET);
+    io_cb->write(h2, h2len, 1, fp);
+    io_cb->close(fp);
   }
   else {
     if (new) {
@@ -1309,7 +1354,7 @@ static int get_meta_from_header(blosc2_frame_s* frame, blosc2_schunk* schunk, ui
     if ((*idxp & 0xe0u) != 0xa0u) {   // sanity check
       return BLOSC2_ERROR_DATA;
     }
-    blosc2_metalayer* metalayer = calloc(sizeof(blosc2_metalayer), 1);
+    blosc2_metalayer* metalayer = calloc(1, sizeof(blosc2_metalayer));
     schunk->metalayers[nmetalayer] = metalayer;
 
     // Populate the metalayer string
@@ -1385,7 +1430,7 @@ int frame_get_metalayers(blosc2_frame_s* frame, blosc2_schunk* schunk) {
   int64_t nchunks;
   int ret = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                             &blocksize, &chunksize, &nchunks,
-                            NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             schunk->storage->io);
   if (ret < 0) {
     BLOSC_TRACE_ERROR("Unable to get the header info from frame.");
@@ -1409,9 +1454,17 @@ int frame_get_metalayers(blosc2_frame_s* frame, blosc2_schunk* schunk) {
     if (frame->sframe) {
       fp = sframe_open_index(frame->urlpath, "rb",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset, SEEK_SET);
     }
     if (fp != NULL) {
@@ -1481,7 +1534,7 @@ static int get_vlmeta_from_trailer(blosc2_frame_s* frame, blosc2_schunk* schunk,
     if ((*idxp & 0xe0u) != 0xa0u) {   // sanity check
       return BLOSC2_ERROR_DATA;
     }
-    blosc2_metalayer* metalayer = calloc(sizeof(blosc2_metalayer), 1);
+    blosc2_metalayer* metalayer = calloc(1, sizeof(blosc2_metalayer));
     schunk->vlmetalayers[nmetalayer] = metalayer;
 
     // Populate the metalayer string
@@ -1556,7 +1609,7 @@ int frame_get_vlmetalayers(blosc2_frame_s* frame, blosc2_schunk* schunk) {
   int64_t nchunks;
   int ret = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                             &blocksize, &chunksize, &nchunks,
-                            NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             schunk->storage->io);
   if (ret < 0) {
     BLOSC_TRACE_ERROR("Unable to get the trailer info from frame.");
@@ -1590,11 +1643,20 @@ int frame_get_vlmetalayers(blosc2_frame_s* frame, blosc2_schunk* schunk) {
       char* eframe_name = malloc(strlen(frame->urlpath) + strlen("/chunks.b2frame") + 1);
       sprintf(eframe_name, "%s/chunks.b2frame", frame->urlpath);
       fp = io_cb->open(eframe_name, "rb", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", eframe_name);
+        free(eframe_name);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       free(eframe_name);
       io_cb->seek(fp, trailer_offset, SEEK_SET);
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + trailer_offset, SEEK_SET);
     }
     if (fp != NULL) {
@@ -1677,7 +1739,7 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
                        &schunk->cbytes, &schunk->blocksize,
                        &schunk->chunksize, &schunk->nchunks, &schunk->typesize,
                        &schunk->compcode, &schunk->compcode_meta, &schunk->clevel, schunk->filters,
-                       schunk->filters_meta, udio);
+                       schunk->filters_meta, &schunk->splitmode, udio);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
     blosc2_schunk_free(schunk);
@@ -1692,9 +1754,17 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
   blosc2_cparams *cparams;
   blosc2_schunk_get_cparams(schunk, &cparams);
   schunk->cctx = blosc2_create_cctx(*cparams);
+  if (schunk->cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return NULL;
+  }
   blosc2_dparams *dparams;
   blosc2_schunk_get_dparams(schunk, &dparams);
   schunk->dctx = blosc2_create_dctx(*dparams);
+  if (schunk->dctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the decompression context");
+    return NULL;
+  }
   blosc2_storage storage = {.contiguous = copy ? false : true};
   schunk->storage = get_new_storage(&storage, cparams, dparams, udio);
   free(cparams);
@@ -1723,6 +1793,10 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
   // Decompress offsets
   blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
   blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+  if (dctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the decompression context");
+    return NULL;
+  }
   int64_t* offsets = (int64_t *) malloc((size_t)nchunks * sizeof(int64_t));
   int32_t off_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes,
                                              offsets, (int32_t)(nchunks * sizeof(int64_t)));
@@ -1760,6 +1834,7 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
       // If not the chunks won't be in the frame
       fp = io_cb->open(frame->urlpath, "rb", udio->params);
       if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
         rc = BLOSC2_ERROR_FILE_OPEN;
         goto end;
       }
@@ -1772,7 +1847,7 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
         free(data_chunk);
       }
       if (offsets[i] < 0) {
-        int64_t rbytes = frame_get_lazychunk(frame, offsets[i], &data_chunk, &needs_free);
+        int64_t rbytes = frame_get_chunk(frame, i, &data_chunk, &needs_free);
         if (rbytes < 0) {
           break;
         }
@@ -1791,7 +1866,7 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
         if (needs_free) {
           free(data_chunk);
         }
-        rbytes = frame_get_lazychunk(frame, offsets[i], &data_chunk, &needs_free);
+        rbytes = frame_get_chunk(frame, i, &data_chunk, &needs_free);
         if (rbytes < 0) {
           break;
         }
@@ -1884,6 +1959,11 @@ blosc2_schunk* frame_to_schunk(blosc2_frame_s* frame, bool copy, const blosc2_io
   }
 
   return schunk;
+}
+
+
+void frame_avoid_cframe_free(blosc2_frame_s* frame, bool avoid_cframe_free) {
+  frame->avoid_cframe_free = avoid_cframe_free;
 }
 
 
@@ -1998,7 +2078,7 @@ int frame_get_chunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, bool
   *needs_free = false;
   rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                        &blocksize, &chunksize, &nchunks,
-                       &typesize, NULL, NULL, NULL, NULL, NULL,
+                       &typesize, NULL, NULL, NULL, NULL, NULL, NULL,
                        frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2024,7 +2104,7 @@ int frame_get_chunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, bool
     int32_t chunksize_ = chunksize;
     if ((nchunk == nchunks - 1) && (nbytes % chunksize)) {
       // Last chunk is incomplete.  Compute its actual size.
-      chunksize_ = (int32_t) nbytes % chunksize;
+      chunksize_ = (int32_t) (nbytes % chunksize);
     }
     rc = frame_special_chunk(offset, chunksize_, typesize, blocksize, chunk, chunk_cbytes, needs_free);
     if (rc < 0) {
@@ -2048,6 +2128,10 @@ int frame_get_chunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, bool
   if (frame->cframe == NULL) {
     uint8_t header[BLOSC_EXTENDED_HEADER_LENGTH];
     void* fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+    if (fp == NULL) {
+      BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+      return BLOSC2_ERROR_FILE_OPEN;
+    }
     io_cb->seek(fp, frame->file_offset + header_len + offset, SEEK_SET);
     int64_t rbytes = io_cb->read(header, 1, sizeof(header), fp);
     if (rbytes != sizeof(header)) {
@@ -2111,7 +2195,7 @@ int frame_get_lazychunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, 
   *needs_free = false;
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                            &blocksize, &chunksize, &nchunks,
-                           &typesize, NULL, NULL, NULL, NULL, NULL,
+                           &typesize, NULL, NULL, NULL, NULL, NULL, NULL,
                            frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2137,7 +2221,7 @@ int frame_get_lazychunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, 
     int32_t chunksize_ = chunksize;
     if ((nchunk == nchunks - 1) && (nbytes % chunksize)) {
       // Last chunk is incomplete.  Compute its actual size.
-      chunksize_ = (int32_t) nbytes % chunksize;
+      chunksize_ = (int32_t) (nbytes % chunksize);
     }
     rc = frame_special_chunk(offset, chunksize_, typesize, blocksize, chunk,
                              (int32_t)lazychunk_cbytes, needs_free);
@@ -2162,9 +2246,17 @@ int frame_get_lazychunk(blosc2_frame_s *frame, int64_t nchunk, uint8_t **chunk, 
       // The chunk is not in the frame
       fp = sframe_open_chunk(frame->urlpath, offset, "rb",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
     }
     else {
       fp = io_cb->open(frame->urlpath, "rb", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + offset, SEEK_SET);
     }
     int64_t rbytes = io_cb->read(header, 1, BLOSC_EXTENDED_HEADER_LENGTH, fp);
@@ -2328,7 +2420,7 @@ int64_t frame_fill_special(blosc2_frame_s* frame, int64_t nitems, int special_va
   int64_t nchunks;
 
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes, &blocksize, NULL,
-                           &nchunks, &typesize, NULL, NULL, NULL, NULL, NULL,
+                           &nchunks, &typesize, NULL, NULL, NULL, NULL, NULL, NULL,
                            schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2432,11 +2524,19 @@ int64_t frame_fill_special(blosc2_frame_s* frame, int64_t nitems, int special_va
     if (frame->sframe) {
       // Update the offsets chunk in the chunks frame
       fp = sframe_open_index(frame->urlpath, "rb+", frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + header_len, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
     }
     wbytes = io_cb->write(off_chunk, 1, new_off_cbytes, fp);  // the new offsets
@@ -2480,7 +2580,7 @@ void* frame_append_chunk(blosc2_frame_s* frame, void* chunk, blosc2_schunk* schu
   int32_t chunksize;
   int64_t nchunks;
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes, &blocksize, &chunksize,
-                           &nchunks, NULL, NULL, NULL, NULL, NULL, NULL,
+                           &nchunks, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                            frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2544,6 +2644,10 @@ void* frame_append_chunk(blosc2_frame_s* frame, void* chunk, blosc2_schunk* schu
     // Decompress offsets
     blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
     blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+    if (dctx == NULL) {
+      BLOSC_TRACE_ERROR("Error while creating the decompression context");
+      return NULL;
+    }
     int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes, offsets,
                                                 off_nbytes);
     blosc2_free_ctx(dctx);
@@ -2600,6 +2704,11 @@ void* frame_append_chunk(blosc2_frame_s* frame, void* chunk, blosc2_schunk* schu
   cparams.nthreads = 4;  // 4 threads seems a decent default for nowadays CPUs
   cparams.compcode = BLOSC_BLOSCLZ;
   blosc2_context* cctx = blosc2_create_cctx(cparams);
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return NULL;
+  }
+  cctx->typesize = sizeof(int64_t);  // override a possible BLOSC_TYPESIZE env variable (or chaos may appear)
   void* off_chunk = malloc((size_t)off_nbytes + BLOSC2_MAX_OVERHEAD);
   int32_t new_off_cbytes = blosc2_compress_ctx(cctx, offsets, off_nbytes,
                                                off_chunk, off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -2656,11 +2765,19 @@ void* frame_append_chunk(blosc2_frame_s* frame, void* chunk, blosc2_schunk* schu
       }
       fp = sframe_open_index(frame->urlpath, "rb+",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
       wbytes = io_cb->write(chunk, 1, chunk_cbytes, fp);  // the new chunk
       if (wbytes != chunk_cbytes) {
@@ -2710,7 +2827,7 @@ void* frame_insert_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
   int64_t nchunks;
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                            &blocksize, &chunksize, &nchunks,
-                           NULL, NULL, NULL, NULL, NULL, NULL,
+                           NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                            frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2739,6 +2856,10 @@ void* frame_insert_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
     // Decompress offsets
     blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
     blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+    if (dctx == NULL) {
+      BLOSC_TRACE_ERROR("Error while creating the decompression context");
+      return NULL;
+    }
     int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes, offsets, off_nbytes);
     blosc2_free_ctx(dctx);
     if (prev_nbytes < 0) {
@@ -2800,6 +2921,10 @@ void* frame_insert_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
   cparams.nthreads = 4;  // 4 threads seems a decent default for nowadays CPUs
   cparams.compcode = BLOSC_BLOSCLZ;
   blosc2_context* cctx = blosc2_create_cctx(cparams);
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return NULL;
+  }
   void* off_chunk = malloc((size_t)off_nbytes + BLOSC2_MAX_OVERHEAD);
   int32_t new_off_cbytes = blosc2_compress_ctx(cctx, offsets, off_nbytes,
                                                off_chunk, off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -2858,11 +2983,19 @@ void* frame_insert_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
       // Update the offsets chunk in the chunks frame
       fp = sframe_open_index(frame->urlpath, "rb+",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + 0, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
       wbytes = io_cb->write(chunk, 1, chunk_cbytes, fp);  // the new chunk
       if (wbytes != chunk_cbytes) {
@@ -2912,7 +3045,7 @@ void* frame_update_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
   int64_t nchunks;
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                            &blocksize, &chunksize, &nchunks,
-                           NULL, NULL, NULL, NULL, NULL, NULL,
+                           NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                            frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
@@ -2946,6 +3079,10 @@ void* frame_update_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
     // Decompress offsets
     blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
     blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+    if (dctx == NULL) {
+      BLOSC_TRACE_ERROR("Error while creating the decompression context");
+      return NULL;
+    }
     int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes, offsets, off_nbytes);
     blosc2_free_ctx(dctx);
     if (prev_nbytes < 0) {
@@ -2984,7 +3121,7 @@ void* frame_update_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
   // Add the new offset
   int64_t sframe_chunk_id;
   if (frame->sframe) {
-    if ((int64_t)offsets[nchunk] < 0) {
+    if (offsets[nchunk] < 0) {
       sframe_chunk_id = -1;
     }
     else {
@@ -3042,6 +3179,10 @@ void* frame_update_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
   cparams.nthreads = 4;  // 4 threads seems a decent default for nowadays CPUs
   cparams.compcode = BLOSC_BLOSCLZ;
   blosc2_context* cctx = blosc2_create_cctx(cparams);
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return NULL;
+  }
   void* off_chunk = malloc((size_t)off_nbytes + BLOSC2_MAX_OVERHEAD);
   int32_t new_off_cbytes = blosc2_compress_ctx(cctx, offsets, off_nbytes,
                                                off_chunk, off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -3096,11 +3237,19 @@ void* frame_update_chunk(blosc2_frame_s* frame, int64_t nchunk, void* chunk, blo
       // Update the offsets chunk in the chunks frame
       fp = sframe_open_index(frame->urlpath, "rb+",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + 0, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
       wbytes = io_cb->write(chunk, 1, chunk_cbytes, fp);  // the new chunk
       if (wbytes != chunk_cbytes) {
@@ -3150,7 +3299,7 @@ void* frame_delete_chunk(blosc2_frame_s* frame, int64_t nchunk, blosc2_schunk* s
   int64_t nchunks;
   int rc = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                            &blocksize, &chunksize,  &nchunks,
-                           NULL, NULL, NULL, NULL, NULL, NULL, frame->schunk->storage->io);
+                           NULL, NULL, NULL, NULL, NULL, NULL, NULL, frame->schunk->storage->io);
   if (rc < 0) {
     BLOSC_TRACE_ERROR("Unable to get meta info from frame.");
     return NULL;
@@ -3173,6 +3322,10 @@ void* frame_delete_chunk(blosc2_frame_s* frame, int64_t nchunk, blosc2_schunk* s
     // Decompress offsets
     blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
     blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+    if (dctx == NULL) {
+      BLOSC_TRACE_ERROR("Error while creating the decompression context");
+      return NULL;
+    }
     int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes, offsets, off_nbytes);
     blosc2_free_ctx(dctx);
     if (prev_nbytes < 0) {
@@ -3196,6 +3349,10 @@ void* frame_delete_chunk(blosc2_frame_s* frame, int64_t nchunk, blosc2_schunk* s
   cparams.nthreads = 4;  // 4 threads seems a decent default for nowadays CPUs
   cparams.compcode = BLOSC_BLOSCLZ;
   blosc2_context* cctx = blosc2_create_cctx(cparams);
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return NULL;
+  }
   void* off_chunk = malloc((size_t)off_nbytes + BLOSC2_MAX_OVERHEAD);
   int32_t new_off_cbytes = blosc2_compress_ctx(cctx, offsets, off_nbytes - (int32_t)sizeof(int64_t),
                                                off_chunk, off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -3254,11 +3411,19 @@ void* frame_delete_chunk(blosc2_frame_s* frame, int64_t nchunk, blosc2_schunk* s
       }
       // Update the offsets chunk in the chunks frame
       fp = sframe_open_index(frame->urlpath, "rb+", frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + 0, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return NULL;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
     }
     wbytes = io_cb->write(off_chunk, 1, new_off_cbytes, fp);  // the new offsets
@@ -3301,7 +3466,7 @@ int frame_reorder_offsets(blosc2_frame_s* frame, const int64_t* offsets_order, b
   int64_t nchunks;
   int ret = get_header_info(frame, &header_len, &frame_len, &nbytes, &cbytes,
                             &blocksize, &chunksize, &nchunks,
-                            NULL, NULL, NULL, NULL, NULL, NULL,
+                            NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             frame->schunk->storage->io);
   if (ret < 0) {
       BLOSC_TRACE_ERROR("Cannot get the header info for the frame.");
@@ -3323,6 +3488,10 @@ int frame_reorder_offsets(blosc2_frame_s* frame, const int64_t* offsets_order, b
   // Decompress offsets
   blosc2_dparams off_dparams = BLOSC2_DPARAMS_DEFAULTS;
   blosc2_context *dctx = blosc2_create_dctx(off_dparams);
+  if (dctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the decompression context");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
   int32_t prev_nbytes = blosc2_decompress_ctx(dctx, coffsets, coffsets_cbytes,
                                               offsets, off_nbytes);
   blosc2_free_ctx(dctx);
@@ -3349,6 +3518,10 @@ int frame_reorder_offsets(blosc2_frame_s* frame, const int64_t* offsets_order, b
   cparams.nthreads = 4;  // 4 threads seems a decent default for nowadays CPUs
   cparams.compcode = BLOSC_BLOSCLZ;
   blosc2_context* cctx = blosc2_create_cctx(cparams);
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
   void* off_chunk = malloc((size_t)off_nbytes + BLOSC2_MAX_OVERHEAD);
   int32_t new_off_cbytes = blosc2_compress_ctx(cctx, offsets, off_nbytes,
                                                off_chunk, off_nbytes + BLOSC2_MAX_OVERHEAD);
@@ -3393,11 +3566,19 @@ int frame_reorder_offsets(blosc2_frame_s* frame, const int64_t* offsets_order, b
       // Update the offsets chunk in the chunks frame
       fp = sframe_open_index(frame->urlpath, "rb+",
                              frame->schunk->storage->io);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + 0, SEEK_SET);
     }
     else {
       // Regular frame
       fp = io_cb->open(frame->urlpath, "rb+", frame->schunk->storage->io->params);
+      if (fp == NULL) {
+        BLOSC_TRACE_ERROR("Error opening file in: %s", frame->urlpath);
+        return BLOSC2_ERROR_FILE_OPEN;
+      }
       io_cb->seek(fp, frame->file_offset + header_len + cbytes, SEEK_SET);
     }
     int64_t wbytes = io_cb->write(off_chunk, 1, new_off_cbytes, fp);  // the new offsets

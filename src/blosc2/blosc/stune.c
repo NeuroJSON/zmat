@@ -1,16 +1,17 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
+#include "stune.h"
+
 #include <stdbool.h>
 #include <stdio.h>
-#include "stune.h"
 
 
 /* Whether a codec is meant for High Compression Ratios
@@ -21,7 +22,9 @@ static bool is_HCR(blosc2_context * context) {
     case BLOSC_BLOSCLZ :
       return false;
     case BLOSC_LZ4 :
-      return (context->filter_flags & BLOSC_DOBITSHUFFLE) ? true : false;
+      // return (context->filter_flags & BLOSC_DOBITSHUFFLE) ? true : false;
+      // Do not treat LZ4 differently than BloscLZ here
+      return false;
     case BLOSC_LZ4HC :
     case BLOSC_ZLIB :
     case BLOSC_ZSTD :
@@ -31,14 +34,16 @@ static bool is_HCR(blosc2_context * context) {
   }
 }
 
-void blosc_stune_init(void * config, blosc2_context* cctx, blosc2_context* dctx) {
+int blosc_stune_init(void * config, blosc2_context* cctx, blosc2_context* dctx) {
   BLOSC_UNUSED_PARAM(config);
   BLOSC_UNUSED_PARAM(cctx);
   BLOSC_UNUSED_PARAM(dctx);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Set the automatic blocksize 0 to its real value
-void blosc_stune_next_blocksize(blosc2_context *context) {
+int blosc_stune_next_blocksize(blosc2_context *context) {
   int32_t clevel = context->clevel;
   int32_t typesize = context->typesize;
   int32_t nbytes = context->sourcesize;
@@ -48,7 +53,7 @@ void blosc_stune_next_blocksize(blosc2_context *context) {
   // Protection against very small buffers
   if (nbytes < typesize) {
     context->blocksize = 1;
-    return;
+    return BLOSC2_ERROR_SUCCESS;
   }
 
   if (user_blocksize) {
@@ -103,7 +108,8 @@ void blosc_stune_next_blocksize(blosc2_context *context) {
   }
 
   /* Now the blocksize for splittable codecs */
-  if (clevel > 0 && split_block(context, typesize, blocksize)) {
+  int splitmode = split_block(context, typesize, blocksize);
+  if (clevel > 0 && splitmode) {
     // For performance reasons, do not exceed 256 KB (it must fit in L2 cache)
     switch (clevel) {
       case 1:
@@ -114,7 +120,11 @@ void blosc_stune_next_blocksize(blosc2_context *context) {
       case 4:
       case 5:
       case 6:
+        blocksize = 64 * 1024;
+        break;
       case 7:
+        blocksize = 128 * 1024;
+        break;
       case 8:
         blocksize = 256 * 1024;
         break;
@@ -147,19 +157,29 @@ void blosc_stune_next_blocksize(blosc2_context *context) {
   }
 
   context->blocksize = blocksize;
+  BLOSC_INFO("compcode: %d, clevel: %d, blocksize: %d, splitmode: %d, typesize: %d",
+             context->compcode, context->clevel, blocksize, splitmode, typesize);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
-void blosc_stune_next_cparams(blosc2_context * context) {
-    BLOSC_UNUSED_PARAM(context);
+int blosc_stune_next_cparams(blosc2_context * context) {
+  BLOSC_UNUSED_PARAM(context);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
-void blosc_stune_update(blosc2_context * context, double ctime) {
-    BLOSC_UNUSED_PARAM(context);
-    BLOSC_UNUSED_PARAM(ctime);
+int blosc_stune_update(blosc2_context * context, double ctime) {
+  BLOSC_UNUSED_PARAM(context);
+  BLOSC_UNUSED_PARAM(ctime);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
-void blosc_stune_free(blosc2_context * context) {
-    BLOSC_UNUSED_PARAM(context);
+int blosc_stune_free(blosc2_context * context) {
+  BLOSC_UNUSED_PARAM(context);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 int split_block(blosc2_context *context, int32_t typesize, int32_t blocksize) {
@@ -180,6 +200,8 @@ int split_block(blosc2_context *context, int32_t typesize, int32_t blocksize) {
   return (
           // Fast codecs like blosclz and lz4 always prefer to always split
           ((compcode == BLOSC_BLOSCLZ) || (compcode == BLOSC_LZ4)) &&
+          // ...but split seems to harm cratio too much when not using shuffle
+          (context->filter_flags & BLOSC_DOSHUFFLE) &&
           (typesize <= MAX_STREAMS) &&
           (blocksize / typesize) >= BLOSC_MIN_BUFFERSIZE);
 }

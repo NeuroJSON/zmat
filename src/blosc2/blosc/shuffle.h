@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -16,14 +16,30 @@
   these are cross-platform and future-proof.
 **********************************************************************/
 
-
-#ifndef SHUFFLE_H
-#define SHUFFLE_H
+#ifndef BLOSC_SHUFFLE_H
+#define BLOSC_SHUFFLE_H
 
 #include "blosc2/blosc2-common.h"
 
-#ifdef __cplusplus
-extern "C" {
+#include <stdint.h>
+
+/* Toggle hardware-accelerated routines based on SHUFFLE_*_ENABLED macros
+   and availability on the target architecture.
+*/
+#if defined(SHUFFLE_AVX2_ENABLED) && defined(__AVX2__)
+#define SHUFFLE_USE_AVX2
+#endif
+
+#if defined(SHUFFLE_SSE2_ENABLED) && defined(__SSE2__)
+#define SHUFFLE_USE_SSE2
+#endif
+
+#if defined(SHUFFLE_ALTIVEC_ENABLED) && defined(__ALTIVEC__)
+#define SHUFFLE_USE_ALTIVEC
+#endif
+
+#if defined(SHUFFLE_NEON_ENABLED) && defined(__ARM_NEON)
+#define SHUFFLE_USE_NEON
 #endif
 
 /**
@@ -65,8 +81,4 @@ BLOSC_NO_EXPORT int32_t
                  const uint8_t *_src, const uint8_t *_dest,
                  const uint8_t *_tmp, const uint8_t format_version);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* SHUFFLE_H */
+#endif /* BLOSC_SHUFFLE_H */

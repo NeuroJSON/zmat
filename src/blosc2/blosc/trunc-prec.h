@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -11,10 +11,9 @@
 #ifndef BLOSC_TRUNC_PREC_H
 #define BLOSC_TRUNC_PREC_H
 
-#include <stdio.h>
 #include <stdint.h>
 
 int truncate_precision(int8_t prec_bits, int32_t typesize, int32_t nbytes,
                        const uint8_t* src, uint8_t* dest);
 
-#endif //BLOSC_TRUNC_PREC_H
+#endif /* BLOSC_TRUNC_PREC_H */

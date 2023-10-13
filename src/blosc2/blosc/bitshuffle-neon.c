@@ -1,22 +1,22 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "bitshuffle-generic.h"
 #include "bitshuffle-neon.h"
+#include "bitshuffle-generic.h"
 
 /* Make sure NEON is available for the compilation target and compiler. */
-#if !defined(__ARM_NEON)
-  #error NEON is not supported by the target architecture/platform and/or this compiler.
-#endif
+#if defined(__ARM_NEON)
 
 #include <arm_neon.h>
+
+#include <stdint.h>
 
 /* The next is useful for debugging purposes */
 #if 0
@@ -1000,6 +1000,8 @@ bitunshuffle_neon(void* _src, void* _dest, const size_t size,
          so we're done processing here. */
       return count;
   }
-  
+
   return (int64_t)size * (int64_t)elem_size;
 }
+
+#endif /* defined(__ARM_NEON) */

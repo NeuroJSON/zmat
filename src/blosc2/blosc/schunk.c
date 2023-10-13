@@ -1,39 +1,33 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include "blosc2.h"
 #include "frame.h"
 #include "stune.h"
-#include <inttypes.h>
+#include "blosc-private.h"
+#include "blosc2/tuners-registry.h"
+#include "blosc2.h"
 
 #if defined(_WIN32)
-  #include <windows.h>
-  #include <direct.h>
-  #include <malloc.h>
-
-  #define mkdir(D, M) _mkdir(D)
-
-/* stdint.h only available in VS2010 (VC++ 16.0) and newer */
-  #if defined(_MSC_VER) && _MSC_VER < 1600
-    #include "win32/stdint-windows.h"
-  #else
-    #include <stdint.h>
-  #endif
-
+#include <windows.h>
+#include <direct.h>
+#include <malloc.h>
+#define mkdir(D, M) _mkdir(D)
 #endif  /* _WIN32 */
 
+#include <sys/stat.h>
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* If C11 is supported, use it's built-in aligned allocation. */
 #if __STDC_VERSION__ >= 201112L
@@ -43,7 +37,7 @@
 
 /* Get the cparams associated with a super-chunk */
 int blosc2_schunk_get_cparams(blosc2_schunk *schunk, blosc2_cparams **cparams) {
-  *cparams = calloc(sizeof(blosc2_cparams), 1);
+  *cparams = calloc(1, sizeof(blosc2_cparams));
   (*cparams)->schunk = schunk;
   for (int i = 0; i < BLOSC2_MAX_FILTERS; i++) {
     (*cparams)->filters[i] = schunk->filters[i];
@@ -54,8 +48,9 @@ int blosc2_schunk_get_cparams(blosc2_schunk *schunk, blosc2_cparams **cparams) {
   (*cparams)->clevel = schunk->clevel;
   (*cparams)->typesize = schunk->typesize;
   (*cparams)->blocksize = schunk->blocksize;
+  (*cparams)->splitmode = schunk->splitmode;
   if (schunk->cctx == NULL) {
-    (*cparams)->nthreads = BLOSC2_CPARAMS_DEFAULTS.nthreads;
+    (*cparams)->nthreads = blosc2_get_nthreads();
   }
   else {
     (*cparams)->nthreads = (int16_t)schunk->cctx->nthreads;
@@ -66,10 +61,10 @@ int blosc2_schunk_get_cparams(blosc2_schunk *schunk, blosc2_cparams **cparams) {
 
 /* Get the dparams associated with a super-chunk */
 int blosc2_schunk_get_dparams(blosc2_schunk *schunk, blosc2_dparams **dparams) {
-  *dparams = calloc(sizeof(blosc2_dparams), 1);
+  *dparams = calloc(1, sizeof(blosc2_dparams));
   (*dparams)->schunk = schunk;
   if (schunk->dctx == NULL) {
-    (*dparams)->nthreads = BLOSC2_DPARAMS_DEFAULTS.nthreads;
+    (*dparams)->nthreads = blosc2_get_nthreads();
   }
   else {
     (*dparams)->nthreads = schunk->dctx->nthreads;
@@ -78,7 +73,7 @@ int blosc2_schunk_get_dparams(blosc2_schunk *schunk, blosc2_dparams **dparams) {
 }
 
 
-void update_schunk_properties(struct blosc2_schunk* schunk) {
+int update_schunk_properties(struct blosc2_schunk* schunk) {
   blosc2_cparams* cparams = schunk->storage->cparams;
   blosc2_dparams* dparams = schunk->storage->dparams;
 
@@ -89,16 +84,25 @@ void update_schunk_properties(struct blosc2_schunk* schunk) {
   schunk->compcode = cparams->compcode;
   schunk->compcode_meta = cparams->compcode_meta;
   schunk->clevel = cparams->clevel;
+  schunk->splitmode = cparams->splitmode;
   schunk->typesize = cparams->typesize;
   schunk->blocksize = cparams->blocksize;
   schunk->chunksize = -1;
-
+  schunk->tuner_params = cparams->tuner_params;
+  schunk->tuner_id = cparams->tuner_id;
+  if (cparams->tuner_id == BLOSC_BTUNE) {
+    cparams->use_dict = 0;
+  }
   /* The compression context */
   if (schunk->cctx != NULL) {
     blosc2_free_ctx(schunk->cctx);
   }
   cparams->schunk = schunk;
   schunk->cctx = blosc2_create_cctx(*cparams);
+  if (schunk->cctx == NULL) {
+    BLOSC_TRACE_ERROR("Could not create compression ctx");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
 
   /* The decompression context */
   if (schunk->dctx != NULL) {
@@ -106,6 +110,12 @@ void update_schunk_properties(struct blosc2_schunk* schunk) {
   }
   dparams->schunk = schunk;
   schunk->dctx = blosc2_create_dctx(*dparams);
+  if (schunk->dctx == NULL) {
+    BLOSC_TRACE_ERROR("Could not create decompression ctx");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 
@@ -125,18 +135,17 @@ blosc2_schunk* blosc2_schunk_new(blosc2_storage *storage) {
   // Update the (local variable) storage
   storage = schunk->storage;
 
-  schunk->udbtune = malloc(sizeof(blosc2_btune));
-  if (schunk->storage->cparams->udbtune == NULL) {
-    memcpy(schunk->udbtune, &BTUNE_DEFAULTS, sizeof(blosc2_btune));
-  } else {
-    memcpy(schunk->udbtune, schunk->storage->cparams->udbtune, sizeof(blosc2_btune));
+  char* tradeoff = getenv("BTUNE_TRADEOFF");
+  if (tradeoff != NULL) {
+    // If BTUNE_TRADEOFF passed, automatically use btune
+    storage->cparams->tuner_id = BLOSC_BTUNE;
   }
-  schunk->storage->cparams->udbtune = schunk->udbtune;
 
   // ...and update internal properties
-  update_schunk_properties(schunk);
-
-  schunk->cctx->udbtune->btune_init(schunk->udbtune->btune_config, schunk->cctx, schunk->dctx);
+  if (update_schunk_properties(schunk) < 0) {
+    BLOSC_TRACE_ERROR("Error when updating schunk properties");
+    return NULL;
+  }
 
   if (!storage->contiguous && storage->urlpath != NULL){
     char* urlpath;
@@ -204,6 +213,7 @@ blosc2_schunk* blosc2_schunk_copy(blosc2_schunk *schunk, blosc2_storage *storage
     cparams.clevel = schunk->cctx->clevel;
     cparams.compcode = schunk->cctx->compcode;
     cparams.compcode_meta = schunk->cctx->compcode_meta;
+    cparams.splitmode = schunk->cctx->splitmode;
     cparams.use_dict = schunk->cctx->use_dict;
     cparams.blocksize = schunk->cctx->blocksize;
     memcpy(cparams.filters, schunk->cctx->filters, BLOSC2_MAX_FILTERS);
@@ -327,7 +337,7 @@ blosc2_schunk* blosc2_schunk_open(const char* urlpath) {
   return blosc2_schunk_open_udio(urlpath, &BLOSC2_IO_DEFAULTS);
 }
 
-BLOSC_EXPORT blosc2_schunk* blosc2_schunk_open_offset(const char* urlpath, int64_t offset) {
+blosc2_schunk* blosc2_schunk_open_offset(const char* urlpath, int64_t offset) {
   if (urlpath == NULL) {
     BLOSC_TRACE_ERROR("You need to supply a urlpath.");
     return NULL;
@@ -536,9 +546,6 @@ int blosc2_schunk_free(blosc2_schunk *schunk) {
     }
   }
 
-  if (schunk->udbtune != NULL) {
-    free(schunk->udbtune);
-  }
   free(schunk);
 
   return 0;
@@ -564,6 +571,14 @@ blosc2_schunk* blosc2_schunk_from_buffer(uint8_t *cframe, int64_t len, bool copy
   }
   return schunk;
 }
+
+
+/* Create a super-chunk out of a contiguous frame buffer */
+void blosc2_schunk_avoid_cframe_free(blosc2_schunk *schunk, bool avoid_cframe_free) {
+  blosc2_frame_s* frame = (blosc2_frame_s*)schunk->frame;
+  frame_avoid_cframe_free(frame, avoid_cframe_free);
+}
+
 
 /* Fill an empty frame with special values (fast path). */
 int64_t blosc2_schunk_fill_special(blosc2_schunk* schunk, int64_t nitems, int special_value,
@@ -709,7 +724,7 @@ int64_t blosc2_schunk_append_chunk(blosc2_schunk *schunk, uint8_t *chunk, bool c
   blosc2_frame_s* frame = (blosc2_frame_s*)schunk->frame;
   if (frame == NULL) {
     // Check that we are not appending a small chunk after another small chunk
-    if ((schunk->nchunks > 0) && (chunk_nbytes < schunk->chunksize)) {
+    if ((schunk->nchunks > 1) && (chunk_nbytes < schunk->chunksize)) {
       uint8_t* last_chunk = schunk->data[nchunks - 1];
       int32_t last_nbytes;
       rc = blosc2_cbuffer_sizes(last_chunk, &last_nbytes, NULL, NULL);
@@ -856,10 +871,12 @@ int64_t blosc2_schunk_update_chunk(blosc2_schunk *schunk, int64_t nchunk, uint8_
     schunk->chunksize = chunk_nbytes;  // The super-chunk is initialized now
   }
 
-  if ((schunk->chunksize != 0) && (chunk_nbytes != schunk->chunksize)) {
-    BLOSC_TRACE_ERROR("Inserting chunks that have different lengths in the same schunk "
-                      "is not supported yet: %d > %d.", chunk_nbytes, schunk->chunksize);
-    return BLOSC2_ERROR_CHUNK_INSERT;
+  if (schunk->chunksize != 0 && (chunk_nbytes > schunk->chunksize ||
+      (chunk_nbytes < schunk->chunksize && nchunk != schunk->nchunks - 1))) {
+    BLOSC_TRACE_ERROR("Updating chunks that have different lengths in the same schunk "
+                      "is not supported yet (unless it's the last one and smaller):"
+                      " %d > %d.", chunk_nbytes, schunk->chunksize);
+    return BLOSC2_ERROR_CHUNK_UPDATE;
   }
 
   bool needs_free;
@@ -1182,28 +1199,185 @@ int blosc2_schunk_get_lazychunk(blosc2_schunk *schunk, int64_t nchunk, uint8_t *
 }
 
 
-/* Find whether the schunk has a metalayer or not.
- *
- * If successful, return the index of the metalayer.  Else, return a negative value.
- */
-int blosc2_meta_exists(blosc2_schunk *schunk, const char *name) {
-  if (strlen(name) > BLOSC2_METALAYER_NAME_MAXLEN) {
-    BLOSC_TRACE_ERROR("Metalayers cannot be larger than %d chars.", BLOSC2_METALAYER_NAME_MAXLEN);
-    return BLOSC2_ERROR_INVALID_PARAM;
+int blosc2_schunk_get_slice_buffer(blosc2_schunk *schunk, int64_t start, int64_t stop, void *buffer) {
+  int64_t byte_start = start * schunk->typesize;
+  int64_t byte_stop = stop * schunk->typesize;
+  int64_t nchunk_start = byte_start / schunk->chunksize;
+  int32_t chunk_start = (int32_t) (byte_start % schunk->chunksize); // 0 indexed
+  int32_t chunk_stop; // 0 indexed
+  if (byte_stop >= (nchunk_start + 1) * schunk->chunksize) {
+    chunk_stop = schunk->chunksize;
+  }
+  else {
+    chunk_stop = (int32_t) (byte_stop % schunk->chunksize);
   }
 
-  if (schunk == NULL) {
-    BLOSC_TRACE_ERROR("Schunk must not be NUll.");
-    return BLOSC2_ERROR_INVALID_PARAM;
-  }
+  uint8_t *dst_ptr = (uint8_t *) buffer;
+  bool needs_free;
+  uint8_t *chunk;
+  int32_t cbytes;
+  int64_t nchunk = nchunk_start;
+  int64_t nbytes_read = 0;
+  int32_t nbytes;
+  int32_t chunksize = schunk->chunksize;
 
-  for (int nmetalayer = 0; nmetalayer < schunk->nmetalayers; nmetalayer++) {
-    if (strcmp(name, schunk->metalayers[nmetalayer]->name) == 0) {
-      return nmetalayer;
+  while (nbytes_read < ((stop - start) * schunk->typesize)) {
+    cbytes = blosc2_schunk_get_lazychunk(schunk, nchunk, &chunk, &needs_free);
+    if (cbytes < 0) {
+      BLOSC_TRACE_ERROR("Cannot get lazychunk ('%" PRId64 "').", nchunk);
+      return BLOSC2_ERROR_FAILURE;
+    }
+    int32_t blocksize = sw32_(chunk + BLOSC2_CHUNK_BLOCKSIZE);
+
+    int32_t nblock_start = (int32_t) (chunk_start / blocksize);
+    int32_t nblock_stop = (int32_t) ((chunk_stop - 1) / blocksize);
+    if (nchunk == (schunk->nchunks - 1) && schunk->nbytes % schunk->chunksize != 0) {
+      chunksize = schunk->nbytes % schunk->chunksize;
+    }
+    int32_t nblocks = chunksize / blocksize;
+    if (chunksize % blocksize != 0) {
+      nblocks++;
+    }
+
+    if (chunk_start == 0 && chunk_stop == chunksize) {
+      // Avoid memcpy
+      nbytes = blosc2_decompress_ctx(schunk->dctx, chunk, cbytes, dst_ptr, chunksize);
+      if (nbytes < 0) {
+        BLOSC_TRACE_ERROR("Cannot decompress chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_FAILURE;
+      }
+    }
+    else {
+      // After extensive timing I have not been able to see lots of situations where
+      // a maskout read is better than a getitem one.  Disabling for now.
+      // if (nblock_start != nblock_stop) {
+      if (false) {
+        uint8_t *data = malloc(chunksize);
+        /* We have more than 1 block to read, so use a masked read */
+        bool *block_maskout = calloc(nblocks, 1);
+        for (int32_t nblock = 0; nblock < nblocks; nblock++) {
+          if ((nblock < nblock_start) || (nblock > nblock_stop)) {
+            block_maskout[nblock] = true;
+          }
+        }
+        if (blosc2_set_maskout(schunk->dctx, block_maskout, nblocks) < 0) {
+          BLOSC_TRACE_ERROR("Cannot set maskout");
+          return BLOSC2_ERROR_FAILURE;
+        }
+
+        nbytes = blosc2_decompress_ctx(schunk->dctx, chunk, cbytes, data, chunksize);
+        if (nbytes < 0) {
+          BLOSC_TRACE_ERROR("Cannot decompress chunk ('%" PRId64 "').", nchunk);
+          return BLOSC2_ERROR_FAILURE;
+        }
+        nbytes = chunk_stop - chunk_start;
+        memcpy(dst_ptr, &data[chunk_start], nbytes);
+        free(block_maskout);
+        free(data);
+      }
+      else {
+        /* Less than 1 block to read; use a getitem call */
+        nbytes = blosc2_getitem_ctx(schunk->dctx, chunk, cbytes, (int32_t) (chunk_start / schunk->typesize),
+                                    (chunk_stop - chunk_start) / schunk->typesize, dst_ptr, chunksize);
+        if (nbytes < 0) {
+          BLOSC_TRACE_ERROR("Cannot get item from ('%" PRId64 "') chunk.", nchunk);
+          return BLOSC2_ERROR_FAILURE;
+        }
+      }
+    }
+
+    dst_ptr += nbytes;
+    nbytes_read += nbytes;
+    nchunk++;
+
+    if (needs_free) {
+      free(chunk);
+    }
+    chunk_start = 0;
+    if (byte_stop >= (nchunk + 1) * chunksize) {
+      chunk_stop = chunksize;
+    }
+    else {
+      chunk_stop = (int32_t)(byte_stop % chunksize);
     }
   }
-  return BLOSC2_ERROR_NOT_FOUND;
+
+  return BLOSC2_ERROR_SUCCESS;
 }
+
+
+int blosc2_schunk_set_slice_buffer(blosc2_schunk *schunk, int64_t start, int64_t stop, void *buffer) {
+  int64_t byte_start = start * schunk->typesize;
+  int64_t byte_stop = stop * schunk->typesize;
+  int64_t nchunk_start = byte_start / schunk->chunksize;
+  int32_t chunk_start = (int32_t) (byte_start % schunk->chunksize);
+  int32_t chunk_stop;
+  if (byte_stop >= (nchunk_start + 1) * schunk->chunksize) {
+    chunk_stop = schunk->chunksize;
+  }
+  else {
+    chunk_stop = (int32_t) (byte_stop % schunk->chunksize);
+  }
+
+  uint8_t *src_ptr = (uint8_t *) buffer;
+  int64_t nchunk = nchunk_start;
+  int64_t nbytes_written = 0;
+  int32_t nbytes;
+  uint8_t *data = malloc(schunk->chunksize);
+  int64_t nchunks;
+  int32_t chunksize = schunk->chunksize;
+
+  while (nbytes_written < ((stop - start) * schunk->typesize)) {
+    if (chunk_start == 0 &&
+        (chunk_stop == schunk->chunksize || chunk_stop == schunk->nbytes % schunk->chunksize)) {
+      if (chunk_stop == schunk->nbytes % schunk->chunksize) {
+        chunksize = chunk_stop;
+      }
+      uint8_t *chunk = malloc(chunksize + BLOSC2_MAX_OVERHEAD);
+      if (blosc2_compress_ctx(schunk->cctx, src_ptr, chunksize, chunk, chunksize + BLOSC2_MAX_OVERHEAD) < 0) {
+        BLOSC_TRACE_ERROR("Cannot compress data of chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_FAILURE;
+      }
+      nchunks = blosc2_schunk_update_chunk(schunk, nchunk, chunk, false);
+      if (nchunks != schunk->nchunks) {
+        BLOSC_TRACE_ERROR("Cannot update chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_CHUNK_UPDATE;
+      }
+    }
+    else {
+      nbytes = blosc2_schunk_decompress_chunk(schunk, nchunk, data, schunk->chunksize);
+      if (nbytes < 0) {
+        BLOSC_TRACE_ERROR("Cannot decompress chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_FAILURE;
+      }
+      memcpy(&data[chunk_start], src_ptr, chunk_stop - chunk_start);
+      uint8_t *chunk = malloc(nbytes + BLOSC2_MAX_OVERHEAD);
+      if (blosc2_compress_ctx(schunk->cctx, data, nbytes, chunk, nbytes + BLOSC2_MAX_OVERHEAD) < 0) {
+        BLOSC_TRACE_ERROR("Cannot compress data of chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_FAILURE;
+      }
+      nchunks = blosc2_schunk_update_chunk(schunk, nchunk, chunk, false);
+      if (nchunks != schunk->nchunks) {
+        BLOSC_TRACE_ERROR("Cannot update chunk ('%" PRId64 "').", nchunk);
+        return BLOSC2_ERROR_CHUNK_UPDATE;
+      }
+    }
+    nchunk++;
+    nbytes_written += chunk_stop - chunk_start;
+    src_ptr += chunk_stop - chunk_start;
+    chunk_start = 0;
+    if (byte_stop >= (nchunk + 1) * schunk->chunksize) {
+      chunk_stop = schunk->chunksize;
+    }
+    else {
+      chunk_stop = (int32_t) (byte_stop % schunk->chunksize);
+    }
+  }
+  free(data);
+
+  return BLOSC2_ERROR_SUCCESS;
+}
+
 
 /* Reorder the chunk offsets of an existing super-chunk. */
 int blosc2_schunk_reorder_offsets(blosc2_schunk *schunk, int64_t *offsets_order) {
@@ -1359,25 +1533,6 @@ int blosc2_meta_update(blosc2_schunk *schunk, const char *name, uint8_t *content
 }
 
 
-/* Get the content out of a metalayer.
- *
- * The `**content` receives a malloc'ed copy of the content.  The user is responsible of freeing it.
- *
- * If successful, return the index of the new metalayer.  Else, return a negative value.
- */
-int blosc2_meta_get(blosc2_schunk *schunk, const char *name, uint8_t **content,
-                    int32_t *content_len) {
-  int nmetalayer = blosc2_meta_exists(schunk, name);
-  if (nmetalayer < 0) {
-    BLOSC_TRACE_ERROR("Metalayer \"%s\" not found.", name);
-    return nmetalayer;
-  }
-  *content_len = schunk->metalayers[nmetalayer]->content_len;
-  *content = malloc((size_t)*content_len);
-  memcpy(*content, schunk->metalayers[nmetalayer]->content, (size_t)*content_len);
-  return nmetalayer;
-}
-
 /* Find whether the schunk has a variable-length metalayer or not.
  *
  * If successful, return the index of the variable-length metalayer.  Else, return a negative value.
@@ -1438,6 +1593,10 @@ int blosc2_vlmeta_add(blosc2_schunk *schunk, const char *name, uint8_t *content,
   } else {
     cctx = blosc2_create_cctx(BLOSC2_CPARAMS_DEFAULTS);
   }
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
 
   int csize = blosc2_compress_ctx(cctx, content, content_len, content_buf, content_len + BLOSC2_MAX_OVERHEAD);
   if (csize < 0) {
@@ -1479,6 +1638,10 @@ int blosc2_vlmeta_get(blosc2_schunk *schunk, const char *name, uint8_t **content
   *content_len = nbytes;
   *content = malloc((size_t) nbytes);
   blosc2_context *dctx = blosc2_create_dctx(*schunk->storage->dparams);
+  if (dctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the decompression context");
+    return BLOSC2_ERROR_NULL_POINTER;
+  }
   int nbytes_ = blosc2_decompress_ctx(dctx, meta->content, meta->content_len, *content, nbytes);
   blosc2_free_ctx(dctx);
   if (nbytes_ != nbytes) {
@@ -1505,6 +1668,10 @@ int blosc2_vlmeta_update(blosc2_schunk *schunk, const char *name, uint8_t *conte
     cctx = blosc2_create_cctx(*cparams);
   } else {
     cctx = blosc2_create_cctx(BLOSC2_CPARAMS_DEFAULTS);
+  }
+  if (cctx == NULL) {
+    BLOSC_TRACE_ERROR("Error while creating the compression context");
+    return BLOSC2_ERROR_NULL_POINTER;
   }
 
   int csize = blosc2_compress_ctx(cctx, content, content_len, content_buf, content_len + BLOSC2_MAX_OVERHEAD);

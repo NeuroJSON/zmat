@@ -1,41 +1,29 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "shuffle.h"
-#include "blosc2/blosc2-common.h"
-#include "shuffle-generic.h"
-#include "bitshuffle-generic.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
-
-
-#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
-    __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-#define HAVE_CPU_FEAT_INTRIN
-#endif
+#include "shuffle.h" /* needs to be included first to define macros */
 
 /*  Include hardware-accelerated shuffle/unshuffle routines based on
     the target architecture. Note that a target architecture may support
     more than one type of acceleration!*/
-#if defined(SHUFFLE_AVX2_ENABLED)
+#if defined(SHUFFLE_USE_AVX2)
   #include "shuffle-avx2.h"
   #include "bitshuffle-avx2.h"
-#endif  /* defined(SHUFFLE_AVX2_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_AVX2) */
 
-#if defined(SHUFFLE_SSE2_ENABLED)
+#if defined(SHUFFLE_USE_SSE2)
   #include "shuffle-sse2.h"
   #include "bitshuffle-sse2.h"
-#endif  /* defined(SHUFFLE_SSE2_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_SSE2) */
 
-#if defined(SHUFFLE_NEON_ENABLED)
+#if defined(SHUFFLE_USE_NEON)
   #if defined(__linux__)
     #include <sys/auxv.h>
     #ifdef ARM_ASM_HWCAP
@@ -44,12 +32,28 @@
   #endif
   #include "shuffle-neon.h"
   #include "bitshuffle-neon.h"
-#endif  /* defined(SHUFFLE_NEON_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_NEON) */
 
-#if defined(SHUFFLE_ALTIVEC_ENABLED)
+#if defined(SHUFFLE_USE_ALTIVEC)
   #include "shuffle-altivec.h"
   #include "bitshuffle-altivec.h"
-#endif  /* defined(SHUFFLE_ALTIVEC_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_ALTIVEC) */
+
+#include "shuffle-generic.h"
+#include "bitshuffle-generic.h"
+#include "blosc2/blosc2-common.h"
+#include "blosc2.h"
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+    __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#define HAVE_CPU_FEAT_INTRIN
+#endif
 
 
 /*  Define function pointer types for shuffle/unshuffle routines. */
@@ -84,7 +88,7 @@ typedef enum {
 
 /* Detect hardware and set function pointers to the best shuffle/unshuffle
    implementations supported by the host processor. */
-#if defined(SHUFFLE_AVX2_ENABLED) || defined(SHUFFLE_SSE2_ENABLED)    /* Intel/i686 */
+#if defined(SHUFFLE_USE_AVX2) || defined(SHUFFLE_USE_SSE2)    /* Intel/i686 */
 
 /*  Disabled the __builtin_cpu_supports() call, as it has issues with
     new versions of gcc (like 5.3.1 in forthcoming ubuntu/xenial:
@@ -141,7 +145,7 @@ __cpuidex(int32_t cpuInfo[4], int32_t function_id, int32_t subfunction_id) {
 
 // GCC folks added _xgetbv in immintrin.h starting in GCC 9
 // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71659
-#if !(defined(_IMMINTRIN_H_INCLUDED) && (BLOSC_GCC_VERSION >= 900))
+#if !(defined(_IMMINTRIN_H_INCLUDED) && (BLOSC_GCC_VERSION >= 900)) && !defined(__IMMINTRIN_H)
 /* Reads the content of an extended control register.
    https://software.intel.com/en-us/articles/how-to-detect-new-instruction-support-in-the-4th-generation-intel-core-processor-family
 */
@@ -160,7 +164,7 @@ _xgetbv(uint32_t xcr) {
     );
   return ((uint64_t)edx << 32) | eax;
 }
-#endif  // !(defined(_IMMINTRIN_H_INCLUDED) && (BLOSC_GCC_VERSION >= 900))
+#endif  // !(defined(_IMMINTRIN_H_INCLUDED) && (BLOSC_GCC_VERSION >= 900)) && !defined(__IMMINTRIN_H)
 #endif /* defined(_MSC_VER) */
 
 #ifndef _XCR_XFEATURE_ENABLED_MASK
@@ -250,7 +254,7 @@ static blosc_cpu_features blosc_get_cpu_features(void) {
 }
 #endif /* HAVE_CPU_FEAT_INTRIN */
 
-#elif defined(SHUFFLE_NEON_ENABLED) /* ARM-NEON */
+#elif defined(SHUFFLE_USE_NEON) /* ARM-NEON */
 static blosc_cpu_features blosc_get_cpu_features(void) {
   blosc_cpu_features cpu_features = BLOSC_HAVE_NOTHING;
 #if defined(__aarch64__)
@@ -263,7 +267,7 @@ static blosc_cpu_features blosc_get_cpu_features(void) {
 #endif
   return cpu_features;
 }
-#elif defined(SHUFFLE_ALTIVEC_ENABLED) /* POWER9-ALTIVEC preliminary test*/
+#elif defined(SHUFFLE_USE_ALTIVEC) /* POWER9-ALTIVEC preliminary test*/
 static blosc_cpu_features blosc_get_cpu_features(void) {
   blosc_cpu_features cpu_features = BLOSC_HAVE_NOTHING;
   cpu_features |= BLOSC_HAVE_ALTIVEC;
@@ -280,11 +284,11 @@ static blosc_cpu_features blosc_get_cpu_features(void) {
 return BLOSC_HAVE_NOTHING;
 }
 
-#endif /* defined(SHUFFLE_AVX2_ENABLED) || defined(SHUFFLE_SSE2_ENABLED) */
+#endif /* defined(SHUFFLE_USE_AVX2) || defined(SHUFFLE_USE_SSE2) */
 
 static shuffle_implementation_t get_shuffle_implementation(void) {
   blosc_cpu_features cpu_features = blosc_get_cpu_features();
-#if defined(SHUFFLE_AVX2_ENABLED)
+#if defined(SHUFFLE_USE_AVX2)
   if (cpu_features & BLOSC_HAVE_AVX2) {
     shuffle_implementation_t impl_avx2;
     impl_avx2.name = "avx2";
@@ -294,9 +298,9 @@ static shuffle_implementation_t get_shuffle_implementation(void) {
     impl_avx2.bitunshuffle = (bitunshuffle_func)bshuf_untrans_bit_elem_avx2;
     return impl_avx2;
   }
-#endif  /* defined(SHUFFLE_AVX2_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_AVX2) */
 
-#if defined(SHUFFLE_SSE2_ENABLED)
+#if defined(SHUFFLE_USE_SSE2)
   if (cpu_features & BLOSC_HAVE_SSE2) {
     shuffle_implementation_t impl_sse2;
     impl_sse2.name = "sse2";
@@ -306,9 +310,9 @@ static shuffle_implementation_t get_shuffle_implementation(void) {
     impl_sse2.bitunshuffle = (bitunshuffle_func)bshuf_untrans_bit_elem_sse2;
     return impl_sse2;
   }
-#endif  /* defined(SHUFFLE_SSE2_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_SSE2) */
 
-#if defined(SHUFFLE_NEON_ENABLED)
+#if defined(SHUFFLE_USE_NEON)
   if (cpu_features & BLOSC_HAVE_NEON) {
     shuffle_implementation_t impl_neon;
     impl_neon.name = "neon";
@@ -326,9 +330,9 @@ static shuffle_implementation_t get_shuffle_implementation(void) {
     impl_neon.bitunshuffle = (bitunshuffle_func)bshuf_untrans_bit_elem_scal;
     return impl_neon;
   }
-#endif  /* defined(SHUFFLE_NEON_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_NEON) */
 
-#if defined(SHUFFLE_ALTIVEC_ENABLED)
+#if defined(SHUFFLE_USE_ALTIVEC)
   if (cpu_features & BLOSC_HAVE_ALTIVEC) {
     shuffle_implementation_t impl_altivec;
     impl_altivec.name = "altivec";
@@ -338,7 +342,7 @@ static shuffle_implementation_t get_shuffle_implementation(void) {
     impl_altivec.bitunshuffle = (bitunshuffle_func)bshuf_untrans_bit_elem_altivec;
     return impl_altivec;
   }
-#endif  /* defined(SHUFFLE_ALTIVEC_ENABLED) */
+#endif  /* defined(SHUFFLE_USE_ALTIVEC) */
 
   /* Processor doesn't support any of the hardware-accelerated implementations,
      so use the generic implementation. */
@@ -433,7 +437,7 @@ bitshuffle(const int32_t bytesoftype, const int32_t blocksize,
                                              size, bytesoftype, (void *) _tmp);
   if (ret < 0) {
     // Some error in bitshuffle (should not happen)
-    fprintf(stderr, "the impossible happened: the bitshuffle filter failed!");
+    BLOSC_TRACE_ERROR("the impossible happened: the bitshuffle filter failed!");
     return ret;
   }
 
@@ -463,7 +467,7 @@ int32_t bitunshuffle(const int32_t bytesoftype, const int32_t blocksize,
                                                    bytesoftype, (void *) _tmp);
       if (ret < 0) {
         // Some error in bitshuffle (should not happen)
-        fprintf(stderr, "the impossible happened: the bitunshuffle filter failed!");
+        BLOSC_TRACE_ERROR("the impossible happened: the bitunshuffle filter failed!");
         return ret;
       }
       /* Copy the leftovers (we do so starting from c-blosc 1.18 on) */
@@ -480,7 +484,7 @@ int32_t bitunshuffle(const int32_t bytesoftype, const int32_t blocksize,
     int ret = (int) (host_implementation.bitunshuffle)((void *) _src, (void *) _dest,
                                                  size, bytesoftype, (void *) _tmp);
     if (ret < 0) {
-      fprintf(stderr, "the impossible happened: the bitunshuffle filter failed!");
+      BLOSC_TRACE_ERROR("the impossible happened: the bitunshuffle filter failed!");
       return ret;
     }
 

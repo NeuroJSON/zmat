@@ -95,7 +95,10 @@ else
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
     LIBZLIB+=-Lblosc2/internal-complibs/zstd -lzstd
   endif
-  LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread -lz
+  LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread -ldl
+  ifeq ($(HAVE_ZLIB),yes)
+     LIBZLIB+=-lz
+  endif
   INCLUDEDIRS+=-Iblosc2/include
 endif
 
