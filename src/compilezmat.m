@@ -28,7 +28,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-filelist = {'lz4/lz4.c', 'lz4/lz4hc.c', 'easylzma/compress.c', 'easylzma/decompress.c', ...
+filelist = {'miniz/miniz.c', 'lz4/lz4.c', 'lz4/lz4hc.c', 'easylzma/compress.c', 'easylzma/decompress.c', ...
           'easylzma/lzma_header.c', 'easylzma/lzip_header.c', 'easylzma/common_internal.c', ...
           'easylzma/pavlov/LzmaEnc.c', 'easylzma/pavlov/LzmaDec.c', 'easylzma/pavlov/LzmaLib.c' ...
           'easylzma/pavlov/LzFind.c', 'easylzma/pavlov/Bra.c', 'easylzma/pavlov/BraIA64.c' ...
@@ -36,31 +36,27 @@ filelist = {'lz4/lz4.c', 'lz4/lz4hc.c', 'easylzma/compress.c', 'easylzma/decompr
 
 mexfile = 'zmat.cpp';
 suffix = '.o';
+includdir = '-I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4 -Iminiz';
 if (ispc)
     suffix = '.obj';
 end
 if (~exist('OCTAVE_VERSION', 'builtin'))
     delete(['*', suffix]);
-    if (ispc)
-        CCFLAG = 'CFLAGS=''-O3 -g -I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4'' -c';
-        LINKFLAG = 'CXXLIBS=''$CLIBS -lz'' -output ../zipmat -outdir ../';
-    else
-        CCFLAG = 'CFLAGS=''-O3 -g -I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4 -fPIC'' -c';
-        LINKFLAG = 'CXXLIBS=''\$CLIBS -lz'' -output ../zipmat -outdir ../';
-    end
+    CCFLAG = ['CFLAGS=''-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 ' includdir ' -fPIC'' -c'];
+    LINKFLAG = 'CXXLIBS=''$CXXLIBS'' -output ../zipmat -outdir ../';
     for i = 1:length(filelist)
         fprintf(1, 'mex %s %s\n', CCFLAG, filelist{i});
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
     end
     filelist = dir(['*' suffix]);
     filelist = {filelist.name};
-    cmd = sprintf('mex %s -I../include -Ieasylzma %s %s', mexfile, LINKFLAG, sprintf('%s ', filelist{:}));
+    cmd = sprintf('mex %s %s %s %s', mexfile, LINKFLAG, includdir, sprintf('%s ', filelist{:}));
     fprintf(1, '%s\n', cmd);
     eval(cmd);
 else
     delete('*.o');
-    CCFLAG = '-O3 -g -c -I../include -Ieasylzma -Ieasylzma/pavlov -Ilz4';
-    LINKFLAG = '-o ../zipmat -lz';
+    CCFLAG = ['-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 -c ' includdir];
+    LINKFLAG = '-o ../zipmat';
     for i = 1:length(filelist)
         fprintf(stdout, 'mex %s %s\n', CCFLAG, filelist{i});
         fflush(stdout);
