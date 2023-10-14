@@ -1,30 +1,40 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#ifndef BLOSC_BLOSC2_BLOSC2_STDIO_H
-#define BLOSC_BLOSC2_BLOSC2_STDIO_H
 
+#ifndef BLOSC_BLOSC2_STDIO_H
+#define BLOSC_BLOSC2_STDIO_H
+
+
+#include <stdio.h>
+#include <stdlib.h>
 #include "blosc2-export.h"
 
-#if defined(_MSC_VER)
+
+#if defined(_WIN32) && !defined(__MINGW32__)
+
+/* stdint.h only available in VS2010 (VC++ 16.0) and newer */
+   #if defined(_MSC_VER) && _MSC_VER < 1600
+     #include "win32/stdint-windows.h"
+   #else
+     #include <stdint.h>
+   #endif
+
+#else
+#include <stdint.h>
+#endif
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #include <io.h>
 #else
 #include <unistd.h>
-#endif
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 typedef struct {
@@ -39,8 +49,4 @@ BLOSC_EXPORT int64_t blosc2_stdio_write(const void *ptr, int64_t size, int64_t n
 BLOSC_EXPORT int64_t blosc2_stdio_read(void *ptr, int64_t size, int64_t nitems, void *stream);
 BLOSC_EXPORT int blosc2_stdio_truncate(void *stream, int64_t size);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* BLOSC_BLOSC2_BLOSC2_STDIO_H */
+#endif //BLOSC_BLOSC2_STDIO_H

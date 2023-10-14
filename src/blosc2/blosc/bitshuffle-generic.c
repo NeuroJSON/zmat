@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -9,8 +9,6 @@
 **********************************************************************/
 
 #include "bitshuffle-generic.h"
-
-#include <stdint.h>
 
 #ifdef _MSC_VER
 #pragma warning (push)

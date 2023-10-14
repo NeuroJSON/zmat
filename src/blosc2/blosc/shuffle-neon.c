@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  Lucian Marc <ruben.lucian@gmail.com>
+  Copyright (C) 2021  Lucian Marc <ruben.lucian@gmail.com>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -9,15 +9,14 @@
 **********************************************************************/
 
 
-#include "shuffle-neon.h"
 #include "shuffle-generic.h"
+#include "shuffle-neon.h"
 
 /* Make sure NEON is available for the compilation target and compiler. */
 #if defined(__ARM_NEON)
 
 #include <arm_neon.h>
 
-#include <stdint.h>
 
 /* The next is useful for debugging purposes */
 #if 0

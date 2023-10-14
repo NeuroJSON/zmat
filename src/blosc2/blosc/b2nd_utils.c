@@ -1,18 +1,14 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "b2nd_utils.h"
-#include "b2nd.h"
-
-#include <stdint.h>
-#include <string.h>
+#include <b2nd_utils.h>
 
 // copyNdim where N = {2-8} - specializations of copy loops to be used by b2nd_copy_buffer
 // since we don't have c++ templates, substitute manual specializations for up to known B2ND_MAX_DIM (8)

@@ -1,24 +1,21 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org> and Jerome Kieffer <jerome.kieffer@esrf.fr>
+  Copyright (C) 2021  The Blosc developers <blosc@blosc.org> and Jerome Kieffer <jerome.kieffer@esrf.fr>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "shuffle-altivec.h"
 #include "shuffle-generic.h"
+#include "shuffle-altivec.h"
 
 /* Make sure ALTIVEC is available for the compilation target and compiler. */
 #if defined(__ALTIVEC__)
 
-#include "transpose-altivec.h"
-
 #include <altivec.h>
-
-#include <stdint.h>
+#include "transpose-altivec.h"
 
 /* Routine optimized for shuffling a buffer for a type size of 2 bytes. */
 static void

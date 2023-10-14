@@ -1,33 +1,40 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "frame.h"
-#include "stune.h"
-#include "blosc-private.h"
-#include "blosc2/tuners-registry.h"
-#include "blosc2.h"
 
-#if defined(_WIN32)
-#include <windows.h>
-#include <direct.h>
-#include <malloc.h>
-#define mkdir(D, M) _mkdir(D)
-#endif  /* _WIN32 */
-
-#include <sys/stat.h>
-
-#include <inttypes.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include "blosc2.h"
+#include "frame.h"
+#include "stune.h"
+#include <inttypes.h>
+#include "blosc-private.h"
+
+#if defined(_WIN32)
+  #include <windows.h>
+  #include <direct.h>
+  #include <malloc.h>
+
+  #define mkdir(D, M) _mkdir(D)
+
+/* stdint.h only available in VS2010 (VC++ 16.0) and newer */
+  #if defined(_MSC_VER) && _MSC_VER < 1600
+    #include "win32/stdint-windows.h"
+  #else
+    #include <stdint.h>
+  #endif
+
+#endif  /* _WIN32 */
+
 
 /* If C11 is supported, use it's built-in aligned allocation. */
 #if __STDC_VERSION__ >= 201112L
@@ -37,7 +44,7 @@
 
 /* Get the cparams associated with a super-chunk */
 int blosc2_schunk_get_cparams(blosc2_schunk *schunk, blosc2_cparams **cparams) {
-  *cparams = calloc(1, sizeof(blosc2_cparams));
+  *cparams = calloc(sizeof(blosc2_cparams), 1);
   (*cparams)->schunk = schunk;
   for (int i = 0; i < BLOSC2_MAX_FILTERS; i++) {
     (*cparams)->filters[i] = schunk->filters[i];
@@ -61,7 +68,7 @@ int blosc2_schunk_get_cparams(blosc2_schunk *schunk, blosc2_cparams **cparams) {
 
 /* Get the dparams associated with a super-chunk */
 int blosc2_schunk_get_dparams(blosc2_schunk *schunk, blosc2_dparams **dparams) {
-  *dparams = calloc(1, sizeof(blosc2_dparams));
+  *dparams = calloc(sizeof(blosc2_dparams), 1);
   (*dparams)->schunk = schunk;
   if (schunk->dctx == NULL) {
     (*dparams)->nthreads = blosc2_get_nthreads();
@@ -73,7 +80,7 @@ int blosc2_schunk_get_dparams(blosc2_schunk *schunk, blosc2_dparams **dparams) {
 }
 
 
-int update_schunk_properties(struct blosc2_schunk* schunk) {
+void update_schunk_properties(struct blosc2_schunk* schunk) {
   blosc2_cparams* cparams = schunk->storage->cparams;
   blosc2_dparams* dparams = schunk->storage->dparams;
 
@@ -88,21 +95,13 @@ int update_schunk_properties(struct blosc2_schunk* schunk) {
   schunk->typesize = cparams->typesize;
   schunk->blocksize = cparams->blocksize;
   schunk->chunksize = -1;
-  schunk->tuner_params = cparams->tuner_params;
-  schunk->tuner_id = cparams->tuner_id;
-  if (cparams->tuner_id == BLOSC_BTUNE) {
-    cparams->use_dict = 0;
-  }
+
   /* The compression context */
   if (schunk->cctx != NULL) {
     blosc2_free_ctx(schunk->cctx);
   }
   cparams->schunk = schunk;
   schunk->cctx = blosc2_create_cctx(*cparams);
-  if (schunk->cctx == NULL) {
-    BLOSC_TRACE_ERROR("Could not create compression ctx");
-    return BLOSC2_ERROR_NULL_POINTER;
-  }
 
   /* The decompression context */
   if (schunk->dctx != NULL) {
@@ -110,12 +109,6 @@ int update_schunk_properties(struct blosc2_schunk* schunk) {
   }
   dparams->schunk = schunk;
   schunk->dctx = blosc2_create_dctx(*dparams);
-  if (schunk->dctx == NULL) {
-    BLOSC_TRACE_ERROR("Could not create decompression ctx");
-    return BLOSC2_ERROR_NULL_POINTER;
-  }
-
-  return BLOSC2_ERROR_SUCCESS;
 }
 
 
@@ -135,17 +128,18 @@ blosc2_schunk* blosc2_schunk_new(blosc2_storage *storage) {
   // Update the (local variable) storage
   storage = schunk->storage;
 
-  char* tradeoff = getenv("BTUNE_TRADEOFF");
-  if (tradeoff != NULL) {
-    // If BTUNE_TRADEOFF passed, automatically use btune
-    storage->cparams->tuner_id = BLOSC_BTUNE;
+  schunk->udbtune = malloc(sizeof(blosc2_btune));
+  if (schunk->storage->cparams->udbtune == NULL) {
+    memcpy(schunk->udbtune, &BTUNE_DEFAULTS, sizeof(blosc2_btune));
+  } else {
+    memcpy(schunk->udbtune, schunk->storage->cparams->udbtune, sizeof(blosc2_btune));
   }
+  schunk->storage->cparams->udbtune = schunk->udbtune;
 
   // ...and update internal properties
-  if (update_schunk_properties(schunk) < 0) {
-    BLOSC_TRACE_ERROR("Error when updating schunk properties");
-    return NULL;
-  }
+  update_schunk_properties(schunk);
+
+  schunk->cctx->udbtune->btune_init(schunk->udbtune->btune_config, schunk->cctx, schunk->dctx);
 
   if (!storage->contiguous && storage->urlpath != NULL){
     char* urlpath;
@@ -337,7 +331,7 @@ blosc2_schunk* blosc2_schunk_open(const char* urlpath) {
   return blosc2_schunk_open_udio(urlpath, &BLOSC2_IO_DEFAULTS);
 }
 
-blosc2_schunk* blosc2_schunk_open_offset(const char* urlpath, int64_t offset) {
+BLOSC_EXPORT blosc2_schunk* blosc2_schunk_open_offset(const char* urlpath, int64_t offset) {
   if (urlpath == NULL) {
     BLOSC_TRACE_ERROR("You need to supply a urlpath.");
     return NULL;
@@ -546,6 +540,9 @@ int blosc2_schunk_free(blosc2_schunk *schunk) {
     }
   }
 
+  if (schunk->udbtune != NULL) {
+    free(schunk->udbtune);
+  }
   free(schunk);
 
   return 0;
@@ -1593,10 +1590,6 @@ int blosc2_vlmeta_add(blosc2_schunk *schunk, const char *name, uint8_t *content,
   } else {
     cctx = blosc2_create_cctx(BLOSC2_CPARAMS_DEFAULTS);
   }
-  if (cctx == NULL) {
-    BLOSC_TRACE_ERROR("Error while creating the compression context");
-    return BLOSC2_ERROR_NULL_POINTER;
-  }
 
   int csize = blosc2_compress_ctx(cctx, content, content_len, content_buf, content_len + BLOSC2_MAX_OVERHEAD);
   if (csize < 0) {
@@ -1638,10 +1631,6 @@ int blosc2_vlmeta_get(blosc2_schunk *schunk, const char *name, uint8_t **content
   *content_len = nbytes;
   *content = malloc((size_t) nbytes);
   blosc2_context *dctx = blosc2_create_dctx(*schunk->storage->dparams);
-  if (dctx == NULL) {
-    BLOSC_TRACE_ERROR("Error while creating the decompression context");
-    return BLOSC2_ERROR_NULL_POINTER;
-  }
   int nbytes_ = blosc2_decompress_ctx(dctx, meta->content, meta->content_len, *content, nbytes);
   blosc2_free_ctx(dctx);
   if (nbytes_ != nbytes) {
@@ -1668,10 +1657,6 @@ int blosc2_vlmeta_update(blosc2_schunk *schunk, const char *name, uint8_t *conte
     cctx = blosc2_create_cctx(*cparams);
   } else {
     cctx = blosc2_create_cctx(BLOSC2_CPARAMS_DEFAULTS);
-  }
-  if (cctx == NULL) {
-    BLOSC_TRACE_ERROR("Error while creating the compression context");
-    return BLOSC2_ERROR_NULL_POINTER;
   }
 
   int csize = blosc2_compress_ctx(cctx, content, content_len, content_buf, content_len + BLOSC2_MAX_OVERHEAD);

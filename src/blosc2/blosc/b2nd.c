@@ -1,23 +1,19 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "b2nd.h"
-#include "b2nd_utils.h"
+#include <b2nd.h>
 #include "context.h"
-#include "blosc2/blosc2-common.h"
+#include "b2nd_utils.h"
 #include "blosc2.h"
-
+#include "blosc2/blosc2-common.h"
 #include <inttypes.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
 
 
 int b2nd_serialize_meta(int8_t ndim, const int64_t *shape, const int32_t *chunkshape,
@@ -176,8 +172,8 @@ int update_shape(b2nd_array_t *array, int8_t ndim, const int64_t *shape,
             b2nd_serialize_meta(array->ndim, array->shape, array->chunkshape, array->blockshape,
                                 array->dtype, array->dtype_format, &smeta);
     if (smeta_len < 0) {
-      BLOSC_TRACE_ERROR("Error during serializing dims info for Blosc2 NDim");
-      BLOSC_ERROR(BLOSC2_ERROR_FAILURE);
+      fprintf(stderr, "error during serializing dims info for Blosc2 NDim");
+      return -1;
     }
     // ... and update it in its metalayer
     if (blosc2_meta_exists(array->sc, "b2nd") < 0) {
@@ -269,10 +265,6 @@ int array_new(b2nd_context_t *ctx, int special_value, b2nd_array_t **array) {
     }
   }
 
-  if ((*array)->extchunknitems * sc->typesize > BLOSC2_MAX_BUFFERSIZE){
-    BLOSC_TRACE_ERROR("Chunksize exceeds maximum of %d", BLOSC2_MAX_BUFFERSIZE);
-    return BLOSC2_ERROR_MAX_BUFSIZE_EXCEEDED;
-  }
   // Fill schunk with uninit values
   if ((*array)->nitems != 0) {
     int32_t chunksize = (int32_t) (*array)->extchunknitems * sc->typesize;
@@ -603,7 +595,7 @@ int get_set_slice(void *buffer, int64_t buffersize, const int64_t *start, const 
     int64_t nchunk;
     blosc2_multidim_to_unidim(nchunk_ndim, ndim, chunks_in_array_strides, &nchunk);
 
-    // Check if the chunk needs to be updated
+    // check if the chunk needs to be updated
     int64_t chunk_start[B2ND_MAX_DIM] = {0};
     int64_t chunk_stop[B2ND_MAX_DIM] = {0};
     for (int i = 0; i < ndim; ++i) {
@@ -648,7 +640,7 @@ int get_set_slice(void *buffer, int64_t buffersize, const int64_t *start, const 
         int64_t nblock_ndim[B2ND_MAX_DIM] = {0};
         blosc2_unidim_to_multidim(ndim, blocks_in_chunk, nblock, nblock_ndim);
 
-        // Check if the block needs to be updated
+        // check if the block needs to be updated
         int64_t block_start[B2ND_MAX_DIM] = {0};
         int64_t block_stop[B2ND_MAX_DIM] = {0};
         for (int i = 0; i < ndim; ++i) {
@@ -692,7 +684,7 @@ int get_set_slice(void *buffer, int64_t buffersize, const int64_t *start, const 
       int64_t nblock_ndim[B2ND_MAX_DIM] = {0};
       blosc2_unidim_to_multidim(ndim, blocks_in_chunk, nblock, nblock_ndim);
 
-      // Check if the block needs to be updated
+      // check if the block needs to be updated
       int64_t block_start[B2ND_MAX_DIM] = {0};
       int64_t block_stop[B2ND_MAX_DIM] = {0};
       for (int i = 0; i < ndim; ++i) {
@@ -891,7 +883,7 @@ int b2nd_get_slice(b2nd_context_t *ctx, b2nd_array_t **array, const b2nd_array_t
     int64_t nchunk_ndim[B2ND_MAX_DIM] = {0};
     blosc2_unidim_to_multidim(ndim, chunks_in_array, nchunk, nchunk_ndim);
 
-    // Check if the chunk needs to be updated
+    // check if the chunk needs to be updated
     int64_t chunk_start[B2ND_MAX_DIM] = {0};
     int64_t chunk_stop[B2ND_MAX_DIM] = {0};
     int64_t chunk_shape[B2ND_MAX_DIM] = {0};
@@ -1100,7 +1092,7 @@ int b2nd_print_meta(const b2nd_array_t *array) {
                                     &dtype, &dtype_format));
   free(smeta);
 
-  printf("b2nd metalayer parameters:\n Ndim:       %d", ndim);
+  printf("b2nd metalayer parameters: \n Ndim:       %d", ndim);
   printf("\n shape:      %" PRId64 "", shape[0]);
   for (int i = 1; i < ndim; ++i) {
     printf(", %" PRId64 "", shape[i]);
@@ -1823,20 +1815,6 @@ b2nd_create_ctx(const blosc2_storage *b2_storage, int8_t ndim, const int64_t *sh
   for (int i = 0; i < nmetalayers; ++i) {
     ctx->metalayers[i] = metalayers[i];
   }
-
-#if defined(HAVE_PLUGINS)
-  #include "blosc2/codecs-registry.h"
-  if ((ctx->b2_storage->cparams->compcode >= BLOSC_CODEC_ZFP_FIXED_ACCURACY) &&
-      (ctx->b2_storage->cparams->compcode <= BLOSC_CODEC_ZFP_FIXED_RATE)) {
-    for (int i = 0; i < BLOSC2_MAX_FILTERS; ++i) {
-      if ((ctx->b2_storage->cparams->filters[i] == BLOSC_SHUFFLE) ||
-          (ctx->b2_storage->cparams->filters[i] == BLOSC_BITSHUFFLE)) {
-        BLOSC_TRACE_ERROR("ZFP cannot be run in presence of SHUFFLE / BITSHUFFLE");
-        return NULL;
-      }
-    }
-  }
-#endif /* HAVE_PLUGINS */
 
   return ctx;
 }

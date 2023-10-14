@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -11,6 +11,7 @@
 #ifndef BLOSC_DELTA_H
 #define BLOSC_DELTA_H
 
+#include <stdio.h>
 #include <stdint.h>
 
 void delta_encoder(const uint8_t* dref, int32_t offset, int32_t nbytes,
@@ -19,4 +20,4 @@ void delta_encoder(const uint8_t* dref, int32_t offset, int32_t nbytes,
 void delta_decoder(const uint8_t* dref, int32_t offset, int32_t nbytes,
                    int32_t typesize, uint8_t* dest);
 
-#endif /* BLOSC_DELTA_H */
+#endif //BLOSC_DELTA_H

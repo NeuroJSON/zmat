@@ -1,22 +1,21 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "shuffle-sse2.h"
 #include "shuffle-generic.h"
+#include "shuffle-sse2.h"
 
 /* Make sure SSE2 is available for the compilation target and compiler. */
 #if defined(__SSE2__)
 
 #include <emmintrin.h>
 
-#include <stdint.h>
 
 /* The next is useful for debugging purposes */
 #if 0

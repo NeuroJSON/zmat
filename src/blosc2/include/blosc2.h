@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -13,28 +13,36 @@
   @brief Blosc2 header file.
 
   This file contains Blosc2 public API and the structures needed to use it.
-  @author The Blosc Development Team <blosc@blosc.org>
+  @author The Blosc Developers <blosc@blosc.org>
 **********************************************************************/
 
-#ifndef BLOSC_BLOSC2_H
-#define BLOSC_BLOSC2_H
 
-#include "blosc2/blosc2-export.h"
-#include "blosc2/blosc2-common.h"
-#include "blosc2/blosc2-stdio.h"
-
-#if defined(_WIN32) && !defined(__MINGW32__)
-#include <windows.h>
-#include <malloc.h>
-#include <process.h>
-#define getpid _getpid
-#endif
+#ifndef BLOSC2_H
+#define BLOSC2_H
 
 #include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "blosc2/blosc2-export.h"
+#include "blosc2/blosc2-common.h"
+#include "blosc2/blosc2-stdio.h"
+#ifdef __cplusplus
+}
+#endif
+
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include <windows.h>
+  #include <malloc.h>
+
+  #include <process.h>
+  #define getpid _getpid
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,11 +90,11 @@ extern "C" {
 
 /* Version numbers */
 #define BLOSC2_VERSION_MAJOR    2    /* for major interface/format changes  */
-#define BLOSC2_VERSION_MINOR    10   /* for minor interface/format changes  */
-#define BLOSC2_VERSION_RELEASE  5    /* for tweaks, bug-fixes, or development */
+#define BLOSC2_VERSION_MINOR    8    /* for minor interface/format changes  */
+#define BLOSC2_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
 
-#define BLOSC2_VERSION_STRING   "2.10.5"  /* string version.  Sync with above! */
-#define BLOSC2_VERSION_DATE     "$Date:: 2023-10-05 #$"    /* date version */
+#define BLOSC2_VERSION_STRING   "2.8.0"  /* string version.  Sync with above! */
+#define BLOSC2_VERSION_DATE     "$Date:: 2023-03-24 #$"    /* date version */
 
 
 /* The maximum number of dimensions for Blosc2 NDim arrays */
@@ -96,20 +104,19 @@ extern "C" {
 /* Tracing macros */
 #define BLOSC_TRACE_ERROR(msg, ...) BLOSC_TRACE(error, msg, ##__VA_ARGS__)
 #define BLOSC_TRACE_WARNING(msg, ...) BLOSC_TRACE(warning, msg, ##__VA_ARGS__)
-#define BLOSC_TRACE_INFO(msg, ...) BLOSC_TRACE(info, msg, ##__VA_ARGS__)
-#define BLOSC_TRACE(cat, msg, ...)                  \
-    do {                                            \
-        const char *__e = getenv("BLOSC_TRACE");    \
-        if (!__e) { break; }                        \
-        fprintf(stderr, "[%s] - " msg " (%s:%d)\n", #cat, ##__VA_ARGS__, __FILE__, __LINE__); \
-    } while(0)
+#define BLOSC_TRACE(cat, msg, ...) \
+    do { \
+         const char *__e = getenv("BLOSC_TRACE"); \
+         if (!__e) { break; } \
+         fprintf(stderr, "[%s] - " msg " (%s:%d)\n", #cat, ##__VA_ARGS__, __FILE__, __LINE__); \
+       } while(0)
 
-#define BLOSC_ERROR_NULL(pointer, rc)               \
-    do {                                            \
-        if ((pointer) == NULL) {                    \
-            BLOSC_TRACE_ERROR("Pointer is null");   \
-            return rc;                              \
-        }                                           \
+#define BLOSC_ERROR_NULL(pointer, rc)                           \
+    do {                                                        \
+        if ((pointer) == NULL) {                                \
+            BLOSC_TRACE_ERROR("Pointer is null");               \
+            return rc;                                          \
+        }\
     } while (0)
 #define BLOSC_ERROR(rc)                             \
     do {                                            \
@@ -120,13 +127,6 @@ extern "C" {
             return rc_;                             \
         }                                           \
     } while (0)
-
-#define BLOSC_INFO(msg, ...)                        \
-    do {                                            \
-        const char *__e = getenv("BLOSC_INFO");     \
-        if (!__e) { break; }                        \
-        fprintf(stderr, "[INFO] - " msg "\n", ##__VA_ARGS__); \
-    } while(0)
 
 
 /* The VERSION_FORMAT symbols below should be just 1-byte long */
@@ -194,30 +194,6 @@ enum {
   //!< Minimum buffer size to be compressed.
 };
 
-enum {
-    BLOSC2_DEFINED_TUNER_START = 0,
-    BLOSC2_DEFINED_TUNER_STOP = 31,
-    //!< Blosc-defined tuners must be between 0 - 31.
-    BLOSC2_GLOBAL_REGISTERED_TUNER_START = 32,
-    BLOSC2_GLOBAL_REGISTERED_TUNER_STOP = 159,
-    //!< Blosc-registered tuners must be between 31 - 159.
-    BLOSC2_GLOBAL_REGISTERED_TUNERS = 0,
-    //!< Number of Blosc-registered tuners at the moment.
-    BLOSC2_USER_REGISTERED_TUNER_START = 160,
-    BLOSC2_USER_REGISTERED_TUNER_STOP = 255,
-    //!< User-defined tuners must be between 160 - 255.
-};
-
-/**
- * @brief Codes for the different tuners shipped with Blosc
- */
-enum {
-    BLOSC_STUNE = 0,
-    BLOSC_LAST_TUNER = 1,
-    //!< Determine the last tuner defined by Blosc.
-    BLOSC_LAST_REGISTERED_TUNE = BLOSC2_GLOBAL_REGISTERED_TUNER_START + BLOSC2_GLOBAL_REGISTERED_TUNERS - 1,
-    //!< Determine the last registered tuner. It is used to check if a tuner is registered or not.
-};
 
 enum {
   BLOSC2_DEFINED_FILTERS_START = 0,
@@ -226,7 +202,7 @@ enum {
   BLOSC2_GLOBAL_REGISTERED_FILTERS_START = 32,
   BLOSC2_GLOBAL_REGISTERED_FILTERS_STOP = 159,
   //!< Blosc-registered filters must be between 32 - 159.
-  BLOSC2_GLOBAL_REGISTERED_FILTERS = 4,
+  BLOSC2_GLOBAL_REGISTERED_FILTERS = 3,
   //!< Number of Blosc-registered filters at the moment.
   BLOSC2_USER_REGISTERED_FILTERS_START = 160,
   BLOSC2_USER_REGISTERED_FILTERS_STOP = 255,
@@ -294,7 +270,7 @@ enum {
   BLOSC2_GLOBAL_REGISTERED_CODECS_START = 32,
   BLOSC2_GLOBAL_REGISTERED_CODECS_STOP = 159,
   //!< Blosc-registered codecs must be between 31 - 159.
-  BLOSC2_GLOBAL_REGISTERED_CODECS = 5,
+  BLOSC2_GLOBAL_REGISTERED_CODECS = 1,
     //!< Number of Blosc-registered codecs at the moment.
   BLOSC2_USER_REGISTERED_CODECS_START = 160,
   BLOSC2_USER_REGISTERED_CODECS_STOP = 255,
@@ -429,8 +405,6 @@ enum {
 
 /**
  * @brief Error codes
- * Each time an error code is added here, its corresponding message error should be added in
- * print_error()
  */
 enum {
   BLOSC2_ERROR_SUCCESS = 0,           //<! Success
@@ -468,8 +442,6 @@ enum {
   BLOSC2_ERROR_NULL_POINTER = -32,    //!< Pointer is null
   BLOSC2_ERROR_INVALID_INDEX = -33,   //!< Invalid index
   BLOSC2_ERROR_METALAYER_NOT_FOUND = -34,   //!< Metalayer has not been found
-  BLOSC2_ERROR_MAX_BUFSIZE_EXCEEDED = -35,  //!< Max buffer size exceeded
-  BLOSC2_ERROR_TUNER = -36,           //!< Tuner failure
 };
 
 
@@ -550,8 +522,6 @@ static char *print_error(int rc) {
       return (char *) "Invalid index";
     case BLOSC2_ERROR_METALAYER_NOT_FOUND:
       return (char *) "Metalayer has not been found";
-    case BLOSC2_ERROR_MAX_BUFSIZE_EXCEEDED:
-      return (char *) "Maximum buffersize exceeded";
     default:
       return (char *) "Unknown error";
   }
@@ -1030,8 +1000,6 @@ typedef int     (*blosc2_truncate_cb)(void *stream, int64_t size);
 typedef struct {
   uint8_t id;
   //!< The IO identifier.
-  char* name;
-  //!< The IO name.
   blosc2_open_cb open;
   //!< The IO open callback.
   blosc2_close_cb close;
@@ -1054,16 +1022,16 @@ typedef struct {
  */
 typedef struct {
   uint8_t id;
-  const char *name;
   //!< The IO identifier.
   void *params;
   //!< The IO parameters.
 } blosc2_io;
 
+static blosc2_io_cb BLOSC2_IO_CB_DEFAULTS = {0};
+
 static const blosc2_io BLOSC2_IO_DEFAULTS = {
-  /* .id = */ BLOSC2_IO_FILESYSTEM,
-  /* .name = */ "filesystem",
-  /* .params = */ NULL,
+    .id = BLOSC2_IO_FILESYSTEM,
+    .params = NULL,
 };
 
 
@@ -1085,31 +1053,19 @@ BLOSC_EXPORT blosc2_io_cb *blosc2_get_io_cb(uint8_t id);
 typedef struct blosc2_context_s blosc2_context;   /* opaque type */
 
 typedef struct {
-  int (*init)(void * config, blosc2_context* cctx, blosc2_context* dctx);
-  //!< Initialize tuner. Keep in mind dctx may be NULL. This should memcpy the cctx->tuner_params.
-  int (*next_blocksize)(blosc2_context * context);
-  //!< Only compute the next blocksize. Only it is executed if tuner is not initialized.
-  int (*next_cparams)(blosc2_context * context);
-  //!< Compute the next cparams. Only is executed if tuner is initialized.
-  int (*update)(blosc2_context * context, double ctime);
-  //!< Update the tuner parameters.
-  int (*free)(blosc2_context * context);
-  //!< Free the tuner.
-  int id;
-  //!< The tuner id
-  char *name;
-  //!< The tuner name
-} blosc2_tuner;
-
-
-/**
- * @brief Register locally a user-defined tuner in Blosc.
- *
- * @param tuner The tuner to register.
- *
- * @return 0 if succeeds. Else a negative code is returned.
- */
-BLOSC_EXPORT int register_tuner_private(blosc2_tuner *tuner);
+  void (*btune_init)(void * config, blosc2_context* cctx, blosc2_context* dctx);
+  //!< Initialize BTune.
+  void (*btune_next_blocksize)(blosc2_context * context);
+  //!< Only compute the next blocksize. Only it is executed if BTune is not initialized.
+  void (*btune_next_cparams)(blosc2_context * context);
+  //!< Compute the next cparams. Only is executed if BTune is initialized.
+  void (*btune_update)(blosc2_context * context, double ctime);
+  //!< Update the BTune parameters.
+  void (*btune_free)(blosc2_context * context);
+  //!< Free the BTune.
+  void *btune_config;
+  //!> BTune configuration.
+}blosc2_btune;
 
 
 /**
@@ -1197,10 +1153,8 @@ typedef struct {
   //!< The prefilter function.
   blosc2_prefilter_params *preparams;
   //!< The prefilter parameters.
-  void *tuner_params;
-  //!< Tune configuration.
-  int tuner_id;
-  //!< The tuner id.
+  blosc2_btune *udbtune;
+  //!< The user-defined BTune parameters.
   bool instr_codec;
   //!< Whether the codec is instrumented or not
   void *codec_params;
@@ -1217,7 +1171,7 @@ static const blosc2_cparams BLOSC2_CPARAMS_DEFAULTS = {
         BLOSC_FORWARD_COMPAT_SPLIT, NULL,
         {0, 0, 0, 0, 0, BLOSC_SHUFFLE},
         {0, 0, 0, 0, 0, 0},
-        NULL, NULL, NULL, 0, 0,
+        NULL, NULL, NULL, 0,
         NULL, {NULL, NULL, NULL, NULL, NULL, NULL}
         };
 
@@ -1251,7 +1205,7 @@ static const blosc2_dparams BLOSC2_DPARAMS_DEFAULTS = {1, NULL, NULL, NULL};
  *
  * @return A pointer to the new context. NULL is returned if this fails.
  *
- * @note This supports the same environment variables than #blosc2_compress
+ * @note This support the same environment variables than #blosc2_compress
  * for overriding the programmatic compression values.
  *
  * @sa #blosc2_compress
@@ -1265,7 +1219,7 @@ BLOSC_EXPORT blosc2_context* blosc2_create_cctx(blosc2_cparams cparams);
  *
  * @return A pointer to the new context. NULL is returned if this fails.
  *
- * @note This supports the same environment variables than #blosc2_decompress
+ * @note This support the same environment variables than #blosc2_decompress
  * for overriding the programmatic decompression values.
  *
  * @sa #blosc2_decompress
@@ -1356,11 +1310,9 @@ BLOSC_EXPORT int blosc2_set_maskout(blosc2_context *ctx, bool *maskout, int nblo
  * @return The number of bytes compressed.
  * If @p src buffer cannot be compressed into @p destsize, the return
  * value is zero and you should discard the contents of the @p dest
- * buffer. A negative return value means that either a parameter is not correct
- * or that an internal error happened. Set the BLOSC_TRACE environment variable
- * for getting more info on what is happening. If the error is not related with
- * wrong params, please report it back together with the buffer data causing this,
- * as well as the compression params used.
+ * buffer. A negative return value means that an internal error happened. This
+ * should never happen. If you see this, please report it back
+ * together with the buffer data causing this and compression settings.
 */
 /*
  * Environment variables
@@ -1711,10 +1663,8 @@ typedef struct blosc2_schunk {
   //<! The array of variable-length metalayers.
   int16_t nvlmetalayers;
   //!< The number of variable-length metalayers.
-  void *tuner_params;
-  //!< Tune configuration.
-  int tuner_id;
-  //<! Id for tuner
+  blosc2_btune *udbtune;
+  //<! Struct for BTune
   int8_t ndim;
   //<! The ndim (mainly for ZFP usage)
   int64_t *blockshape;
@@ -1841,7 +1791,7 @@ BLOSC_EXPORT int64_t blosc2_schunk_append_file(blosc2_schunk* schunk, const char
  *
  * @param schunk The super-chunk to be freed.
  *
- * @remark All the memory resources attached to the super-chunk are freed.
+ * @remark All the memory resources attached to the super-frame are freed.
  * If the super-chunk is on-disk, the data continues there for a later
  * re-opening.
  *
@@ -1924,7 +1874,7 @@ BLOSC_EXPORT int64_t blosc2_schunk_append_buffer(blosc2_schunk *schunk, void *sr
  * @param dest The buffer where the decompressed data will be put.
  * @param nbytes The size of the area pointed by @p *dest.
  *
- * @warning You must make sure that you have enough space to store the
+ * @warning You must make sure that you have space enough to store the
  * uncompressed data.
  *
  * @return The size of the decompressed chunk or 0 if it is non-initialized. If some problem is
@@ -1988,7 +1938,7 @@ BLOSC_EXPORT int blosc2_schunk_get_lazychunk(blosc2_schunk *schunk, int64_t nchu
  * @param stop The first index (0-based) that is not in the selected slice.
  * @param buffer The buffer where the data will be stored.
  *
- * @warning You must make sure that you have enough space in buffer to store the
+ * @warning You must make sure that you have space enough in buffer to store the
  * uncompressed data.
  *
  * @return An error code.
@@ -2400,7 +2350,7 @@ typedef struct {
   //!< The codec name.
   uint8_t complib;
   //!< The codec library format.
-  uint8_t version;
+  uint8_t compver;
   //!< The codec version.
   blosc2_codec_encoder_cb encoder;
   //!< The codec encoder that is used during compression.
@@ -2433,10 +2383,6 @@ typedef int (* blosc2_filter_backward_cb) (const uint8_t *, uint8_t *, int32_t, 
 typedef struct {
   uint8_t id;
   //!< The filter identifier.
-  char * name;
-  //!< The filter name.
-  uint8_t version;
-  //!< The filter version.
   blosc2_filter_forward_cb forward;
   //!< The filter function that is used during compression.
   blosc2_filter_backward_cb backward;
@@ -2490,4 +2436,5 @@ BLOSC_EXPORT void blosc2_multidim_to_unidim(const int64_t *index, int8_t ndim, c
 }
 #endif
 
-#endif /* BLOSC_BLOSC2_H */
+
+#endif  /* BLOSC2_H */

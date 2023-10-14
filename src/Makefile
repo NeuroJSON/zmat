@@ -95,11 +95,7 @@ else
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
     LIBZLIB+=-Lblosc2/internal-complibs/zstd -lzstd
   endif
-  ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
-    LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread
-  else
-    LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread -ldl
-  endif
+  LIBZLIB+=-Lblosc2/lib -lblosc2 -pthread
   ifeq ($(HAVE_ZLIB),yes)
      LIBZLIB+=-lz
   endif

@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -14,14 +14,12 @@
 **********************************************************************/
 
 
+#include <stdio.h>
+#include <stdbool.h>
 #include "blosclz.h"
 #include "fastcopy.h"
 #include "blosc2/blosc2-common.h"
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 
 /*
  * Give hints to the compiler for branch prediction optimization.
@@ -438,7 +436,7 @@ int blosclz_compress(const int clevel, const void* input, int length,
   // Minimum lengths for encoding (normally it is good to match the shift value)
   unsigned minlen = 3;
 
-  uint8_t hashlog_[10] = {0, HASH_LOG - 1, HASH_LOG - 1, HASH_LOG, HASH_LOG,
+  uint8_t hashlog_[10] = {0, HASH_LOG - 2, HASH_LOG - 1, HASH_LOG, HASH_LOG,
                           HASH_LOG, HASH_LOG, HASH_LOG, HASH_LOG, HASH_LOG};
   uint8_t hashlog = hashlog_[clevel];
 
@@ -447,10 +445,7 @@ int blosclz_compress(const int clevel, const void* input, int length,
   // is better (specially when combined with bitshuffle).
   // The loss in speed for checking the whole buffer is pretty negligible too.
   int maxlen = length;
-  if (clevel < 2) {
-    maxlen /= 8;
-  }
-  else if (clevel < 4) {
+  if (clevel < 4) {
     maxlen /= 4;
   }
   else if (clevel < 7) {

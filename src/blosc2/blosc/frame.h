@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -11,9 +11,7 @@
 #ifndef BLOSC_FRAME_H
 #define BLOSC_FRAME_H
 
-#include "blosc2.h"
-
-#include <stdbool.h>
+#include <stdio.h>
 #include <stdint.h>
 
 // Different types of frames
@@ -167,4 +165,4 @@ int frame_update_trailer(blosc2_frame_s* frame, blosc2_schunk* schunk);
 int64_t frame_fill_special(blosc2_frame_s* frame, int64_t nitems, int special_value,
                        int32_t chunksize, blosc2_schunk* schunk);
 
-#endif /* BLOSC_FRAME_H */
+#endif //BLOSC_FRAME_H

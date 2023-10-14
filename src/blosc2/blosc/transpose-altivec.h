@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org> and Jerome Kieffer <jerome.kieffer@esrf.fr>
+  Copyright (C) 2021  The Blosc developers <blosc@blosc.org> and Jerome Kieffer <jerome.kieffer@esrf.fr>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -11,9 +11,9 @@
 #ifndef BLOSC_TRANSPOSE_ALTIVEC_H
 #define BLOSC_TRANSPOSE_ALTIVEC_H
 
-#include <altivec.h>
-
-#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static const __vector uint8_t even = (const __vector uint8_t) {
   0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e,
@@ -113,4 +113,9 @@ static void transpose16x16(__vector uint8_t * xmm0){
   }
 }
 
-#endif /* BLOSC_TRANSPOSE_ALTIVEC_H */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //BLOSC_TRANSPOSE_ALTIVEC_H

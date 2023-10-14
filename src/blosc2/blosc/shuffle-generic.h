@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -16,13 +16,16 @@
   which isn't a multiple of the hardware's vector size.
 **********************************************************************/
 
-#ifndef BLOSC_SHUFFLE_GENERIC_H
-#define BLOSC_SHUFFLE_GENERIC_H
+
+#ifndef SHUFFLE_GENERIC_H
+#define SHUFFLE_GENERIC_H
 
 #include "blosc2/blosc2-common.h"
+#include <stdlib.h>
 
-#include <stdint.h>
-#include <string.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   Generic (non-hardware-accelerated) shuffle routine.
@@ -31,7 +34,7 @@
   implementations to process any remaining elements in a block which
   is not a multiple of (type_size * vector_size).
 */
-static inline void shuffle_generic_inline(const int32_t type_size,
+inline static void shuffle_generic_inline(const int32_t type_size,
                                    const int32_t vectorizable_blocksize, const int32_t blocksize,
                                    const uint8_t *_src, uint8_t *_dest) {
   int32_t i, j;
@@ -59,7 +62,7 @@ static inline void shuffle_generic_inline(const int32_t type_size,
   implementations to process any remaining elements in a block which
   is not a multiple of (type_size * vector_size).
 */
-static inline void unshuffle_generic_inline(const int32_t type_size,
+inline static void unshuffle_generic_inline(const int32_t type_size,
                                      const int32_t vectorizable_blocksize, const int32_t blocksize,
                                      const uint8_t *_src, uint8_t *_dest) {
   int32_t i, j;
@@ -92,4 +95,8 @@ BLOSC_NO_EXPORT void shuffle_generic(const int32_t bytesoftype, const int32_t bl
 BLOSC_NO_EXPORT void unshuffle_generic(const int32_t bytesoftype, const int32_t blocksize,
                                        const uint8_t *_src, uint8_t *_dest);
 
-#endif /* BLOSC_SHUFFLE_GENERIC_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SHUFFLE_GENERIC_H */

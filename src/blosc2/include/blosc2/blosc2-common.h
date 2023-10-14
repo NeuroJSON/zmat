@@ -1,19 +1,17 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#ifndef BLOSC_BLOSC2_BLOSC2_COMMON_H
-#define BLOSC_BLOSC2_BLOSC2_COMMON_H
+#ifndef SHUFFLE_COMMON_H
+#define SHUFFLE_COMMON_H
 
 #include "blosc2-export.h"
-
-#include <stdint.h>
 #include <string.h>
 
 // For shutting up stupid compiler warning about some 'unused' variables in GCC
@@ -27,10 +25,24 @@
 // For shutting up compiler warning about unused parameters
 #define BLOSC_UNUSED_PARAM(x) ((void)(x))
 
-/* Use inlined functions for supported systems */
-#if defined(_MSC_VER) && !defined(__cplusplus)   /* Visual Studio */
-  #define inline __inline  /* Visual C is not C99, but supports some kind of inline */
-#endif
+/* Import standard integer type definitions */
+#if defined(_WIN32) && !defined(__MINGW32__)
+
+  /* stdint.h only available in VS2010 (VC++ 16.0) and newer */
+  #if defined(_MSC_VER) && _MSC_VER < 1600
+    #include "win32/stdint-windows.h"
+  #else
+    #include <stdint.h>
+  #endif
+
+  /* Use inlined functions for supported systems */
+  #if defined(_MSC_VER) && !defined(__cplusplus)   /* Visual Studio */
+    #define inline __inline  /* Visual C is not C99, but supports some kind of inline */
+  #endif
+
+#else
+  #include <stdint.h>
+#endif  /* _WIN32 */
 
 
 /* Define the __SSE2__ symbol if compiling with Visual C++ and
@@ -77,4 +89,4 @@
   #include <immintrin.h>
 #endif
 
-#endif  /* BLOSC_BLOSC2_BLOSC2_COMMON_H */
+#endif  /* SHUFFLE_COMMON_H */

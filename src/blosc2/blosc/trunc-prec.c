@@ -1,20 +1,18 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "assert.h"
 #include "trunc-prec.h"
 #include "blosc2.h"
-
-#include <assert.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 
 #define BITS_MANTISSA_FLOAT 23
 #define BITS_MANTISSA_DOUBLE 52
@@ -79,8 +77,8 @@ int truncate_precision(int8_t prec_bits, int32_t typesize, int32_t nbytes,
       return truncate_precision64(prec_bits, nbytes / typesize,
                               (int64_t *)src, (int64_t *)dest);
     default:
-      BLOSC_TRACE_ERROR("Error in trunc-prec filter: Precision for typesize %d not handled",
-                        (int)typesize);
+      fprintf(stderr, "Error in trunc-prec filter: Precision for typesize %d "
+              "not handled", (int)typesize);
       return -1;
   }
 }

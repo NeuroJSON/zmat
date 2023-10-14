@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
@@ -12,28 +12,20 @@
  * @brief Blosc2 NDim header file.
  *
  * This file contains Blosc2 NDim public API and the structures needed to use it.
- * @author Blosc Development Team <blosc@blosc.org>
+ * @author Blosc Development team <blosc@blosc.org>
  */
 
-#ifndef BLOSC_B2ND_H
-#define BLOSC_B2ND_H
+#ifndef B2ND_B2ND_H_
+#define B2ND_B2ND_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include "blosc2/blosc2-export.h"
-#ifdef __cplusplus
-}
-#endif
-
-#include "blosc2.h"
-
+#include <blosc2.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "blosc2/blosc2-export.h"
 
 
 /* The version for metalayer format; starts from 0 and it must not exceed 127 */
@@ -198,8 +190,8 @@ BLOSC_EXPORT int b2nd_zeros(b2nd_context_t *ctx, b2nd_array_t **array);
  * uninitialized portions of the array.
  *
  * @param ctx The b2nd context for the new array.
- * @param array The memory pointer where the array will be created.
  * @param fill_value Default value for uninitialized portions of the array.
+ * @param array The memory pointer where the array will be created.
  *
  * @return An error code.
  */
@@ -603,4 +595,4 @@ static inline int b2nd_deserialize_meta(
 }
 #endif
 
-#endif  /* BLOSC_B2ND_H */
+#endif  // B2ND_B2ND_H_

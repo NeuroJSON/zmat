@@ -1,21 +1,16 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "blosc2.h"
-
-#include <sys/stat.h>
-#include <errno.h>
-
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include "blosc2.h"
+#include <sys/stat.h>
 
 #if defined(_WIN32) || defined(__MINGW32__)
   #include <windows.h>
@@ -131,10 +126,6 @@ int blosc2_remove_urlpath(const char* urlpath){
   if (urlpath != NULL) {
     struct stat statbuf;
     if (stat(urlpath, &statbuf) != 0){
-      if (errno == ENOENT) {
-        // Path does not exist
-        return BLOSC2_ERROR_SUCCESS;
-      }
       BLOSC_TRACE_ERROR("Could not access %s", urlpath);
       return BLOSC2_ERROR_FAILURE;
     }

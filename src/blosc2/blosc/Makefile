@@ -37,7 +37,7 @@ PLATFORM = $(shell uname -s)
 
 DLLFLAG=-fPIC
 
-CPPOPT=-g -Wall -Wextra -O3 -msse2 -DNDEBUG $(DLLFLAG) -std=gnu99 #-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -Wextra -O3 -msse2 -DNDEBUG $(DLLFLAG) -std=gnu99 -Wno-unused-variable #-g -Wall -std=c99 # -DUSE_OS_TIMER
 
 ifeq ($(HAVE_ZLIB),yes)
   CPPOPT+=-DHAVE_ZLIB

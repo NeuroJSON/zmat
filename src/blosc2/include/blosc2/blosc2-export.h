@@ -1,15 +1,15 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#ifndef BLOSC_BLOSC2_BLOSC2_EXPORT_H
-#define BLOSC_BLOSC2_BLOSC2_EXPORT_H
+#ifndef BLOSC_EXPORT_H
+#define BLOSC_EXPORT_H
 
 /* Macros for specifying exported symbols.
    BLOSC_EXPORT is used to decorate symbols that should be
@@ -33,11 +33,11 @@
   #define BLOSC_EXPORT
 #endif  /* defined(BLOSC_SHARED_LIBRARY) */
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(__MINGW32__)
+#if defined(__GNUC__) || defined(__clang__)
   #define BLOSC_NO_EXPORT __attribute__((visibility("hidden")))
 #else
   #define BLOSC_NO_EXPORT
-#endif  /* (defined(__GNUC__) || defined(__clang__)) && !defined(__MINGW32__) */
+#endif  /* defined(__GNUC__) || defined(__clang__) */
 
 /* When testing, export everything to make it easier to implement tests. */
 #if defined(BLOSC_TESTING)
@@ -45,4 +45,4 @@
   #define BLOSC_NO_EXPORT BLOSC_EXPORT
 #endif  /* defined(BLOSC_TESTING) */
 
-#endif /* BLOSC_BLOSC2_BLOSC2_EXPORT_H */
+#endif  /* BLOSC_EXPORT_H */

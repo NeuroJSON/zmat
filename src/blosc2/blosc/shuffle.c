@@ -1,14 +1,26 @@
 /*********************************************************************
   Blosc - Blocked Shuffling and Compression Library
 
-  Copyright (c) 2021  The Blosc Development Team <blosc@blosc.org>
+  Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
   https://blosc.org
   License: BSD 3-Clause (see LICENSE.txt)
 
   See LICENSE.txt for details about copyright and rights to use.
 **********************************************************************/
 
-#include "shuffle.h" /* needs to be included first to define macros */
+#include "shuffle.h"
+#include "blosc2/blosc2-common.h"
+#include "shuffle-generic.h"
+#include "bitshuffle-generic.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+    __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#define HAVE_CPU_FEAT_INTRIN
+#endif
 
 /*  Include hardware-accelerated shuffle/unshuffle routines based on
     the target architecture. Note that a target architecture may support
@@ -38,22 +50,6 @@
   #include "shuffle-altivec.h"
   #include "bitshuffle-altivec.h"
 #endif  /* defined(SHUFFLE_USE_ALTIVEC) */
-
-#include "shuffle-generic.h"
-#include "bitshuffle-generic.h"
-#include "blosc2/blosc2-common.h"
-#include "blosc2.h"
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-
-
-#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
-    __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-#define HAVE_CPU_FEAT_INTRIN
-#endif
 
 
 /*  Define function pointer types for shuffle/unshuffle routines. */
@@ -437,7 +433,7 @@ bitshuffle(const int32_t bytesoftype, const int32_t blocksize,
                                              size, bytesoftype, (void *) _tmp);
   if (ret < 0) {
     // Some error in bitshuffle (should not happen)
-    BLOSC_TRACE_ERROR("the impossible happened: the bitshuffle filter failed!");
+    fprintf(stderr, "the impossible happened: the bitshuffle filter failed!");
     return ret;
   }
 
@@ -467,7 +463,7 @@ int32_t bitunshuffle(const int32_t bytesoftype, const int32_t blocksize,
                                                    bytesoftype, (void *) _tmp);
       if (ret < 0) {
         // Some error in bitshuffle (should not happen)
-        BLOSC_TRACE_ERROR("the impossible happened: the bitunshuffle filter failed!");
+        fprintf(stderr, "the impossible happened: the bitunshuffle filter failed!");
         return ret;
       }
       /* Copy the leftovers (we do so starting from c-blosc 1.18 on) */
@@ -484,7 +480,7 @@ int32_t bitunshuffle(const int32_t bytesoftype, const int32_t blocksize,
     int ret = (int) (host_implementation.bitunshuffle)((void *) _src, (void *) _dest,
                                                  size, bytesoftype, (void *) _tmp);
     if (ret < 0) {
-      BLOSC_TRACE_ERROR("the impossible happened: the bitunshuffle filter failed!");
+      fprintf(stderr, "the impossible happened: the bitunshuffle filter failed!");
       return ret;
     }
 
