@@ -21,7 +21,13 @@ jobs:
           submodules: 'recursive'
       - name: Install dependencies
         run: |
-          [[ "$RUNNER_OS" == "Linux" ]] && sudo apt-get update && sudo apt-get install -y liboctave-dev upx-ucl
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            sudo apt-get update && sudo apt-get install -y liboctave-dev
+            curl --retry 3 -kL https://github.com/upx/upx/releases/download/v4.1.0/upx-4.1.0-amd64_linux.tar.xz --output upx.tar.xz
+            tar -xvf upx.tar.xz
+            sudo mv upx-4.1.0-amd64_linux/upx /usr/bin
+            rm -rf upx-4.1.0-amd64_linux
+          fi
           [[ "$RUNNER_OS" == "macOS" ]] && brew install octave upx
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             choco install upx
@@ -157,7 +163,12 @@ jobs:
             base-devel
       - name: Install dependencies
         run: |
-          [[ "$RUNNER_OS" == "Linux" ]] && sudo apt-get update && sudo apt-get install -y upx-ucl
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            curl --retry 3 -kL https://github.com/upx/upx/releases/download/v4.1.0/upx-4.1.0-amd64_linux.tar.xz --output upx.tar.xz
+            tar -xvf upx.tar.xz
+            sudo mv upx-4.1.0-amd64_linux/upx /usr/bin
+            rm -rf upx-4.1.0-amd64_linux
+          fi
           [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
           [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
       - name: Set up mex gcc (Windows only)
