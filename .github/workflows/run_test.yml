@@ -21,9 +21,10 @@ jobs:
           submodules: 'recursive'
       - name: Install dependencies
         run: |
-          [[ "$RUNNER_OS" == "Linux" ]] && sudo apt-get update && sudo apt-get install -y liboctave-dev
-          [[ "$RUNNER_OS" == "macOS" ]] && brew install octave
+          [[ "$RUNNER_OS" == "Linux" ]] && sudo apt-get update && sudo apt-get install -y liboctave-dev upx-ucl
+          [[ "$RUNNER_OS" == "macOS" ]] && brew install octave upx
           if [[ "$RUNNER_OS" == "Windows" ]]; then
+            choco install upx
             curl --retry 3 -kL http://cdimage.debian.org/mirror/gnu.org/gnu/octave/windows/octave-8.3.0-w64-64.7z --output octave_8.3.0.7z
             7z x octave_8.3.0.7z -ooctave -y
             echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
@@ -72,6 +73,7 @@ jobs:
           cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           strip zipmat.mex
+          upx -9 zipmat.mex || true
           echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
@@ -85,6 +87,7 @@ jobs:
               ldd zipmat.mex
           fi
           strip -S zipmat.mex
+          upx -9 zipmat.mex || true
       - name: Run octave test
         run: |
           octave-cli --version
@@ -152,6 +155,11 @@ jobs:
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-winpthreads-git
             base-devel
+      - name: Install dependencies
+        run: |
+          [[ "$RUNNER_OS" == "Linux" ]] && sudo apt-get update && sudo apt-get install -y upx-ucl
+          [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
+          [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
       - name: Set up mex gcc (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
@@ -171,6 +179,7 @@ jobs:
             ldd zipmat.mex*
           fi
           strip -S zipmat.mex*
+          upx -9 zipmat.mex* || true
       - name: Run MATLAB examples
         uses: matlab-actions/run-command@v1
         with:
