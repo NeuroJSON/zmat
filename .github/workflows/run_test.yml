@@ -152,9 +152,10 @@ jobs:
       - name: Install dependencies
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
             curl --retry 3 -kL https://github.com/upx/upx/releases/download/v4.1.0/upx-4.1.0-amd64_linux.tar.xz --output upx.tar.xz
             tar -xvf upx.tar.xz
-            sudo mv upx-4.1.0-amd64_linux/upx /bin || true
+            sudo mv upx-4.1.0-amd64_linux/upx /usr/bin
             rm -rf upx-4.1.0-amd64_linux upx.tar.xz
           fi
           [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
