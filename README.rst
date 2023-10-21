@@ -100,11 +100,6 @@ original input's type/dimension info is stored in the 2nd output
 and the ``"info"`` structure, zmat will first decode the binary data 
 and then restore the original input's type and size.
 
-ZMat uses ``zlib`` - an open-source and widely used library for data
-compression. On Linux/Mac OSX, you need to have libz.so or libz.dylib
-installed in your system library path (defined by the environment
-variables ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, respectively).
-
 The pre-compiled mex binaries for MATLAB are stored inside the 
 subfolder named ``private``. Those precompiled for GNU Octave are
 stored in the subfolder named ``octave``, with one operating system
@@ -472,3 +467,7 @@ ZMat is linked against 4 open-source data compression libraries
 6. ZStd: https://facebook.github.io/zstd/
   *  Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.
   *  License: BSD 3-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+7. miniz: https://github.com/richgel999/miniz
+  *  Copyright (c) 2013-2014 RAD Game Tools and Valve Software
+  *  Copyright (c) 2010-2014 Rich Geldreich and Tenacious Software LLC
+  *  License: MIT License (https://github.com/richgel999/miniz/blob/master/LICENSE)

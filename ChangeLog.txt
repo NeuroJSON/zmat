@@ -1,7 +1,73 @@
 = Change Log =
 
-== ZMAT 0.9.9 (Archie-the-goat - RC1), FangQ <q.fang (a) neu.edu> ==
+== ZMAT 0.9.9 (Foxy the Fantastic Mr. Fox - RC1), FangQ <q.fang (a) neu.edu> ==
 
+ 2023-10-13 [d5b2c40] revert blosc2 to v2.8.0 to remove new dependency libdl
+ 2023-10-13 [f2eadb5] fix broken test
+ 2023-10-13 [e6bbda1] update cmake file, update README
+ 2023-10-13 [bc760d5] Merge branch 'master' of github.com:NeuroJSON/zmat
+ 2023-10-13 [7472d29] update blosc2 to v2.10.5, update zstd to 1.5.5
+ 2023-10-13 [437f300] rename zstd folder without version number
+ 2023-10-13*[f4408f6] use miniz by default, rename zstd folder name
+ 2023-10-13 [fcaa396] update lz4 to 1.9.4
+ 2023-10-13 [57115dd] Update README.rst
+ 2023-09-14 [e50dc6b] build octave mex with octave 8.3 on windows
+ 2023-09-14 [edbeae9] update compilezmat.m without blosc2 and zstd support
+ 2023-06-27 [906d422] run a simpler version of octave test on windows
+ 2023-06-25 [d628473] run demo
+ 2023-06-25 [8c97c17] run full test on windows
+ 2023-06-25 [a28f9c7] use simple test on windows
+ 2023-06-25 [f443ef7] skip error testing on windows and mac
+ 2023-06-25 [2d6732c] add matlab mex build on ubuntu 16.04
+ 2023-06-24 [68eede3] add new octave mex for windows and mac
+ 2023-06-24 [7416b2c] double quote windows libloc
+ 2023-06-24 [d9f239c] static link zlib again
+ 2023-06-24 [cf8b9d4] fix windows matlab path
+ 2023-06-24 [05be0d6] add additional path for libmx
+ 2023-06-23 [30beb86] test ubuntu 20.04 build error
+ 2023-06-23 [3383f74] fix windows mx/mex not found issue
+ 2023-06-23 [910be8b] fix quotation mark issue
+ 2023-06-23 [fb1a63d] upload all zip files
+ 2023-06-22 [6f6b493] upload only the allinone package
+ 2023-06-21 [2751923] strip mex file to reduce size
+ 2023-06-21 [1461b9b] remove -lz from static linking on linux
+ 2023-06-21 [df92d96] add LDFLAGS to mkoctfile
+ 2023-06-10 [e3303c5] base64 no longer add new line by default, use level=3 to restore
+ 2023-06-06*[ff150ae] support miniz-based gzip compression and decompression, update test
+ 2023-06-06 [e098fd2] use miniz for gzip decompression
+ 2023-06-03 [0acc9e3] allow using HAVE_ZLIB/HAVE_LZ4/HAVE_ZSTD=yes/no with make
+ 2023-04-11*[2caae69] add github action based CI
+ 2022-10-24*[c655c56] add miniz
+ 2022-09-20*[e557c65] let zmatlib C function handle base64 encoding newline instead of zmat.m
+ 2022-09-20 [afe5654] make flag compatible with zmat v0.9.8 convention
+ 2022-09-20*[6f1e437] add speed benchmark
+ 2022-09-18 [84892ca] update fortran90 example
+ 2022-09-18 [edb768b] update octave mex using octave 5
+ 2022-09-18 [e5107bb] fix zstd default clevel, force make rebuild, update octave mex
+ 2022-09-18 [2be1661] add zstd tests, fix blosc condition, fix zstd error code
+ 2022-09-18 [2526367] fix mac ci error
+ 2022-09-17*[877f2d7] add zstd compression support, fix #5
+ 2022-09-15 [ad4605d] statically link libblosc2 and libzstd to libzmat.a
+ 2022-09-15 [b1b0ad7] add c example in CI, add blosc2 tests
+ 2022-09-15 [a5c072d] adjust makefile for building so file
+ 2022-09-14 [98ab1df] force CC as dll linker
+ 2022-09-13 [b8bdc8d] change xcode version
+ 2022-09-13 [d863adf] remove warning
+ 2022-09-13 [ef9ace9] debug travis on windows and osx
+ 2022-09-13 [269a972] use system MAKE variable
+ 2022-09-13 [7431bfc] debug travis error
+ 2022-09-13 [78b1fa9] fix typesize, fix composit flags, make pretty
+ 2022-09-12 [552a007] add the missing blosc2 makefile
+ 2022-09-12 [944fb12] support blosc2 compressors
+ 2022-09-11 [3f9542e] update zstd makefile
+ 2022-09-11 [f07c09a] revert c-blosc2 to stable release v2.3.1
+ 2022-09-10 [65ae09f] add blosc2 code tree
+ 2022-08-22 [a471522] revert ci setting
+ 2022-08-22 [9d4293e] switch CI to NeuroJSON
+ 2022-08-22 [290a46c] switch upstream git repo owner to NeuroJSON org
+ 2022-08-22 [59d092d] run test on matlab R2010
+ 2022-08-22 [63b3f3d] manually patch easylzma PR lloyd/easylzma#7 to prevent memory leak
+ 2022-08-22 [16cb296] matlab/octave are different in exp(1) and mexErrMsgTxt format
  2022-08-21*[3bc5d6f] allow zmat to return error status without throwing an error
  2022-08-20 [138be0b] test return status, clear memory in c example
  2022-08-20 [b914a67] zlib memory tweaks

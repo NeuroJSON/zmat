@@ -5,7 +5,7 @@
     <param.email>fangqq@gmail.com</param.email>
     <param.company>Northeastern University</param.company>
     <param.summary>A portable data compression/decompression toolbox for MATLAB/Octave</param.summary>
-    <param.description>ZMat is a portable mex function to enable zlib/gzip/lzma/lzip/lz4/lz4hc 
+    <param.description>ZMat is a portable mex function to enable zlib/gzip/lzma/lz4/zstd/blosc2 
 based data compression/decompression and base64 encoding/decoding support 
 in MATLAB and GNU Octave. It is fast and compact, can process a large 
 array within a fraction of a second. Among the 6 supported compression 

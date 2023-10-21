@@ -26,6 +26,7 @@ int main(void) {
 
     int ret = 0, status = 0;
     size_t compressedlen, encodedlen, decodelen, decompressedlen;
+    union TZMatFlags flags = {-9};
 
     /*output buffers will be allocated inside zmat functions, host is responsible to free after use*/
     unsigned char* compressed = NULL, *encoded = NULL, *decoded = NULL, *decompressed = NULL;
@@ -35,7 +36,7 @@ int main(void) {
     /*=====================================*/
 
     /*first, perform zlib compression use the highest compression (-9); one can use zmat_encode as well*/
-    ret = zmat_run(strlen(test[0]), (unsigned char*)test[0], &compressedlen, &compressed, zmZlib, &status, -9);
+    ret = zmat_run(strlen(test[0]), (unsigned char*)test[0], &compressedlen, &compressed, zmZlib, &status, flags.iscompress);
 
     if (ret == 0) {
         /*next, encode the compressed data using base64*/
