@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            sudo apt-get update && sudo apt-get install -y liboctave-dev
+            sudo apt-get update && sudo apt-get install -y liboctave-dev valgrind
             curl --retry 3 -kL https://github.com/upx/upx/releases/download/v4.1.0/upx-4.1.0-amd64_linux.tar.xz --output upx.tar.xz
             tar -xvf upx.tar.xz
             sudo mv upx-4.1.0-amd64_linux/upx /usr/bin
@@ -99,12 +99,18 @@ jobs:
           strip -S zipmat.mex
           upx -9 zipmat.mex || true
       - name: Run octave test
+        if: ${{ matrix.os != 'ubuntu-20.04'}}
         run: |
           octave-cli --version
           if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
           fi
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
+      - name: Run octave test
+        if: ${{ matrix.os == 'ubuntu-20.04'}}
+        run: |
+          octave-cli --version
+          valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
       - name: Create package folder
         run: |
           mkdir packages
