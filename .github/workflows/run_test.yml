@@ -34,6 +34,7 @@ jobs:
             curl --retry 3 -kL http://cdimage.debian.org/mirror/gnu.org/gnu/octave/windows/octave-8.3.0-w64-64.7z --output octave_8.3.0.7z
             7z x octave_8.3.0.7z -ooctave -y
             echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
+            echo 'C:\ProgramData\chocolatey\bin' >> $GITHUB_PATH
             echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
           fi
       - name: Install msys2 libraries (Windows only)
@@ -157,11 +158,9 @@ jobs:
             sudo mv upx-4.1.0-amd64_linux/upx /usr/bin || true
             rm -rf upx-4.1.0-amd64_linux upx.tar.xz || true
           fi
-          echo "1"
           [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
-          echo "2"
-          [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
-          echo "3"
+          [[ "$RUNNER_OS" == "Windows" ]] && choco install upx && echo 'C:\ProgramData\chocolatey\bin' >> $GITHUB_PATH
+          echo "installed upx"
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v1
       - name: Install msys2 libraries (Windows only)
