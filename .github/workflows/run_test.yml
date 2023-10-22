@@ -31,6 +31,7 @@ jobs:
           [[ "$RUNNER_OS" == "macOS" ]] && brew install octave upx
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             choco install upx
+            which upx
             curl --retry 3 -kL http://cdimage.debian.org/mirror/gnu.org/gnu/octave/windows/octave-8.3.0-w64-64.7z --output octave_8.3.0.7z
             7z x octave_8.3.0.7z -ooctave -y
             echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
@@ -72,15 +73,17 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
-          export PATH="/c/ProgramData/chocolatey/lib/upx/tools":"/mingw64/bin":"$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
+          export PATH="/mingw64/bin":"$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
           which gcc
           gcc -v
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s '$PWD/octave/octave-8.3.0-w64-64/mingw64/lib/octave/8.3.0/liboctinterp.dll.a'"
           cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           strip zipmat.mex
-          upx -9 zipmat.mex || true
           echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
+      - name: Compress octave mex (Windows only)
+        if: ${{ runner.os == 'Windows' }}
+        run: upx -9 zipmat.mex || true
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
