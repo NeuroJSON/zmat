@@ -104,13 +104,7 @@ jobs:
           if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
           fi
-          if [ "$RUNNER_OS" == "Linux" ]; then
-              octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-              octave-cli --eval "addpath(pwd);cd test;run_zmat_test({'c','d'})"
-          else
-              octave-cli --eval "addpath(pwd);which zipmat;disp(char(zmat(zmat('test zlib'),0,'zlib')));disp(char(zmat(zmat('test gzip',1,'gzip'),0,'gzip')));disp(char(zmat(zmat('test lzma',1,'lzma'),0,'lzma')));disp(char(zmat(zmat('test blosc2lz4',1,'blosc2lz4'),0,'blosc2lz4')));"
-          fi
+          octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
       - name: Create package folder
         run: |
           mkdir packages
@@ -161,7 +155,7 @@ jobs:
             sudo mv upx-4.1.0-amd64_linux/upx /usr/bin || true
             rm -rf upx-4.1.0-amd64_linux upx.tar.xz || true
           fi
-          [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
+          [[ "$RUNNER_OS" == "macOS" ]] && brew install --build-from-source upx
           [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
           echo "installed upx"
       - name: Set up MATLAB

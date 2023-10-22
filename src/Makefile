@@ -42,7 +42,7 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=-fPIC
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -O3 -fPIC #-g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -fPIC # -O3 -g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
