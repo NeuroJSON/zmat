@@ -118,6 +118,9 @@ jobs:
           mkdir -p zmat/octave/${{ env.OCTAVE_ARCH }}
           cp *.{m,txt,rst} zmat/
           cp PKG_ADD* zmat/
+          cp INDEX zmat/
+          cp DESCRIPTION zmat/
+          cp COPYING zmat/
           cp -a example zmat/
           cp -a test zmat/
       - name: Create release tag
@@ -241,6 +244,7 @@ jobs:
         run: |
           cd packages
           unzip -n 'zmat*.zip'
+          rm -rf zmat/example/c/testzmat.exe zmat/example/c/testzmat zmat/example/c/testzmat.dSYM
           tree .
           zip -FSr --symlink zmat-allinone-github-latest.zip zmat
           rm -rf zmat
