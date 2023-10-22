@@ -106,7 +106,7 @@ jobs:
           fi
           octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench"
       - name: Run octave test
-        if: ${{ runner.os != 'Linux' }}
+        if: ${{ runner.os == 'Linux' }}
         run: |
           octave-cli --version
           valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench"
