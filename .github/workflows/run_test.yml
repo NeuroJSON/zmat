@@ -72,14 +72,14 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
-          export PATH="/mingw64/bin":"$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
+          export PATH="/c/ProgramData/chocolatey/lib/upx/tools":"/mingw64/bin":"$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
           which gcc
           gcc -v
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s '$PWD/octave/octave-8.3.0-w64-64/mingw64/lib/octave/8.3.0/liboctinterp.dll.a'"
           cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           strip zipmat.mex
-          upx.exe -9 zipmat.mex || true
+          upx -9 zipmat.mex || true
           echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
