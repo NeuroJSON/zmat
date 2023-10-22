@@ -97,7 +97,7 @@ jobs:
               ldd zipmat.mex
           fi
           strip -S zipmat.mex
-          #upx -9 zipmat.mex || true
+          upx -9 zipmat.mex || true
       - name: Run octave test
         if: ${{ matrix.os != 'ubuntu-20.04'}}
         run: |
