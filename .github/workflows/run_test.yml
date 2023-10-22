@@ -109,7 +109,8 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           octave-cli --version
-          valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench"
+          valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic"
+          octave-cli --eval "addpath(pwd);cd example;zmat_speedbench"
       - name: Create package folder
         run: |
           mkdir packages

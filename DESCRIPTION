@@ -1,0 +1,16 @@
+Name: zmat
+Version: 0.9.9
+Date: 2023-22-10
+Title: In-memory data compression with zlib/gzip/lzma/lz4/zstd/blosc2 for Octave
+Author: Qianqian Fang <fangqq@gmail.com>
+Maintainer: Qianqian Fang <fangqq@gmail.com>
+Description: ZMat is a portable mex function to enable zlib/gzip/lzma/lz4/zstd/blosc2
+ based data compression/decompression and base64 encoding/decoding support
+ in MATLAB and GNU Octave. It is fast and compact, can process a large
+ array within a fraction of a second. Among the supported compression
+ methods, lz4 is the fastest for compression/decompression; lzma is the
+ slowest but has the highest compression ratio; zlib/gzip have excellent
+ balance between speed and compression time.
+URL: https://neurojson.org/zmat
+License: GPLv3+
+Categories: Compression
