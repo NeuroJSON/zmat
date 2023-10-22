@@ -2,6 +2,7 @@
 
 == ZMAT 0.9.9 (Foxy the Fantastic Mr. Fox - RC1), FangQ <q.fang (a) neu.edu> ==
 
+ 2023-10-22 [48ba900] fix memory error using valgrind, run full tests on all OS
  2023-10-13 [d5b2c40] revert blosc2 to v2.8.0 to remove new dependency libdl
  2023-10-13 [f2eadb5] fix broken test
  2023-10-13 [e6bbda1] update cmake file, update README

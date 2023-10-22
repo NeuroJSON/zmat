@@ -77,7 +77,6 @@ jobs:
           which gcc
           gcc -v
           make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s '$PWD/octave/octave-8.3.0-w64-64/mingw64/lib/octave/8.3.0/liboctinterp.dll.a'"
-          cp /mingw64/bin/zlib1.dll .
           objdump -p zipmat.mex | grep "DLL Name:"
           strip zipmat.mex
           echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
@@ -99,18 +98,18 @@ jobs:
           strip -S zipmat.mex
           upx -9 zipmat.mex || true
       - name: Run octave test
-        if: ${{ matrix.os != 'ubuntu-20.04'}}
+        if: ${{ runner.os != 'Linux' }}
         run: |
           octave-cli --version
           if [ "$RUNNER_OS" == "Windows" ]; then
               export PATH="$PWD/octave/octave-8.3.0-w64-64/mingw64/bin":$PATH
           fi
-          octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
+          octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench"
       - name: Run octave test
-        if: ${{ matrix.os == 'ubuntu-20.04'}}
+        if: ${{ runner.os != 'Linux' }}
         run: |
           octave-cli --version
-          valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test"
+          valgrind octave-cli --eval "addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench"
       - name: Create package folder
         run: |
           mkdir packages
@@ -126,7 +125,6 @@ jobs:
         run: |
           mv zipmat.mex zmat/octave/${{ env.OCTAVE_ARCH }}
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp /mingw64/bin/zlib1.dll zmat/octave/${{ env.OCTAVE_ARCH }}
             7z a -tzip packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           else
             zip -FSr --symlink packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
@@ -200,7 +198,7 @@ jobs:
       - name: Run MATLAB examples
         uses: matlab-actions/run-command@v1
         with:
-          command: addpath(pwd);cd test;run_zmat_test
+          command: addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench
       - name: Create package folder
         run: |
           mkdir packages
