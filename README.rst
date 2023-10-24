@@ -68,7 +68,7 @@ conveniently compress or decompress a memory buffer:
         const int clevel            /* 1 to compress (default level); 0 to decompress, -1 to -9 (-22 for zstd): setting compression level */
       );
 
-When ``blosc2`` codes are used, users can set additional compression flags, including
+When ``blosc2`` codecs are used, users can set additional compression flags, including
 number of threads, byte-shuffling length, can be set via the ``flags.param`` interface
 in the following data structure, and pass on ``flags.iscompress`` as the last 
 input to ``zmat_run``.
@@ -446,7 +446,7 @@ forum to report any questions you may have regarding ZMat:
 Acknowledgement
 ==========================
 
-ZMat is linked against 4 open-source data compression libraries
+ZMat is linked against the below open-source data compression libraries
 
 1. ZLib library: https://www.zlib.net/
   *  Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
