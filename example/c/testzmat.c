@@ -36,7 +36,7 @@ int main(void) {
     /*=====================================*/
 
     /*first, perform zlib compression use the highest compression (-9); one can use zmat_encode as well*/
-    ret = zmat_run(strlen(test[0]), (unsigned char*)test[0], &compressedlen, &compressed, zmLzma, &status, flags.iscompress);
+    ret = zmat_run(strlen(test[0]), (unsigned char*)test[0], &compressedlen, &compressed, zmZlib, &status, flags.iscompress);
 
     if (ret == 0) {
         /*next, encode the compressed data using base64*/
@@ -68,7 +68,7 @@ int main(void) {
 
     if (ret == 0) {
         /*next, decompress using zlib (deflate) */
-        ret = zmat_decode(decodelen, decoded, &decompressedlen, &decompressed, zmLzma, &status);
+        ret = zmat_decode(decodelen, decoded, &decompressedlen, &decompressed, zmZlib, &status);
 
         if (ret == 0) {
             printf("\t\"decompressed\":\"%s\",\n", decompressed);
