@@ -28,7 +28,7 @@ jobs:
             sudo mv upx-4.1.0-amd64_linux/upx /usr/bin
             rm -rf upx-4.1.0-amd64_linux upx.tar.xz
           fi
-          [[ "$RUNNER_OS" == "macOS" ]] && brew install octave upx
+          [[ "$RUNNER_OS" == "macOS" ]] && brew install octave
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             choco install upx
             which upx
@@ -164,7 +164,7 @@ jobs:
             sudo mv upx-4.1.0-amd64_linux/upx /usr/bin || true
             rm -rf upx-4.1.0-amd64_linux upx.tar.xz || true
           fi
-          [[ "$RUNNER_OS" == "macOS" ]] && brew install upx
+          #[[ "$RUNNER_OS" == "macOS" ]] && brew install upx
           [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
           echo "installed upx"
       - name: Set up MATLAB
@@ -193,7 +193,7 @@ jobs:
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             make -C src mex CC=gcc-12 CXX=g++-12 MEXLINKOPT="-static-libstdc++"
             otool -L zipmat.mex*
-            upx -9 zipmat.mex* || true
+            #upx -9 zipmat.mex* || true
           else
             make -C src mex CC=gcc CXX=g++ MEXLINKOPT="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -Wl,-Bdynamic" MEX="mex -v"
             ldd zipmat.mex*
