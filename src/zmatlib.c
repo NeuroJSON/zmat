@@ -1020,6 +1020,8 @@ simpleDecompress(elzma_file_format format, const unsigned char* inData,
     return rc;
 }
 
+#endif
+
 #ifdef NO_ZLIB
 /*
  * miniz based gzip compression code was adapted based on the following
@@ -1219,6 +1221,4 @@ int miniz_gzip_uncompress(void* in_data, size_t in_len,
 
     return 0;
 }
-#endif
-
 #endif
