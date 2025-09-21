@@ -82,10 +82,12 @@ extern "C"
  * 10: blosc2lz4hc
  * 11: blosc2zlib
  * 12: blosc2zstd
+ * 13: pzlib
+ * 14: pgzip
  * -1: unknown
  */
 
-enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1};
+enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmPzlib, zmPgzip, zmUnknown = -1};
 
 /**
  * @brief advanced ZMat parameters needed for blosc2 metacompressor

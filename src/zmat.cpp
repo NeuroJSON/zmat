@@ -195,6 +195,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     if (nrhs >= 4) {
         double* val = mxGetPr(prhs[3]);
         flags.param.nthread = val[0];
+
+        if (flags.param.nthread > 1 && zipid == zmZlib) {
+            zipid = zmPzlib;
+        } else if (flags.param.nthread > 1 && zipid == zmGzip) {
+            zipid = zmPgzip;
+        }
     }
 
     if (nrhs >= 5) {
@@ -205,6 +211,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     if (nrhs >= 6) {
         double* val = mxGetPr(prhs[5]);
         flags.param.typesize = val[0];
+    }
+
+    if (flags.param.nthread == 1 && (zipid == zmPzlib || zipid == zmPgzip)) {
+        flags.param.nthread = 4;
     }
 
     try {

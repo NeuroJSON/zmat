@@ -160,6 +160,10 @@ char* zmat_error(int id) {
     }
 }
 
+/* Function prototypes for parallel functions */
+#ifndef NO_PTHREAD
+
+
 /* Simple CRC32 combine implementation if not available in zlib */
 #if defined(NO_ZLIB) || !defined(ZLIB_VERNUM) || ZLIB_VERNUM < 0x1250
 static unsigned long simple_crc32_combine(unsigned long crc1, unsigned long crc2, size_t len2) {
@@ -173,11 +177,7 @@ static unsigned long simple_crc32_combine(unsigned long crc1, unsigned long crc2
 #endif
 
 /* Forward declarations for functions that might not be available */
-#ifdef NO_ZLIB
-/* For miniz compatibility */
-#define deflateSetDictionary(strm, dict, dictLength) mz_deflateSetDictionary(strm, dict, dictLength)
-#define crc32_combine(crc1, crc2, len2) mz_crc32_combine(crc1, crc2, len2)
-#else
+#ifndef NO_ZLIB
 /* Ensure zlib functions are declared */
 extern int ZEXPORT deflateSetDictionary OF((z_streamp strm,
         const Bytef* dictionary,
@@ -185,13 +185,7 @@ extern int ZEXPORT deflateSetDictionary OF((z_streamp strm,
 extern uLong ZEXPORT crc32_combine OF((uLong crc1, uLong crc2, z_off_t len2));
 #endif
 
-/* Function prototypes for parallel functions */
-#ifndef NO_PTHREAD
-static void* parallel_decompress_worker(void* arg);
 static void* parallel_compress_worker(void* arg);
-static int real_parallel_decompress(unsigned char* inputstr, size_t inputsize,
-                                    unsigned char** outputbuf, size_t* outputsize,
-                                    int is_gzip, int num_threads, int* ret);
 static int pipeline_zlib_decompress(unsigned char* inputstr, size_t inputsize,
                                     unsigned char** outputbuf, size_t* outputsize,
                                     int is_gzip, int num_threads, int* ret);
@@ -216,49 +210,6 @@ typedef struct {
     int is_gzip;
 } thread_decompress_data_t;
 
-/* Worker thread function for parallel decompression */
-static void* parallel_decompress_worker(void* arg) {
-    thread_decompress_data_t* data = (thread_decompress_data_t*)arg;
-    z_stream* zs = data->stream;
-    int ret;
-
-    /* Initialize the stream for this thread */
-    zs->zalloc = Z_NULL;
-    zs->zfree = Z_NULL;
-    zs->opaque = Z_NULL;
-    zs->avail_in = 0;
-    zs->next_in = Z_NULL;
-
-    if (data->is_gzip) {
-#ifndef NO_ZLIB
-        ret = inflateInit2(zs, 15 | 32);
-#else
-        ret = inflateInit2(zs, -Z_DEFAULT_WINDOW_BITS);
-#endif
-    } else {
-        ret = inflateInit(zs);
-    }
-
-    if (ret != Z_OK) {
-        data->result = ret;
-        return NULL;
-    }
-
-    /* Set up input and output */
-    zs->avail_in = data->input_size;
-    zs->next_in = data->input_chunk;
-    zs->avail_out = data->output_size;
-    zs->next_out = data->output_chunk;
-
-    /* Decompress */
-    ret = inflate(zs, Z_FINISH);
-    data->output_used = data->output_size - zs->avail_out;
-    data->result = ret;
-
-    inflateEnd(zs);
-    return NULL;
-}
-
 /* Pipeline decompression with I/O threading (like pigz) */
 typedef struct {
     pthread_mutex_t mutex;
@@ -276,6 +227,7 @@ typedef struct {
 /* I/O thread for reading input */
 static void* input_reader_thread(void* arg) {
     pipeline_data_t* data = (pipeline_data_t*)arg;
+
     /* In a real implementation, this would handle buffered I/O */
     /* For this example, input is already in memory */
     pthread_mutex_lock(&data->mutex);
@@ -316,7 +268,7 @@ static void* crc_calculator_thread(void* arg) {
 
     /* Calculate CRC32 of decompressed data */
     if (data->output_buffer && data->output_used > 0) {
-        unsigned long crc = crc32(0L, data->output_buffer, data->output_used);
+        // unsigned long crc = crc32(0L, data->output_buffer, data->output_used);
         /* Store CRC for later verification if needed */
     }
 
@@ -454,44 +406,6 @@ cleanup:
     return result;
 }
 
-/* Alternative: True parallel decompression for specially prepared streams */
-static int real_parallel_decompress(unsigned char* inputstr, size_t inputsize,
-                                    unsigned char** outputbuf, size_t* outputsize,
-                                    int is_gzip, int num_threads, int* ret) {
-    /* This would only work if the compressed stream was created with
-     * independent blocks (like pigz -i option creates).
-     * For now, this is a placeholder that falls back to pipeline approach */
-
-    /* Check if stream has independent blocks marker */
-    /* Independent blocks are marked with: 00 00 FF FF 00 00 00 FF FF */
-    const unsigned char independent_marker[] = {0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF};
-
-    /* Simple check - in real implementation would be more sophisticated */
-    int has_independent_blocks = 0;
-
-    if (inputsize > sizeof(independent_marker)) {
-        for (size_t i = 0; i <= inputsize - sizeof(independent_marker); i++) {
-            if (memcmp(inputstr + i, independent_marker, sizeof(independent_marker)) == 0) {
-                has_independent_blocks = 1;
-                break;
-            }
-        }
-    }
-
-    if (!has_independent_blocks) {
-        /* Fall back to pipeline decompression */
-        return pipeline_zlib_decompress(inputstr, inputsize, outputbuf, outputsize,
-                                        is_gzip, num_threads, ret);
-    }
-
-    /* TODO: Implement true parallel decompression for independent blocks */
-    /* This would require parsing the stream to find block boundaries */
-    /* and decompressing each block in parallel */
-
-    /* For now, fall back to pipeline approach */
-    return pipeline_zlib_decompress(inputstr, inputsize, outputbuf, outputsize,
-                                    is_gzip, num_threads, ret);
-}
 
 /* Parallel compression implementation (similar to pigz) */
 typedef struct {
@@ -535,6 +449,7 @@ static void* parallel_compress_worker(void* arg) {
     }
 
     /* Set dictionary if provided (for maintaining compression efficiency) */
+    /*
     if (data->dictionary && data->dict_size > 0) {
         ret = deflateSetDictionary(&zs, data->dictionary, data->dict_size);
 
@@ -544,6 +459,7 @@ static void* parallel_compress_worker(void* arg) {
             return NULL;
         }
     }
+    */
 
     /* Set up compression */
     zs.avail_in = data->input_size;
@@ -729,21 +645,6 @@ static int parallel_zlib_compress(unsigned char* inputstr, size_t inputsize,
 
     return 0;
 }
-
-/* Enhanced parallel decompression with better chunking strategy */
-static int advanced_parallel_decompress(unsigned char* inputstr, size_t inputsize,
-                                        unsigned char** outputbuf, size_t* outputsize,
-                                        int is_gzip, int num_threads, int* ret) {
-    /* Choose decompression strategy based on data characteristics */
-
-    /* First attempt: True parallel decompression for independent blocks */
-    /* This will actually call parallel_decompress_worker if independent blocks are found */
-    int result = real_parallel_decompress(inputstr, inputsize, outputbuf, outputsize,
-                                          is_gzip, num_threads, ret);
-
-    /* If real parallel failed or no independent blocks found, it already fell back to pipeline */
-    return result;
-}
 #endif /* NO_PTHREAD */
 
 
@@ -913,16 +814,17 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
 #endif
 
-            /* Handle parallel methods */
+            /* pipeline based zlib/gzip compression */
 #ifndef NO_PTHREAD
         } else if (zipid == zmPzlib || zipid == zmPgzip) {
             int num_threads = (flags.param.nthread > 0) ? flags.param.nthread :
                               (int)sysconf(_SC_NPROCESSORS_ONLN);
 
-            /* Parallel decompression */
-            return advanced_parallel_decompress(inputstr, inputsize, outputbuf,
-                                                outputsize, (zipid == zmPgzip),
-                                                num_threads, ret);
+            int compression_level = (flags.param.clevel > 0) ? Z_DEFAULT_COMPRESSION : (-flags.param.clevel);
+            return parallel_zlib_compress(inputstr, inputsize, outputbuf,
+                                          outputsize, (zipid == zmPgzip),
+                                          num_threads, compression_level, ret);
+
 #endif
 
 #ifndef NO_LZMA
@@ -1102,10 +1004,10 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             int num_threads = (flags.param.nthread > 0) ? flags.param.nthread :
                               (int)sysconf(_SC_NPROCESSORS_ONLN);
 
-            int compression_level = (flags.param.clevel > 0) ? Z_DEFAULT_COMPRESSION : (-flags.param.clevel);
-            return parallel_zlib_compress(inputstr, inputsize, outputbuf,
-                                          outputsize, (zipid == zmPgzip),
-                                          num_threads, compression_level, ret);
+            /* Parallel decompression */
+            return pipeline_zlib_decompress(inputstr, inputsize, outputbuf,
+                                            outputsize, (zipid == zmPgzip),
+                                            num_threads, ret);
 #endif
 
 #ifndef NO_LZMA
