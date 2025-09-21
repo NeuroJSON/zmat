@@ -87,6 +87,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         "blosc2zlib",
         "blosc2zstd",
 #endif
+#if !defined(NO_PTHREAD)
+        "pzlib",
+        "pgzip",
+#endif
         ""
     };
 
@@ -111,6 +115,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         zmBlosc2Lz4hc,
         zmBlosc2Zlib,
         zmBlosc2Zstd,
+#endif
+#if !defined(NO_PTHREAD)
+        zmPzlib,
+        zmPgzip,
 #endif
         zmUnknown
     };

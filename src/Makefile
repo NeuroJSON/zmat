@@ -11,7 +11,7 @@ ZMATDIR ?=$(ROOTDIR)
 LIBDIR  ?=$(ROOTDIR)/lib
 
 MKDIR      :=mkdir
-HAVE_ZLIB  ?=miniz
+HAVE_ZLIB  ?=yes
 HAVE_LZMA  ?=yes
 HAVE_LZ4   ?=yes
 HAVE_ZSTD  ?=yes
