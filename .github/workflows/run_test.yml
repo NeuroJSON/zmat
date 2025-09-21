@@ -6,9 +6,9 @@ jobs:
   octave_test:
     name: Octave tests
     strategy:
-      # tested octave versions: ubuntu-20.04 = 5.2, ubuntu-22.04 = 6.4, macos-13 = 8.1, windows-2019 = 8.3
+      # tested octave versions: ubuntu-22.04 = 5.2, ubuntu-22.04 = 6.4, macos-13 = 8.1, windows-2022 = 8.3
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, macos-13, windows-2019]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-13, windows-2022]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -135,17 +135,17 @@ jobs:
             zip -FSr --symlink packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           fi
       - name: Upload zmat package
-        if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2019' }}
-        uses: actions/upload-artifact@v3
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2022' }}
+        uses: actions/upload-artifact@v4
         with:
-          name: all-zmat-packages
+          name: all-zmat-packages-${{ env.RELEASE_TAG }}
           path: packages/zmat-octave-${{ env.RELEASE_TAG }}.zip
 
   matlab_test:
     name: MATLAB test
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-13, windows-2019]
+        os: [ubuntu-22.04, macos-13, windows-2022]
     defaults:
       run:
         shell: bash
@@ -224,22 +224,23 @@ jobs:
             zip -FSr --symlink packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip zmat
           fi
       - name: Upload zmat package
-        if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2019' }}
-        uses: actions/upload-artifact@v3
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2022' }}
+        uses: actions/upload-artifact@v4
         with:
-          name: all-zmat-packages
+          name: all-zmat-packages-${{ env.RELEASE_TAG }}
           path: packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip
 
   upload_package:
     name: Upload Packages
     needs: [octave_test, matlab_test]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ github.repository_owner == 'NeuroJSON' && github.event_name != 'pull_request'}}
     steps:
       - name: Download zmat
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: all-zmat-packages
+          pattern: all-zmat*
+          merge-multiple: true
           path: packages
       - name: Create all-in-one zmat package
         run: |
