@@ -640,9 +640,15 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                         return -3;
                     }
 
-                    /* if output space remains but inflate didn't finish, input may be bad */
-                    if (zs.avail_out > 0) {
+                    /* if both input and output have space but inflate can't
+                       proceed, the stream is done or corrupt */
+                    if (zs.avail_out > 0 && zs.avail_in == 0) {
                         break;
+                    }
+
+                    /* output buffer full — need to grow */
+                    if (zs.avail_out > 0) {
+                        continue;  /* input remains, keep inflating */
                     }
 
                     rounds++;
@@ -734,11 +740,13 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                 if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
                     free(*outputbuf);
                     *outputbuf = NULL;
+                    *outputsize = 0;
                     return -6;
                 }
 
                 if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
                     /* outputbuf already freed and set to NULL by zmat_grow_buf */
+                    *outputsize = 0;
                     return -5;
                 }
             }
@@ -764,11 +772,13 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             *outputsize = ZSTD_decompressBound(inputstr, inputsize);
 
             if (*outputsize == ZSTD_CONTENTSIZE_ERROR) {
+                *ret = -9;
                 *outputsize = 0;
                 return -9;
             }
 
             if (!(*outputbuf = (unsigned char*)malloc(*outputsize))) {
+                *ret = -5;
                 *outputsize = 0;
                 return -5;
             }
@@ -806,11 +816,13 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                 if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
                     free(*outputbuf);
                     *outputbuf = NULL;
+                    *outputsize = 0;
                     return -8;
                 }
 
                 if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
                     /* outputbuf already freed and set to NULL by zmat_grow_buf */
+                    *outputsize = 0;
                     return -5;
                 }
             }
