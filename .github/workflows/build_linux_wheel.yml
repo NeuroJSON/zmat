@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     outputs:
       perform_pypi_upload: ${{ steps.perform_pypi_upload_check.outputs.perform_pypi_upload }}
     steps:
@@ -30,10 +30,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc g++ make zlib1g-dev
-      - name: Build static library
-        run: |
-          make -C src lib CC=gcc CXX=g++
+          sudo apt-get install -y gcc g++ make
       - name: Build wheel
         run: |
           cd python/
@@ -43,7 +40,8 @@ jobs:
       - name: Run unit tests
         run: |
           cd python/
-          PYTHONPATH=. python -m unittest discover -s tests -v
+          pip install dist/*.whl
+          python -m unittest discover -s tests -v
       - name: Check If the Build Version Exists on PyPI
         id: perform_pypi_upload_check
         run: |

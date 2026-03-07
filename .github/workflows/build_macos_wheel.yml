@@ -15,9 +15,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        os: [macos-15-intel, macos-14]
+        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
+          - os: macos-14
+            python_version: '3.7'
           - os: macos-14
             python_version: '3.8'
           - os: macos-14
@@ -40,17 +42,9 @@ jobs:
         run: |
           if [[ "$(uname -m)" == "arm64" ]]; then
             echo "Building for Apple Silicon (arm64)"
-            echo "CC=gcc" >> $GITHUB_ENV
-            echo "CXX=g++" >> $GITHUB_ENV
           else
             echo "Building for Intel (x86_64)"
-            GCC_VERSION=$(brew list --versions gcc | sed 's/gcc //' | cut -d. -f1)
-            echo "CC=gcc-${GCC_VERSION}" >> $GITHUB_ENV
-            echo "CXX=g++-${GCC_VERSION}" >> $GITHUB_ENV
           fi
-      - name: Build static library
-        run: |
-          make -C src lib CC=$CC CXX=$CXX
       - name: Build wheel
         run: |
           cd python/
@@ -60,7 +54,8 @@ jobs:
       - name: Run unit tests
         run: |
           cd python/
-          PYTHONPATH=. python -m unittest discover -s tests -v
+          pip install dist/*.whl
+          python -m unittest discover -s tests -v
       - name: Check If the Build Version Exists on PyPI
         id: perform_pypi_upload_check
         run: |
@@ -81,7 +76,7 @@ jobs:
       - name: Download Wheels from Build Job
         uses: actions/download-artifact@v4
         with:
-          pattern: macos-wheels-macos-13-*
+          pattern: macos-wheels-macos-15-intel-*
           merge-multiple: true
           path: dist/
       - name: Upload packages to PyPI

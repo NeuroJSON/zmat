@@ -46,6 +46,10 @@ library_dirs = []
 extra_compile_args = ["-O2"]
 extra_link_args = []
 
+# detect CPU architecture
+machine = platform.machine().lower()
+is_x86 = any(x in machine for x in ["x86_64", "amd64", "i386", "i686"])
+
 # ---- zlib / miniz ----
 # By default, use the embedded miniz (no system zlib dependency).
 # Set environment variable ZMAT_USE_SYSTEM_ZLIB=1 to link against -lz instead.
@@ -97,6 +101,10 @@ if use_zstd:
     for subdir in ["common", "compress", "decompress"]:
         pattern = os.path.join(zstd_dir, subdir, "*.c")
         sources.extend(glob.glob(pattern))
+
+    # zstd assembly is x86_64 only; disable on ARM and other platforms
+    if not is_x86:
+        define_macros.append(("ZSTD_DISABLE_ASM", "1"))
 else:
     define_macros.append(("NO_ZSTD", None))
 
@@ -131,10 +139,7 @@ if use_blosc2:
         sources.append(os.path.join(blosc2_dir, f))
 
     # add SSE2 shuffle on x86 only
-    import struct as _struct
-
-    machine = platform.machine().lower()
-    if any(x in machine for x in ["x86_64", "amd64", "i386", "i686"]):
+    if is_x86:
         sources.append(os.path.join(blosc2_dir, "shuffle-sse2.c"))
         sources.append(os.path.join(blosc2_dir, "bitshuffle-sse2.c"))
 

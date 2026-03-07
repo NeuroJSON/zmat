@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 77"]
+requires = ["setuptools >= 61"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "zmat"
 version = "0.9.9"
 description = "A portable data compression/decompression library supporting zlib/gzip/lzma/lz4/zstd/blosc2/base64"
 readme = {text = "ZMat - A portable data compression/decompression module supporting zlib, gzip, lzma, lz4, zstd, blosc2, and base64.", content-type = "text/plain"}
-license = "GPL-3.0-or-later"
+license = {text = "GPL-3.0-or-later"}
 requires-python = ">=3.7"
 authors = [
     {name = "Qianqian Fang", email = "fangqq@gmail.com"},

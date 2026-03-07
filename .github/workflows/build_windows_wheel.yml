@@ -18,7 +18,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     outputs:
       perform_pypi_upload: ${{ steps.perform_pypi_upload_check.outputs.perform_pypi_upload }}
     steps:
@@ -30,73 +30,17 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
-      - uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-winpthreads-git
-            mingw-w64-x86_64-tools-git
-            base-devel
-      - name: Put MSYS2 MinGW64 on PATH
-        run: echo "${{ runner.temp }}/msys64/mingw64/bin" >> $GITHUB_PATH
-      - name: Create Python import library for MinGW
-        run: |
-          PYTHON_DIR=$(dirname "$(which python)")
-          PYTHON_VER=$(python -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')")
-          PYTHON_DLL="python${PYTHON_VER}.dll"
-          PYTHON_LIB="libpython${PYTHON_VER}.a"
-
-          # Find the DLL
-          DLL_PATH="${PYTHON_DIR}/${PYTHON_DLL}"
-          if [ ! -f "$DLL_PATH" ]; then
-            DLL_PATH="/c/Windows/System32/${PYTHON_DLL}"
-          fi
-
-          echo "Python DLL: $DLL_PATH"
-          echo "Creating import library: $PYTHON_LIB"
-
-          # Create .def file from DLL exports
-          gendef.exe "$DLL_PATH"
-
-          # Create import library
-          dlltool.exe --dllname "$PYTHON_DLL" --def "python${PYTHON_VER}.def" --output-lib "$PYTHON_LIB"
-
-          # Copy to Python libs directory
-          LIBS_DIR="${PYTHON_DIR}/libs"
-          cp "$PYTHON_LIB" "$LIBS_DIR/"
-          echo "Copied $PYTHON_LIB to $LIBS_DIR"
-      - name: Build static library
-        shell: msys2 {0}
-        run: |
-          make -C src lib CC=gcc CXX=g++
-      - name: Bundle MinGW DLLs and Build Wheel
-        env:
-          CC: gcc
-          CXX: g++
+      - name: Build wheel
         run: |
           cd python/
-
-          # Copy MinGW runtime DLLs next to the extension for redistribution
-          MINGW_BIN="${{ runner.temp }}/msys64/mingw64/bin"
-          for dll in libgcc_s_seh-1.dll libwinpthread-1.dll libstdc++-6.dll; do
-            if [ -f "$MINGW_BIN/$dll" ]; then
-              cp "$MINGW_BIN/$dll" .
-              echo "Bundled: $dll"
-            else
-              echo "Warning: $dll not found in $MINGW_BIN"
-            fi
-          done
-
           pip install build setuptools wheel
           python -m build --wheel
-
           ls dist/
       - name: Run unit tests
         run: |
           cd python/
-          PYTHONPATH=. python -m unittest discover -s tests -v
+          pip install dist/*.whl
+          python -m unittest discover -s tests -v
       - name: Check If the Build Version Exists on PyPI
         id: perform_pypi_upload_check
         run: |
