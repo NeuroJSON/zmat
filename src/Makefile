@@ -174,9 +174,20 @@ OBJS      := $(addsuffix $(OBJSUFFIX), $(FILES))
 all dll lib mex oct: $(OUTPUT_DIR)/$(BINARY)
 
 dll: linkdll
+
+# detect if SSE2 is supported (x86 only)
+IS_X86 = $(shell echo | $(CC) -dM -E - 2>/dev/null | grep -c __x86_64__)
+ifeq ($(IS_X86),0)
+    IS_X86 = $(shell echo | $(CC) -dM -E - 2>/dev/null | grep -c __i386__)
+endif
+
 blosc:
 	@if [ $(HAVE_BLOSC2) = "yes" ]; then\
-	    $(MAKE) -C blosc2 all;\
+	    if [ $(IS_X86) = "0" ]; then\
+	        $(MAKE) -C blosc2 all NO_SSE2=1;\
+	    else\
+	        $(MAKE) -C blosc2 all;\
+	    fi;\
 	fi
 
 makedirs:
