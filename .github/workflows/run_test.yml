@@ -50,6 +50,10 @@ jobs:
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-winpthreads-git
             base-devel
+      - name: Set up mex gcc (Windows only)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          echo "MW_MINGW64_LOC=${{ runner.temp }}/msys64/mingw64" >> $GITHUB_ENV
       - name: Build static library
         run: |
           which gcc
@@ -196,7 +200,7 @@ jobs:
       - name: Set up mex gcc (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          echo 'MW_MINGW64_LOC=$RUNNER_TEMP/msys64/mingw64' >> $GITHUB_ENV
+          echo "MW_MINGW64_LOC=${{ runner.temp }}/msys64/mingw64" >> $GITHUB_ENV
           echo 'COMPFLAGS=""' >> $GITHUB_ENV
       - name: Build MATLAB mex
         run: |
