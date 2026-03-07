@@ -1,5 +1,15 @@
 #!/bin/bash
-PYPKG_BUILD_VERSION=$(awk -F"-" '{ print $2 }' <<< $(ls python/dist/ | head -1))
+# check both possible dist locations
+if [ -d "python/dist" ]; then
+    DISTDIR="python/dist"
+elif [ -d "dist" ]; then
+    DISTDIR="dist"
+else
+    echo "No dist directory found"
+    echo "perform_pypi_upload=0" >> $GITHUB_OUTPUT
+    exit 0
+fi
+PYPKG_BUILD_VERSION=$(awk -F"-" '{ print $2 }' <<< $(ls $DISTDIR/ | head -1))
 PYPKG_VERSIONS_STRING=$(pip index versions zmat 2>/dev/null | grep versions:)
 PYPKG_VERSIONS_STRING=${PYPKG_VERSIONS_STRING#*:}
 UPLOAD_TO_PYPI=1
