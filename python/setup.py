@@ -102,10 +102,9 @@ if use_zstd:
         pattern = os.path.join(zstd_dir, subdir, "*.c")
         sources.extend(glob.glob(pattern))
 
-    # zstd assembly requires GNU as and GNU ld; disable on non-Linux
-    # platforms (macOS linker doesn't support zstd's x86_64 asm, and
-    # ARM/other architectures don't have it at all)
-    if platform.system() != "Linux" or not is_x86:
+    # zstd x86_64 assembly requires GNU as/ld; Apple's linker doesn't
+    # support it, and non-x86 platforms don't have it
+    if not is_x86 or platform.system() == "Darwin":
         define_macros.append(("ZSTD_DISABLE_ASM", "1"))
 else:
     define_macros.append(("NO_ZSTD", None))
