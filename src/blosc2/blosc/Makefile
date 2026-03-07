@@ -37,7 +37,14 @@ PLATFORM = $(shell uname -s)
 
 DLLFLAG=-fPIC
 
-CPPOPT=-g -Wall -Wextra -O3 -msse2 -DNDEBUG $(DLLFLAG) -std=gnu99 -Wno-unused-variable #-g -Wall -std=c99 # -DUSE_OS_TIMER
+# detect x86 for SSE2 support
+IS_X86 := $(filter x86_64 i386 i486 i586 i686,$(ARCH))
+
+CPPOPT=-g -Wall -Wextra -O3 -DNDEBUG $(DLLFLAG) -std=gnu99 -Wno-unused-variable
+
+ifneq ($(IS_X86),)
+  CPPOPT += -msse2
+endif
 
 ifeq ($(HAVE_ZLIB),yes)
   CPPOPT+=-DHAVE_ZLIB
@@ -55,9 +62,13 @@ OUTPUTFLAG:=-o
 OBJSUFFIX=.o
 EXESUFFIX=.mex*
 
-FILES=bitshuffle-sse2 blosc2 blosc2-stdio blosclz delta directories fastcopy \
+FILES=blosc2 blosc2-stdio blosclz delta directories fastcopy \
       frame schunk sframe shuffle shuffle-generic bitshuffle-generic \
-      shuffle-sse2 stune timestamp trunc-prec
+      stune timestamp trunc-prec
+
+ifneq ($(IS_X86),)
+  FILES += bitshuffle-sse2 shuffle-sse2
+endif
 
 ifeq ($(findstring CYGWIN,$(PLATFORM)), CYGWIN)
   CPPOPT =-c -DWIN32
@@ -147,4 +158,3 @@ clean:
 .PHONY: all lib dll
 
 .DEFAULT_GOAL := all
-
