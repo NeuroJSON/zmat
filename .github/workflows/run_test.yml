@@ -37,6 +37,9 @@ jobs:
             echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
             echo "$PWD/octave/octave-8.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
           fi
+      - name: Install gcc-12
+        if: ${{ matrix.os == 'macos-14' }}
+        run: brew install gcc@12
       - name: Install msys2 libraries (Windows only)
         if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
@@ -167,8 +170,13 @@ jobs:
           #[[ "$RUNNER_OS" == "macOS" ]] && brew install upx
           [[ "$RUNNER_OS" == "Windows" ]] && choco install upx
           echo "installed upx"
+      - name: Install gcc-12
+        if: ${{ matrix.os == 'macos-14' }}
+        run: brew install gcc@12
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v1
+        with:
+          release: R2022a
       - name: Install msys2 libraries (Windows only)
         if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
