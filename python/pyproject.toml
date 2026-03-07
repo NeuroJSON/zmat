@@ -42,3 +42,5 @@ Issues = "https://github.com/NeuroJSON/zmat/issues"
 
 [tool.setuptools]
 zip-safe = false
+py-modules = []
+packages = []

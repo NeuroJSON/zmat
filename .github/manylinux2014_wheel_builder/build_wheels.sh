@@ -21,10 +21,10 @@ for PYBIN in /opt/python/cp3{7,8,9,10,11,12,13,14}*/bin/; do
         "${PYBIN}/pip" install build setuptools wheel
 
         # Build wheel
-        "${PYBIN}/python" -m build --wheel --outdir wheels/
+        "${PYBIN}/python" -m build --wheel --outdir tmpwheels/
 
         # Run unit tests
-        "${PYBIN}/pip" install wheels/zmat-*.whl
+        "${PYBIN}/pip" install tmpwheels/zmat-*.whl
         "${PYBIN}/python" -m unittest discover -s tests -v
         "${PYBIN}/pip" uninstall -y zmat
     fi
@@ -34,7 +34,7 @@ done
 rm -rf dist/
 mkdir -p dist/
 
-for WHEEL in wheels/*.whl; do
+for WHEEL in tmpwheels/*.whl; do
     if [ -f "$WHEEL" ]; then
         echo "Checking: ${WHEEL}"
 
@@ -51,7 +51,7 @@ for WHEEL in wheels/*.whl; do
 done
 
 # Cleanup
-rm -rf wheels/ build/ *.egg-info/ builddir/
+rm -rf tmpwheels/ build/ *.egg-info/ builddir/
 
 echo "========================================"
 echo "Built wheels:"
