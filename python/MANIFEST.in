@@ -1,32 +1,8 @@
 # Python binding source
 include pyzmat.c
 
-# C library headers
-graft ../include
-
-# Core C source
-include ../src/zmatlib.c
-
-# miniz (embedded zlib replacement)
-graft ../src/miniz
-
-# easylzma
-graft ../src/easylzma
-
-# lz4
-graft ../src/lz4
-
-# zstd (embedded inside blosc2 tree)
-graft ../src/blosc2/internal-complibs/zstd
-
-# blosc2 headers and source
-graft ../src/blosc2/include
-graft ../src/blosc2/blosc
-
-# Documentation and metadata
-include ../README.rst
-include ../LICENSE.txt
-include ../AUTHORS.txt
+# C source tree (copied into csrc/ by custom sdist command)
+graft csrc
 
 # Exclude build artifacts
 global-exclude *.o *.a *.so *.dylib *.dll *.mex* *.oct

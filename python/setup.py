@@ -2,8 +2,8 @@
 setup.py for the zmat Python C extension module
 
 This file lives in python/ and references C sources in ../src/ and ../include/.
-When building an sdist, MANIFEST.in must include those directories so that
-the source tree is complete inside the distribution.
+For sdist builds, a custom command copies the required source files into a local
+'csrc' directory so the sdist is self-contained.
 
 Build:
     pip install .
@@ -18,19 +18,78 @@ Release:
 import glob
 import os
 import platform
+import shutil
 
 from setuptools import Extension, setup
+from setuptools.command.sdist import sdist as _sdist
 
-# ---------- paths relative to this setup.py (inside python/) ----------
+# ---------- paths ----------
 here = os.path.dirname(os.path.abspath(__file__))
-srcdir = os.path.join(here, "..", "src")
-incdir = os.path.join(here, "..", "include")
+parent_srcdir = os.path.join(here, "..", "src")
+parent_incdir = os.path.join(here, "..", "include")
+local_csrc = os.path.join(here, "csrc")
 
-# when building from sdist, ../src won't exist — sources are copied flat
-# into the sdist under src/ and include/ via MANIFEST.in
-if not os.path.isdir(srcdir):
-    srcdir = os.path.join(here, "src")
-    incdir = os.path.join(here, "include")
+
+# ---------- custom sdist command ----------
+class sdist_with_csrc(_sdist):
+    """Custom sdist that copies C sources into csrc/ before packaging."""
+
+    COPY_ITEMS = [
+        ("src/zmatlib.c", "src/zmatlib.c"),
+        ("src/miniz", "src/miniz"),
+        ("src/easylzma", "src/easylzma"),
+        ("src/lz4", "src/lz4"),
+        ("src/blosc2/internal-complibs/zstd", "src/blosc2/internal-complibs/zstd"),
+        ("src/blosc2/include", "src/blosc2/include"),
+        ("src/blosc2/blosc", "src/blosc2/blosc"),
+        ("src/blosc2/plugins", "src/blosc2/plugins"),
+        ("include", "include"),
+    ]
+
+    def run(self):
+        self._copy_csrc()
+        try:
+            _sdist.run(self)
+        finally:
+            self._clean_csrc()
+
+    def _copy_csrc(self):
+        parent = os.path.join(here, "..")
+        for src_rel, dst_rel in self.COPY_ITEMS:
+            src_path = os.path.join(parent, src_rel)
+            dst_path = os.path.join(local_csrc, dst_rel)
+            if os.path.isfile(src_path):
+                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                shutil.copy2(src_path, dst_path)
+            elif os.path.isdir(src_path):
+                if os.path.exists(dst_path):
+                    shutil.rmtree(dst_path)
+                shutil.copytree(
+                    src_path, dst_path, ignore=shutil.ignore_patterns("*.o", "*.a", "*.S", "*.s")
+                )
+
+    def _clean_csrc(self):
+        if os.path.isdir(local_csrc):
+            shutil.rmtree(local_csrc)
+
+
+# ---------- determine source tree location ----------
+if os.path.isdir(parent_srcdir):
+    srcdir = parent_srcdir
+    incdir = parent_incdir
+elif os.path.isdir(local_csrc):
+    srcdir = os.path.join(local_csrc, "src")
+    incdir = os.path.join(local_csrc, "include")
+else:
+    # during get_requires_for_build_sdist, sources may not be needed yet
+    srcdir = parent_srcdir
+    incdir = parent_incdir
+
+
+# ---------- detect CPU architecture ----------
+machine = platform.machine().lower()
+is_x86 = any(x in machine for x in ["x86_64", "amd64", "i386", "i686"])
+
 
 # ---------- collect source files ----------
 sources = [
@@ -46,13 +105,8 @@ library_dirs = []
 extra_compile_args = ["-O2"]
 extra_link_args = []
 
-# detect CPU architecture
-machine = platform.machine().lower()
-is_x86 = any(x in machine for x in ["x86_64", "amd64", "i386", "i686"])
 
 # ---- zlib / miniz ----
-# By default, use the embedded miniz (no system zlib dependency).
-# Set environment variable ZMAT_USE_SYSTEM_ZLIB=1 to link against -lz instead.
 use_system_zlib = os.environ.get("ZMAT_USE_SYSTEM_ZLIB", "0") == "1"
 
 if use_system_zlib:
@@ -62,7 +116,10 @@ else:
     define_macros.append(("_LARGEFILE64_SOURCE", "1"))
     miniz_dir = os.path.join(srcdir, "miniz")
     include_dirs.append(miniz_dir)
-    sources.append(os.path.join(miniz_dir, "miniz.c"))
+    miniz_c = os.path.join(miniz_dir, "miniz.c")
+    if os.path.isfile(miniz_c):
+        sources.append(miniz_c)
+
 
 # ---- lzma / easylzma ----
 use_lzma = os.environ.get("ZMAT_NO_LZMA", "0") != "1"
@@ -72,11 +129,16 @@ if use_lzma:
     pavlov_dir = os.path.join(easylzma_dir, "pavlov")
     include_dirs.extend([easylzma_dir, pavlov_dir])
     for f in ["compress", "decompress", "lzma_header", "lzip_header", "common_internal"]:
-        sources.append(os.path.join(easylzma_dir, f + ".c"))
+        p = os.path.join(easylzma_dir, f + ".c")
+        if os.path.isfile(p):
+            sources.append(p)
     for f in ["LzmaEnc", "LzmaDec", "LzmaLib", "LzFind", "Bra", "BraIA64", "Alloc", "7zCrc"]:
-        sources.append(os.path.join(pavlov_dir, f + ".c"))
+        p = os.path.join(pavlov_dir, f + ".c")
+        if os.path.isfile(p):
+            sources.append(p)
 else:
     define_macros.append(("NO_LZMA", None))
+
 
 # ---- lz4 ----
 use_lz4 = os.environ.get("ZMAT_NO_LZ4", "0") != "1"
@@ -84,33 +146,34 @@ use_lz4 = os.environ.get("ZMAT_NO_LZ4", "0") != "1"
 if use_lz4:
     lz4_dir = os.path.join(srcdir, "lz4")
     include_dirs.append(lz4_dir)
-    sources.append(os.path.join(lz4_dir, "lz4.c"))
-    sources.append(os.path.join(lz4_dir, "lz4hc.c"))
+    for f in ["lz4.c", "lz4hc.c"]:
+        p = os.path.join(lz4_dir, f)
+        if os.path.isfile(p):
+            sources.append(p)
 else:
     define_macros.append(("NO_LZ4", None))
 
+
 # ---- zstd ----
-# Embed zstd source files directly (no external library dependency)
 use_zstd = os.environ.get("ZMAT_NO_ZSTD", "0") != "1"
 
 if use_zstd:
     zstd_dir = os.path.join(srcdir, "blosc2", "internal-complibs", "zstd")
     include_dirs.append(zstd_dir)
 
-    # collect all zstd .c files from subdirectories
     for subdir in ["common", "compress", "decompress"]:
         pattern = os.path.join(zstd_dir, subdir, "*.c")
         sources.extend(glob.glob(pattern))
 
-    # zstd x86_64 assembly requires GNU as/ld; Apple's linker doesn't
-    # support it, and non-x86 platforms don't have it
-    if not is_x86 or platform.system() == "Darwin":
-        define_macros.append(("ZSTD_DISABLE_ASM", "1"))
+    # zstd's huf_decompress.c references assembly symbols from .S files.
+    # setuptools' Extension does not support .S files natively, so we
+    # always disable assembly and use the pure C fallback.
+    define_macros.append(("ZSTD_DISABLE_ASM", "1"))
 else:
     define_macros.append(("NO_ZSTD", None))
 
+
 # ---- blosc2 ----
-# Compile blosc2 source files directly (same as miniz, lz4, zstd)
 use_blosc2 = os.environ.get("ZMAT_NO_BLOSC2", "0") != "1"
 
 if use_blosc2:
@@ -137,22 +200,22 @@ if use_blosc2:
         "trunc-prec.c",
     ]
     for f in blosc2_srcs:
-        sources.append(os.path.join(blosc2_dir, f))
+        p = os.path.join(blosc2_dir, f)
+        if os.path.isfile(p):
+            sources.append(p)
 
-    # add SSE2 shuffle on x86 only
     if is_x86:
-        sources.append(os.path.join(blosc2_dir, "shuffle-sse2.c"))
-        sources.append(os.path.join(blosc2_dir, "bitshuffle-sse2.c"))
+        for f in ["shuffle-sse2.c", "bitshuffle-sse2.c"]:
+            p = os.path.join(blosc2_dir, f)
+            if os.path.isfile(p):
+                sources.append(p)
 
-    # blosc2 needs its internal lz4 if we already have lz4 in include path
-    # and needs zlib/zstd headers — already added above
-
-    # blosc2 needs pthread on Unix
     if platform.system() != "Windows":
         if "pthread" not in libraries:
             libraries.append("pthread")
 else:
     define_macros.append(("NO_BLOSC2", None))
+
 
 # ---- platform-specific flags ----
 if platform.system() == "Windows":
@@ -162,14 +225,11 @@ else:
     if platform.system() == "Darwin":
         extra_link_args.extend(["-undefined", "dynamic_lookup"])
     else:
-        libraries.extend(["pthread", "m"])
+        if "pthread" not in libraries:
+            libraries.append("pthread")
+        if "m" not in libraries:
+            libraries.append("m")
 
-# ---------- verify all source files exist ----------
-missing = [s for s in sources if not os.path.isfile(s)]
-if missing:
-    print("WARNING: Missing source files (sdist may be incomplete):")
-    for m in missing:
-        print(f"  {m}")
 
 # ---------- define the extension ----------
 zmat_ext = Extension(
@@ -186,4 +246,5 @@ zmat_ext = Extension(
 
 setup(
     ext_modules=[zmat_ext],
+    cmdclass={"sdist": sdist_with_csrc},
 )
