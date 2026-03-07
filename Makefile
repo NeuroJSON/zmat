@@ -21,6 +21,8 @@ mex:
 	-$(MAKE) -C $(SOURCE) mex
 oct:
 	-$(MAKE) -C $(SOURCE) oct
+python:
+	-$(MAKE) -C python
 example: lib
 	-$(MAKE) -C $(EXAMPLE) all
 clean:
@@ -30,4 +32,4 @@ clean:
 
 .DEFAULT_GOAL := mex
 
-.PHONY: all lib dll mex oct example clean
+.PHONY: all lib dll mex oct example clean python

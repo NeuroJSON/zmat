@@ -85,13 +85,13 @@ extern "C"
  * -1: unknown
  */
 
-enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1};
+typedef enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1} TZipMethod;
 
 /**
  * @brief advanced ZMat parameters needed for blosc2 metacompressor
  */
 
-union TZMatFlags {
+typedef union TZMatFlags {
     int iscompress;      /**< combined flag used to pass on to zmat_run */
     struct settings {    /**< unpacked flags */
         char clevel;     /**< compression level, 0: decompression, 1: use default level; negative: set compression level (-1 to -19) */
@@ -99,7 +99,7 @@ union TZMatFlags {
         char shuffle;    /**< byte shuffle length */
         char typesize;   /**< for ND-array, the byte-size for each array element */
     } param;
-};
+} TZMatFlags;
 
 /**
  * @brief Main interface to perform compression/decompression

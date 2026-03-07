@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools >= 64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zmat"
+version = "0.9.9"
+description = "A portable data compression/decompression library supporting zlib/gzip/lzma/lz4/zstd/blosc2/base64"
+readme = {text = "ZMat - A portable data compression/decompression module supporting zlib, gzip, lzma, lz4, zstd, blosc2, and base64.", content-type = "text/plain"}
+license = "GPL-3.0-or-later"
+requires-python = ">=3.7"
+authors = [
+    {name = "Qianqian Fang", email = "fangqq@gmail.com"},
+]
+keywords = [
+    "compression", "decompression", "zlib", "gzip", "lzma", "lz4",
+    "zstd", "blosc2", "base64", "encoding", "decoding",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Archiving :: Compression",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/NeuroJSON/zmat"
+Documentation = "https://github.com/NeuroJSON/zmat"
+Repository = "https://github.com/NeuroJSON/zmat"
+Issues = "https://github.com/NeuroJSON/zmat/issues"
+
+[tool.setuptools]
+zip-safe = false

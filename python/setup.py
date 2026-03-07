@@ -1,0 +1,148 @@
+"""
+setup.py for the zmat Python C extension module
+
+This file lives in python/ and references C sources in ../src/ and ../include/.
+When building an sdist, MANIFEST.in must include those directories so that
+the source tree is complete inside the distribution.
+
+Build:
+    pip install .
+    pip install -e .          # editable/development install
+    python setup.py build_ext --inplace   # build in-place for testing
+
+Release:
+    python -m build           # creates sdist + wheel in dist/
+    twine upload dist/*       # upload to PyPI
+"""
+
+import os
+import platform
+import glob
+from setuptools import setup, Extension
+
+# ---------- paths relative to this setup.py (inside python/) ----------
+here   = os.path.dirname(os.path.abspath(__file__))
+srcdir = os.path.join(here, "..", "src")
+incdir = os.path.join(here, "..", "include")
+
+# when building from sdist, ../src won't exist — sources are copied flat
+# into the sdist under src/ and include/ via MANIFEST.in
+if not os.path.isdir(srcdir):
+    srcdir = os.path.join(here, "src")
+    incdir = os.path.join(here, "include")
+
+# ---------- collect source files ----------
+sources = [
+    os.path.join(here, "pyzmat.c"),
+    os.path.join(srcdir, "zmatlib.c"),
+]
+
+include_dirs = [srcdir, incdir]
+
+define_macros = []
+libraries = []
+library_dirs = []
+extra_compile_args = ["-O2"]
+extra_link_args = []
+
+# ---- zlib / miniz ----
+# By default, use the embedded miniz (no system zlib dependency).
+# Set environment variable ZMAT_USE_SYSTEM_ZLIB=1 to link against -lz instead.
+use_system_zlib = os.environ.get("ZMAT_USE_SYSTEM_ZLIB", "0") == "1"
+
+if use_system_zlib:
+    libraries.append("z")
+else:
+    define_macros.append(("NO_ZLIB", None))
+    define_macros.append(("_LARGEFILE64_SOURCE", "1"))
+    miniz_dir = os.path.join(srcdir, "miniz")
+    include_dirs.append(miniz_dir)
+    sources.append(os.path.join(miniz_dir, "miniz.c"))
+
+# ---- lzma / easylzma ----
+use_lzma = os.environ.get("ZMAT_NO_LZMA", "0") != "1"
+
+if use_lzma:
+    easylzma_dir = os.path.join(srcdir, "easylzma")
+    pavlov_dir = os.path.join(easylzma_dir, "pavlov")
+    include_dirs.extend([easylzma_dir, pavlov_dir])
+    for f in ["compress", "decompress", "lzma_header", "lzip_header", "common_internal"]:
+        sources.append(os.path.join(easylzma_dir, f + ".c"))
+    for f in ["LzmaEnc", "LzmaDec", "LzmaLib", "LzFind", "Bra", "BraIA64", "Alloc", "7zCrc"]:
+        sources.append(os.path.join(pavlov_dir, f + ".c"))
+else:
+    define_macros.append(("NO_LZMA", None))
+
+# ---- lz4 ----
+use_lz4 = os.environ.get("ZMAT_NO_LZ4", "0") != "1"
+
+if use_lz4:
+    lz4_dir = os.path.join(srcdir, "lz4")
+    include_dirs.append(lz4_dir)
+    sources.append(os.path.join(lz4_dir, "lz4.c"))
+    sources.append(os.path.join(lz4_dir, "lz4hc.c"))
+else:
+    define_macros.append(("NO_LZ4", None))
+
+# ---- zstd ----
+# Embed zstd source files directly (no external library dependency)
+use_zstd = os.environ.get("ZMAT_NO_ZSTD", "0") != "1"
+
+if use_zstd:
+    zstd_dir = os.path.join(srcdir, "blosc2", "internal-complibs", "zstd")
+    include_dirs.append(zstd_dir)
+
+    # collect all zstd .c files from subdirectories
+    for subdir in ["common", "compress", "decompress"]:
+        pattern = os.path.join(zstd_dir, subdir, "*.c")
+        sources.extend(glob.glob(pattern))
+else:
+    define_macros.append(("NO_ZSTD", None))
+
+# ---- blosc2 ----
+# blosc2 requires many files and a complex build; disable by default for pip.
+# Enable via ZMAT_USE_BLOSC2=1 (requires pre-built libblosc2.a).
+use_blosc2 = os.environ.get("ZMAT_USE_BLOSC2", "0") == "1"
+
+if use_blosc2:
+    blosc2_inc = os.path.join(srcdir, "blosc2", "include")
+    blosc2_lib = os.path.join(srcdir, "blosc2", "lib")
+    include_dirs.append(blosc2_inc)
+    library_dirs.append(blosc2_lib)
+    libraries.extend(["blosc2", "pthread"])
+else:
+    define_macros.append(("NO_BLOSC2", None))
+
+# ---- platform-specific flags ----
+if platform.system() == "Windows":
+    extra_compile_args = ["/O2"]
+else:
+    extra_compile_args.append("-fPIC")
+    if platform.system() == "Darwin":
+        extra_link_args.extend(["-undefined", "dynamic_lookup"])
+    else:
+        libraries.extend(["pthread", "m"])
+
+# ---------- verify all source files exist ----------
+missing = [s for s in sources if not os.path.isfile(s)]
+if missing:
+    print("WARNING: Missing source files (sdist may be incomplete):")
+    for m in missing:
+        print(f"  {m}")
+
+# ---------- define the extension ----------
+zmat_ext = Extension(
+    name="zmat",
+    sources=sources,
+    include_dirs=include_dirs,
+    define_macros=define_macros,
+    library_dirs=library_dirs,
+    libraries=libraries,
+    extra_compile_args=extra_compile_args,
+    extra_link_args=extra_link_args,
+    language="c",
+)
+
+setup(
+    ext_modules=[zmat_ext],
+)
