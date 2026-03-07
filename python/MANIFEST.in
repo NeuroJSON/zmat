@@ -1,6 +1,8 @@
 # Python binding source
 include pyzmat.c
 include README.md
+include setup.py
+include pyproject.toml
 
 # C source tree (copied into csrc/ by custom sdist command)
 graft csrc

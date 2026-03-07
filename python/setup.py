@@ -15,19 +15,18 @@ Release:
     twine upload dist/*       # upload to PyPI
 """
 
-import glob
 import os
-import platform
 import shutil
-
-from setuptools import Extension, setup
+import platform
+import glob
+from setuptools import setup, Extension
 from setuptools.command.sdist import sdist as _sdist
 
 # ---------- paths ----------
-here = os.path.dirname(os.path.abspath(__file__))
+here   = os.path.dirname(os.path.abspath(__file__))
 parent_srcdir = os.path.join(here, "..", "src")
 parent_incdir = os.path.join(here, "..", "include")
-local_csrc = os.path.join(here, "csrc")
+local_csrc    = os.path.join(here, "csrc")
 
 
 # ---------- custom sdist command ----------
@@ -55,22 +54,23 @@ class sdist_with_csrc(_sdist):
 
     def _copy_csrc(self):
         parent = os.path.join(here, "..")
+        csrc_abs = os.path.join(here, "csrc")
         for src_rel, dst_rel in self.COPY_ITEMS:
             src_path = os.path.join(parent, src_rel)
-            dst_path = os.path.join(local_csrc, dst_rel)
+            dst_path = os.path.join(csrc_abs, dst_rel)
             if os.path.isfile(src_path):
                 os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                 shutil.copy2(src_path, dst_path)
             elif os.path.isdir(src_path):
                 if os.path.exists(dst_path):
                     shutil.rmtree(dst_path)
-                shutil.copytree(
-                    src_path, dst_path, ignore=shutil.ignore_patterns("*.o", "*.a", "*.S", "*.s")
-                )
+                shutil.copytree(src_path, dst_path,
+                                ignore=shutil.ignore_patterns('*.o', '*.a', '*.S', '*.s'))
 
     def _clean_csrc(self):
-        if os.path.isdir(local_csrc):
-            shutil.rmtree(local_csrc)
+        csrc_abs = os.path.join(here, "csrc")
+        if os.path.isdir(csrc_abs):
+            shutil.rmtree(csrc_abs)
 
 
 # ---------- determine source tree location ----------
@@ -86,14 +86,19 @@ else:
     incdir = parent_incdir
 
 
-# ---------- detect CPU architecture ----------
+# helper: check if file exists (using absolute path) but return relative
+def _srcfile(relpath):
+    """Return relpath if the file exists (resolved from here), else None."""
+    if os.path.isfile(os.path.join(here, relpath)):
+        return relpath
+    return None
 machine = platform.machine().lower()
 is_x86 = any(x in machine for x in ["x86_64", "amd64", "i386", "i686"])
 
 
 # ---------- collect source files ----------
 sources = [
-    os.path.join(here, "pyzmat.c"),
+    "pyzmat.c",
     os.path.join(srcdir, "zmatlib.c"),
 ]
 
@@ -116,8 +121,8 @@ else:
     define_macros.append(("_LARGEFILE64_SOURCE", "1"))
     miniz_dir = os.path.join(srcdir, "miniz")
     include_dirs.append(miniz_dir)
-    miniz_c = os.path.join(miniz_dir, "miniz.c")
-    if os.path.isfile(miniz_c):
+    miniz_c = _srcfile(os.path.join(srcdir, "miniz", "miniz.c"))
+    if miniz_c:
         sources.append(miniz_c)
 
 
@@ -130,11 +135,11 @@ if use_lzma:
     include_dirs.extend([easylzma_dir, pavlov_dir])
     for f in ["compress", "decompress", "lzma_header", "lzip_header", "common_internal"]:
         p = os.path.join(easylzma_dir, f + ".c")
-        if os.path.isfile(p):
+        if _srcfile(p):
             sources.append(p)
     for f in ["LzmaEnc", "LzmaDec", "LzmaLib", "LzFind", "Bra", "BraIA64", "Alloc", "7zCrc"]:
         p = os.path.join(pavlov_dir, f + ".c")
-        if os.path.isfile(p):
+        if _srcfile(p):
             sources.append(p)
 else:
     define_macros.append(("NO_LZMA", None))
@@ -148,7 +153,7 @@ if use_lz4:
     include_dirs.append(lz4_dir)
     for f in ["lz4.c", "lz4hc.c"]:
         p = os.path.join(lz4_dir, f)
-        if os.path.isfile(p):
+        if _srcfile(p):
             sources.append(p)
 else:
     define_macros.append(("NO_LZ4", None))
@@ -162,8 +167,9 @@ if use_zstd:
     include_dirs.append(zstd_dir)
 
     for subdir in ["common", "compress", "decompress"]:
-        pattern = os.path.join(zstd_dir, subdir, "*.c")
-        sources.extend(glob.glob(pattern))
+        abs_pattern = os.path.join(here, zstd_dir, subdir, "*.c")
+        for abspath in glob.glob(abs_pattern):
+            sources.append(os.path.relpath(abspath, here))
 
     # zstd's huf_decompress.c references assembly symbols from .S files.
     # setuptools' Extension does not support .S files natively, so we
@@ -183,31 +189,20 @@ if use_blosc2:
     include_dirs.append(blosc2_dir)
 
     blosc2_srcs = [
-        "blosc2.c",
-        "blosc2-stdio.c",
-        "blosclz.c",
-        "delta.c",
-        "directories.c",
-        "fastcopy.c",
-        "frame.c",
-        "schunk.c",
-        "sframe.c",
-        "shuffle.c",
-        "shuffle-generic.c",
-        "bitshuffle-generic.c",
-        "stune.c",
-        "timestamp.c",
-        "trunc-prec.c",
+        "blosc2.c", "blosc2-stdio.c", "blosclz.c", "delta.c", "directories.c",
+        "fastcopy.c", "frame.c", "schunk.c", "sframe.c", "shuffle.c",
+        "shuffle-generic.c", "bitshuffle-generic.c", "stune.c",
+        "timestamp.c", "trunc-prec.c",
     ]
     for f in blosc2_srcs:
         p = os.path.join(blosc2_dir, f)
-        if os.path.isfile(p):
+        if _srcfile(p):
             sources.append(p)
 
     if is_x86:
         for f in ["shuffle-sse2.c", "bitshuffle-sse2.c"]:
             p = os.path.join(blosc2_dir, f)
-            if os.path.isfile(p):
+            if _srcfile(p):
                 sources.append(p)
 
     if platform.system() != "Windows":
