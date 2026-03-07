@@ -8,7 +8,7 @@ jobs:
     strategy:
       # tested octave versions: ubuntu-22.04 = 5.2, ubuntu-22.04 = 6.4, macos-13 = 8.1, windows-2022 = 8.3
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, macos-15-intel, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-15-intel, windows-2022]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -141,7 +141,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2022' }}
         uses: actions/upload-artifact@v4
         with:
-          name: all-zmat-packages-${{ env.RELEASE_TAG }}
+          name: all-zmat-octave-${{ env.RELEASE_TAG }}
           path: packages/zmat-octave-${{ env.RELEASE_TAG }}.zip
 
   matlab_test:
@@ -241,7 +241,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-12' || matrix.os == 'windows-2022' }}
         uses: actions/upload-artifact@v4
         with:
-          name: all-zmat-packages-${{ env.RELEASE_TAG }}
+          name: all-zmat-matlab-${{ env.RELEASE_TAG }}
           path: packages/zmat-matlab-${{ env.RELEASE_TAG }}.zip
 
   upload_package:
