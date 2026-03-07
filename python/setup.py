@@ -45,11 +45,12 @@ COPY_ITEMS = [
 
 def ensure_csrc():
     """Copy C sources from parent directory into csrc/ if needed."""
-    if os.path.isdir(os.path.join(csrc_dir, "src")):
+    csrc_src = os.path.join(csrc_dir, "src")
+    if os.path.isdir(csrc_src) and os.path.isfile(os.path.join(csrc_src, "zmatlib.c")):
         return  # already populated
 
     if not os.path.isdir(parent_srcdir):
-        return  # no parent sources available (pure sdist build)
+        return  # no parent sources available (pure sdist build, csrc should be in tree)
 
     parent = os.path.join(here, "..")
     for src_rel, dst_rel in COPY_ITEMS:
@@ -67,7 +68,21 @@ def ensure_csrc():
 
 
 # copy sources into csrc/ so all paths are within setup.py's directory
+# must change to setup.py's directory first so relative paths work
+_orig_cwd = os.getcwd()
+os.chdir(here)
 ensure_csrc()
+os.chdir(_orig_cwd)
+
+# verify csrc exists
+csrc_src = os.path.join(csrc_dir, "src")
+if not os.path.isdir(csrc_src):
+    import warnings
+
+    warnings.warn(
+        "csrc/src/ not found - C sources may be missing. "
+        "Build from a full git checkout or a complete sdist."
+    )
 
 # all paths are relative to here, inside csrc/
 srcdir = os.path.join("csrc", "src")

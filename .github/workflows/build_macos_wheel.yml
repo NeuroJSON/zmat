@@ -48,8 +48,8 @@ jobs:
       - name: Build wheel
         run: |
           cd python/
-          pip install build setuptools wheel
-          python -m build --wheel
+          pip install setuptools wheel
+          pip wheel . --no-deps -w dist/
           ls dist/
       - name: Run unit tests
         run: |
