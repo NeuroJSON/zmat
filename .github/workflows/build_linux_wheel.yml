@@ -12,7 +12,7 @@ on:
 jobs:
   build_linux_wheels:
     name: Build Linux wheels
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
@@ -54,7 +54,7 @@ jobs:
 
   upload_linux_wheels:
     needs: build_linux_wheels
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ github.repository_owner == 'NeuroJSON' && needs.build_linux_wheels.outputs.perform_pypi_upload == 1 && github.event_name != 'pull_request'}}
     permissions:
       id-token: write
