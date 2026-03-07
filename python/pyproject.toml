@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zmat"
-version = "0.9.0"
+version = "0.9.1"
 description = "A portable data compression/decompression library supporting zlib/gzip/lzma/lz4/zstd/blosc2/base64"
-readme = {text = "ZMat - A portable data compression/decompression module supporting zlib, gzip, lzma, lz4, zstd, blosc2, and base64.", content-type = "text/plain"}
+readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 requires-python = ">=3.7"
 authors = [
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Archiving :: Compression",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
