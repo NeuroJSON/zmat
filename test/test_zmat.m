@@ -1,49 +1,49 @@
 function test_zmat(testname, method, input, expected, varargin)
-opt=struct('level',1);
+opt = struct('level', 1);
 
-if(length(varargin)>1 && rem(length(varargin),2)==0 && ischar(varargin{1}))
-    for i=1:2:length(varargin)
-        opt.(varargin{i})=varargin{i+1};
+if (length(varargin) > 1 && rem(length(varargin), 2) == 0 && ischar(varargin{1}))
+    for i = 1:2:length(varargin)
+        opt.(varargin{i}) = varargin{i + 1};
     end
 end
 
 try
     [res, info] = zmat(input, opt.level, method);
-    if(strcmp(method,'gzip') && opt.level && length(res)>=10)
-        res(10)=0;  % the 10th byte of the gzip header is OS ID
+    if (strcmp(method, 'gzip') && opt.level && length(res) >= 10)
+        res(10) = 0;  % the 10th byte of the gzip header is OS ID
     end
 catch ME
-    if(ischar(expected) && ~isempty(strfind(ME.message, expected)))
+    if (ischar(expected) && ~isempty(strfind(ME.message, expected)))
         fprintf(1, 'Testing exception %s: ok\n\toutput:''%s''\n', testname, ME.message);
     else
         warning('Test exception %s: failed: expected ''%s'', obtained ''%s''', testname, expected, ME.message);
     end
-    return;
+    return
 end
 
-if(isfield(opt,'info'))
-    res=info.(opt.info);
+if (isfield(opt, 'info'))
+    res = info.(opt.info);
 end
 
-if(isfield(opt,'status'))
-    if(info.status~=opt.status)
+if (isfield(opt, 'status'))
+    if (info.status ~= opt.status)
         warning('Test %s: failed: expected ''%s'', obtained ''%s''', testname, mat2str(expected), mat2str(res));
     else
         fprintf(1, 'Testing %s error: ok\n\tstatus:''%d''\n', testname, info.status);
     end
-    return;
+    return
 end
 
 if (~isequal(res, expected))
     warning('Test %s: failed: expected ''%s'', obtained ''%s''', testname, mat2str(expected), mat2str(res));
 else
-    if(ischar(res))
+    if (ischar(res))
         fprintf(1, 'Testing %s: ok\n\toutput:''%s''\n', testname, res);
     else
         fprintf(1, 'Testing %s: ok\n\toutput:''%s''\n', testname, mat2str(res));
     end
-    if(isfield(opt,'info') || opt.level == 0)
-        return;
+    if (isfield(opt, 'info') || opt.level == 0)
+        return
     end
     newres = zmat(res, info);
     if (exist('isequaln'))
