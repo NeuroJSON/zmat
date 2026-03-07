@@ -640,34 +640,26 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                         return -3;
                     }
 
-                    /* if both input and output have space but inflate can't
-                       proceed, the stream is done or corrupt */
-                    if (zs.avail_out > 0 && zs.avail_in == 0) {
-                        break;
-                    }
-
                     /* output buffer full — need to grow */
-                    if (zs.avail_out > 0) {
-                        continue;  /* input remains, keep inflating */
+                    if (zs.avail_out == 0) {
+                        rounds++;
+
+                        if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
+                            inflateEnd(&zs);
+                            free(*outputbuf);
+                            *outputbuf = NULL;
+                            return -5;
+                        }
+
+                        if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
+                            inflateEnd(&zs);
+                            /* outputbuf already freed and set to NULL by zmat_grow_buf */
+                            return -5;
+                        }
+
+                        zs.next_out = (Bytef*)(*outputbuf + zs.total_out);
+                        zs.avail_out = outalloc - zs.total_out;
                     }
-
-                    rounds++;
-
-                    if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
-                        inflateEnd(&zs);
-                        free(*outputbuf);
-                        *outputbuf = NULL;
-                        return -5;
-                    }
-
-                    if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
-                        inflateEnd(&zs);
-                        /* outputbuf already freed and set to NULL by zmat_grow_buf */
-                        return -5;
-                    }
-
-                    zs.next_out = (Bytef*)(*outputbuf + zs.total_out);
-                    zs.avail_out = outalloc - zs.total_out;
                 }
 
                 *outputsize = zs.total_out;
