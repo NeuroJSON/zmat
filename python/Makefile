@@ -245,9 +245,9 @@ coverage-open: coverage
 
 # ---------------- linting / formatting ----------------
 
-lint: format check
+lint: pretty check
 
-format:
+pretty:
 	$(PYTHON) -m black . --line-length 100
 	$(PYTHON) -m isort . --profile black --line-length 100
 
@@ -262,6 +262,7 @@ clean:
 	-rm -f $(OBJS) $(TARGET)
 	-rm -rf build dist *.egg-info
 	-rm -rf htmlcov .coverage
+	-$(MAKE) -C $(SRCDIR) clean
 	-find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	-find . -name "*.pyc" -delete 2>/dev/null || true
 
@@ -302,7 +303,7 @@ help:
 	@echo "    make coverage-open- coverage + open HTML report"
 	@echo ""
 	@echo "  Lint:"
-	@echo "    make format       - auto-format with black + isort"
+	@echo "    make pretty       - auto-format with black + isort"
 	@echo "    make check        - check formatting (no changes)"
 	@echo "    make lint         - format + check"
 	@echo ""

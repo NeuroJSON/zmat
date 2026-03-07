@@ -15,13 +15,14 @@ Release:
     twine upload dist/*       # upload to PyPI
 """
 
+import glob
 import os
 import platform
-import glob
-from setuptools import setup, Extension
+
+from setuptools import Extension, setup
 
 # ---------- paths relative to this setup.py (inside python/) ----------
-here   = os.path.dirname(os.path.abspath(__file__))
+here = os.path.dirname(os.path.abspath(__file__))
 srcdir = os.path.join(here, "..", "src")
 incdir = os.path.join(here, "..", "include")
 
@@ -100,16 +101,50 @@ else:
     define_macros.append(("NO_ZSTD", None))
 
 # ---- blosc2 ----
-# blosc2 requires many files and a complex build; disable by default for pip.
-# Enable via ZMAT_USE_BLOSC2=1 (requires pre-built libblosc2.a).
-use_blosc2 = os.environ.get("ZMAT_USE_BLOSC2", "0") == "1"
+# Compile blosc2 source files directly (same as miniz, lz4, zstd)
+use_blosc2 = os.environ.get("ZMAT_NO_BLOSC2", "0") != "1"
 
 if use_blosc2:
+    blosc2_dir = os.path.join(srcdir, "blosc2", "blosc")
     blosc2_inc = os.path.join(srcdir, "blosc2", "include")
-    blosc2_lib = os.path.join(srcdir, "blosc2", "lib")
     include_dirs.append(blosc2_inc)
-    library_dirs.append(blosc2_lib)
-    libraries.extend(["blosc2", "pthread"])
+    include_dirs.append(blosc2_dir)
+
+    blosc2_srcs = [
+        "blosc2.c",
+        "blosc2-stdio.c",
+        "blosclz.c",
+        "delta.c",
+        "directories.c",
+        "fastcopy.c",
+        "frame.c",
+        "schunk.c",
+        "sframe.c",
+        "shuffle.c",
+        "shuffle-generic.c",
+        "bitshuffle-generic.c",
+        "stune.c",
+        "timestamp.c",
+        "trunc-prec.c",
+    ]
+    for f in blosc2_srcs:
+        sources.append(os.path.join(blosc2_dir, f))
+
+    # add SSE2 shuffle on x86 only
+    import struct as _struct
+
+    machine = platform.machine().lower()
+    if any(x in machine for x in ["x86_64", "amd64", "i386", "i686"]):
+        sources.append(os.path.join(blosc2_dir, "shuffle-sse2.c"))
+        sources.append(os.path.join(blosc2_dir, "bitshuffle-sse2.c"))
+
+    # blosc2 needs its internal lz4 if we already have lz4 in include path
+    # and needs zlib/zstd headers — already added above
+
+    # blosc2 needs pthread on Unix
+    if platform.system() != "Windows":
+        if "pthread" not in libraries:
+            libraries.append("pthread")
 else:
     define_macros.append(("NO_BLOSC2", None))
 

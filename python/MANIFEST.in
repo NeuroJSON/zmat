@@ -19,8 +19,9 @@ graft ../src/lz4
 # zstd (embedded inside blosc2 tree)
 graft ../src/blosc2/internal-complibs/zstd
 
-# blosc2 headers (needed for include path even if not linking)
+# blosc2 headers and source
 graft ../src/blosc2/include
+graft ../src/blosc2/blosc
 
 # Documentation and metadata
 include ../README.rst
