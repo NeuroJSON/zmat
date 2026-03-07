@@ -175,7 +175,7 @@ jobs:
         run: brew install gcc@12
       - name: Set up MATLAB (non-MacOS14)
         if: ${{ runner.os != 'macOS' }}
-        uses: matlab-actions/setup-matlab@v1
+        uses: matlab-actions/setup-matlab@v2
         with:
           release: R2022a
       - name: Set up MATLAB (MacOS-14)
@@ -215,7 +215,7 @@ jobs:
           strip -S zipmat.mex*
           upx -9 zipmat.mex* || true
       - name: Run MATLAB examples
-        uses: matlab-actions/run-command@v1
+        uses: matlab-actions/run-command@v2
         with:
           command: addpath(pwd);cd test;run_zmat_test;cd ../example;demo_zmat_basic;zmat_speedbench
       - name: Create package folder
