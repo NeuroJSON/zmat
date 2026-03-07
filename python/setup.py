@@ -2,8 +2,8 @@
 setup.py for the zmat Python C extension module
 
 This file lives in python/ and references C sources in ../src/ and ../include/.
-For sdist builds, a custom command copies the required source files into a local
-'csrc' directory so the sdist is self-contained.
+Since setuptools requires all paths to be within the setup.py directory,
+sources are copied into a local 'csrc' directory before building.
 
 Build:
     pip install .
@@ -15,92 +15,81 @@ Release:
     twine upload dist/*       # upload to PyPI
 """
 
-import os
-import shutil
-import platform
+import atexit
 import glob
-from setuptools import setup, Extension
-from setuptools.command.sdist import sdist as _sdist
+import os
+import platform
+import shutil
+
+from setuptools import Extension, setup
 
 # ---------- paths ----------
-here   = os.path.dirname(os.path.abspath(__file__))
+here = os.path.dirname(os.path.abspath(__file__))
 parent_srcdir = os.path.join(here, "..", "src")
 parent_incdir = os.path.join(here, "..", "include")
-local_csrc    = os.path.join(here, "csrc")
+csrc_dir = os.path.join(here, "csrc")
+
+# items to copy from parent repo into csrc/
+COPY_ITEMS = [
+    ("src/zmatlib.c", "src/zmatlib.c"),
+    ("src/miniz", "src/miniz"),
+    ("src/easylzma", "src/easylzma"),
+    ("src/lz4", "src/lz4"),
+    ("src/blosc2/internal-complibs/zstd", "src/blosc2/internal-complibs/zstd"),
+    ("src/blosc2/include", "src/blosc2/include"),
+    ("src/blosc2/blosc", "src/blosc2/blosc"),
+    ("src/blosc2/plugins", "src/blosc2/plugins"),
+    ("include", "include"),
+]
 
 
-# ---------- custom sdist command ----------
-class sdist_with_csrc(_sdist):
-    """Custom sdist that copies C sources into csrc/ before packaging."""
+def ensure_csrc():
+    """Copy C sources from parent directory into csrc/ if needed."""
+    if os.path.isdir(os.path.join(csrc_dir, "src")):
+        return  # already populated
 
-    COPY_ITEMS = [
-        ("src/zmatlib.c", "src/zmatlib.c"),
-        ("src/miniz", "src/miniz"),
-        ("src/easylzma", "src/easylzma"),
-        ("src/lz4", "src/lz4"),
-        ("src/blosc2/internal-complibs/zstd", "src/blosc2/internal-complibs/zstd"),
-        ("src/blosc2/include", "src/blosc2/include"),
-        ("src/blosc2/blosc", "src/blosc2/blosc"),
-        ("src/blosc2/plugins", "src/blosc2/plugins"),
-        ("include", "include"),
-    ]
+    if not os.path.isdir(parent_srcdir):
+        return  # no parent sources available (pure sdist build)
 
-    def run(self):
-        self._copy_csrc()
-        try:
-            _sdist.run(self)
-        finally:
-            self._clean_csrc()
-
-    def _copy_csrc(self):
-        parent = os.path.join(here, "..")
-        csrc_abs = os.path.join(here, "csrc")
-        for src_rel, dst_rel in self.COPY_ITEMS:
-            src_path = os.path.join(parent, src_rel)
-            dst_path = os.path.join(csrc_abs, dst_rel)
-            if os.path.isfile(src_path):
-                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                shutil.copy2(src_path, dst_path)
-            elif os.path.isdir(src_path):
-                if os.path.exists(dst_path):
-                    shutil.rmtree(dst_path)
-                shutil.copytree(src_path, dst_path,
-                                ignore=shutil.ignore_patterns('*.o', '*.a', '*.S', '*.s'))
-
-    def _clean_csrc(self):
-        csrc_abs = os.path.join(here, "csrc")
-        if os.path.isdir(csrc_abs):
-            shutil.rmtree(csrc_abs)
+    parent = os.path.join(here, "..")
+    for src_rel, dst_rel in COPY_ITEMS:
+        src_path = os.path.join(parent, src_rel)
+        dst_path = os.path.join(csrc_dir, dst_rel)
+        if os.path.isfile(src_path):
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            shutil.copy2(src_path, dst_path)
+        elif os.path.isdir(src_path):
+            if os.path.exists(dst_path):
+                shutil.rmtree(dst_path)
+            shutil.copytree(
+                src_path, dst_path, ignore=shutil.ignore_patterns("*.o", "*.a", "*.S", "*.s")
+            )
 
 
-# ---------- determine source tree location ----------
-if os.path.isdir(parent_srcdir):
-    srcdir = parent_srcdir
-    incdir = parent_incdir
-elif os.path.isdir(local_csrc):
-    srcdir = os.path.join(local_csrc, "src")
-    incdir = os.path.join(local_csrc, "include")
-else:
-    # during get_requires_for_build_sdist, sources may not be needed yet
-    srcdir = parent_srcdir
-    incdir = parent_incdir
+# copy sources into csrc/ so all paths are within setup.py's directory
+ensure_csrc()
+
+# all paths are relative to here, inside csrc/
+srcdir = os.path.join("csrc", "src")
+incdir = os.path.join("csrc", "include")
 
 
-# helper: check if file exists (using absolute path) but return relative
-def _srcfile(relpath):
-    """Return relpath if the file exists (resolved from here), else None."""
-    if os.path.isfile(os.path.join(here, relpath)):
-        return relpath
-    return None
+# ---------- detect CPU architecture ----------
 machine = platform.machine().lower()
 is_x86 = any(x in machine for x in ["x86_64", "amd64", "i386", "i686"])
 
 
+# helper: check if file exists relative to here
+def _exists(relpath):
+    return os.path.isfile(os.path.join(here, relpath))
+
+
 # ---------- collect source files ----------
-sources = [
-    "pyzmat.c",
-    os.path.join(srcdir, "zmatlib.c"),
-]
+sources = ["pyzmat.c"]
+
+zmatlib = os.path.join(srcdir, "zmatlib.c")
+if _exists(zmatlib):
+    sources.append(zmatlib)
 
 include_dirs = [srcdir, incdir]
 
@@ -121,9 +110,9 @@ else:
     define_macros.append(("_LARGEFILE64_SOURCE", "1"))
     miniz_dir = os.path.join(srcdir, "miniz")
     include_dirs.append(miniz_dir)
-    miniz_c = _srcfile(os.path.join(srcdir, "miniz", "miniz.c"))
-    if miniz_c:
-        sources.append(miniz_c)
+    p = os.path.join(miniz_dir, "miniz.c")
+    if _exists(p):
+        sources.append(p)
 
 
 # ---- lzma / easylzma ----
@@ -135,11 +124,11 @@ if use_lzma:
     include_dirs.extend([easylzma_dir, pavlov_dir])
     for f in ["compress", "decompress", "lzma_header", "lzip_header", "common_internal"]:
         p = os.path.join(easylzma_dir, f + ".c")
-        if _srcfile(p):
+        if _exists(p):
             sources.append(p)
     for f in ["LzmaEnc", "LzmaDec", "LzmaLib", "LzFind", "Bra", "BraIA64", "Alloc", "7zCrc"]:
         p = os.path.join(pavlov_dir, f + ".c")
-        if _srcfile(p):
+        if _exists(p):
             sources.append(p)
 else:
     define_macros.append(("NO_LZMA", None))
@@ -153,7 +142,7 @@ if use_lz4:
     include_dirs.append(lz4_dir)
     for f in ["lz4.c", "lz4hc.c"]:
         p = os.path.join(lz4_dir, f)
-        if _srcfile(p):
+        if _exists(p):
             sources.append(p)
 else:
     define_macros.append(("NO_LZ4", None))
@@ -171,9 +160,7 @@ if use_zstd:
         for abspath in glob.glob(abs_pattern):
             sources.append(os.path.relpath(abspath, here))
 
-    # zstd's huf_decompress.c references assembly symbols from .S files.
-    # setuptools' Extension does not support .S files natively, so we
-    # always disable assembly and use the pure C fallback.
+    # zstd asm not supported via setuptools Extension; use pure C fallback
     define_macros.append(("ZSTD_DISABLE_ASM", "1"))
 else:
     define_macros.append(("NO_ZSTD", None))
@@ -189,20 +176,31 @@ if use_blosc2:
     include_dirs.append(blosc2_dir)
 
     blosc2_srcs = [
-        "blosc2.c", "blosc2-stdio.c", "blosclz.c", "delta.c", "directories.c",
-        "fastcopy.c", "frame.c", "schunk.c", "sframe.c", "shuffle.c",
-        "shuffle-generic.c", "bitshuffle-generic.c", "stune.c",
-        "timestamp.c", "trunc-prec.c",
+        "blosc2.c",
+        "blosc2-stdio.c",
+        "blosclz.c",
+        "delta.c",
+        "directories.c",
+        "fastcopy.c",
+        "frame.c",
+        "schunk.c",
+        "sframe.c",
+        "shuffle.c",
+        "shuffle-generic.c",
+        "bitshuffle-generic.c",
+        "stune.c",
+        "timestamp.c",
+        "trunc-prec.c",
     ]
     for f in blosc2_srcs:
         p = os.path.join(blosc2_dir, f)
-        if _srcfile(p):
+        if _exists(p):
             sources.append(p)
 
     if is_x86:
         for f in ["shuffle-sse2.c", "bitshuffle-sse2.c"]:
             p = os.path.join(blosc2_dir, f)
-            if _srcfile(p):
+            if _exists(p):
                 sources.append(p)
 
     if platform.system() != "Windows":
@@ -241,5 +239,4 @@ zmat_ext = Extension(
 
 setup(
     ext_modules=[zmat_ext],
-    cmdclass={"sdist": sdist_with_csrc},
 )
