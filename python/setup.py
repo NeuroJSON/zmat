@@ -190,6 +190,14 @@ if use_blosc2:
     include_dirs.append(blosc2_inc)
     include_dirs.append(blosc2_dir)
 
+    # tell blosc2 which codecs are available
+    # blosc2zlib needs zlib API — miniz provides this even when NO_ZLIB is set
+    define_macros.append(("HAVE_ZLIB", "1"))
+    if use_zstd:
+        define_macros.append(("HAVE_ZSTD", "1"))
+    if use_lz4:
+        define_macros.append(("HAVE_LZ4", "1"))
+
     blosc2_srcs = [
         "blosc2.c",
         "blosc2-stdio.c",
