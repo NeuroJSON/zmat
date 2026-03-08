@@ -146,6 +146,48 @@ class TestZmatMethods(unittest.TestCase):
         self._round_trip(self.text, "base64")
         self._round_trip(self.mixed, "base64")
 
+    def test_zstd(self):
+        """Test zstd round-trip on all data types."""
+        self._round_trip(self.eye5, "zstd")
+        self._round_trip(self.zeros, "zstd")
+        self._round_trip(self.text, "zstd")
+        self._round_trip(self.mixed, "zstd")
+
+    def test_blosc2blosclz(self):
+        """Test blosc2blosclz round-trip on all data types."""
+        self._round_trip(self.eye5, "blosc2blosclz")
+        self._round_trip(self.zeros, "blosc2blosclz")
+        self._round_trip(self.text, "blosc2blosclz")
+        self._round_trip(self.mixed, "blosc2blosclz")
+
+    def test_blosc2lz4(self):
+        """Test blosc2lz4 round-trip on all data types."""
+        self._round_trip(self.eye5, "blosc2lz4")
+        self._round_trip(self.zeros, "blosc2lz4")
+        self._round_trip(self.text, "blosc2lz4")
+        self._round_trip(self.mixed, "blosc2lz4")
+
+    def test_blosc2lz4hc(self):
+        """Test blosc2lz4hc round-trip on all data types."""
+        self._round_trip(self.eye5, "blosc2lz4hc")
+        self._round_trip(self.zeros, "blosc2lz4hc")
+        self._round_trip(self.text, "blosc2lz4hc")
+        self._round_trip(self.mixed, "blosc2lz4hc")
+
+    def test_blosc2zlib(self):
+        """Test blosc2zlib round-trip on all data types."""
+        self._round_trip(self.eye5, "blosc2zlib")
+        self._round_trip(self.zeros, "blosc2zlib")
+        self._round_trip(self.text, "blosc2zlib")
+        self._round_trip(self.mixed, "blosc2zlib")
+
+    def test_blosc2zstd(self):
+        """Test blosc2zstd round-trip on all data types."""
+        self._round_trip(self.eye5, "blosc2zstd")
+        self._round_trip(self.zeros, "blosc2zstd")
+        self._round_trip(self.text, "blosc2zstd")
+        self._round_trip(self.mixed, "blosc2zstd")
+
     def test_zlib_compresses(self):
         """Test that zlib actually reduces size on compressible data."""
         compressed = zmat.compress(self.zeros, method="zlib")
@@ -159,6 +201,16 @@ class TestZmatMethods(unittest.TestCase):
     def test_lz4_compresses(self):
         """Test that lz4 actually reduces size on compressible data."""
         compressed = zmat.compress(self.zeros, method="lz4")
+        self.assertLess(len(compressed), len(self.zeros))
+
+    def test_zstd_compresses(self):
+        """Test that zstd actually reduces size on compressible data."""
+        compressed = zmat.compress(self.zeros, method="zstd")
+        self.assertLess(len(compressed), len(self.zeros))
+
+    def test_blosc2blosclz_compresses(self):
+        """Test that blosc2blosclz actually reduces size on compressible data."""
+        compressed = zmat.compress(self.zeros, method="blosc2blosclz")
         self.assertLess(len(compressed), len(self.zeros))
 
 
@@ -266,7 +318,7 @@ class TestZmatLargeData(unittest.TestCase):
     def test_large_zeros(self):
         """Test compression of large zero-filled buffer (like zeros(500))."""
         data = b"\x00" * (500 * 500 * 8)  # 500x500 doubles
-        for method in ["zlib", "gzip", "lz4", "lzma"]:
+        for method in ["zlib", "gzip", "lz4", "lzma", "zstd", "blosc2blosclz"]:
             compressed = zmat.compress(data, method=method)
             self.assertLess(len(compressed), len(data), f"{method} did not compress zeros")
             decompressed = zmat.decompress(compressed, method=method)
@@ -275,7 +327,7 @@ class TestZmatLargeData(unittest.TestCase):
     def test_large_eye(self):
         """Test compression of identity matrix (like eye(500), mirrors speedbench)."""
         data = self._make_eye(500)
-        for method in ["zlib", "gzip", "lz4", "lz4hc"]:
+        for method in ["zlib", "gzip", "lz4", "lz4hc", "zstd", "blosc2lz4"]:
             compressed = zmat.compress(data, method=method)
             decompressed = zmat.decompress(compressed, method=method)
             self.assertEqual(decompressed, data, f"{method} round-trip failed on eye(500)")
@@ -283,7 +335,7 @@ class TestZmatLargeData(unittest.TestCase):
     def test_large_sequential(self):
         """Test compression of sequential data (like magic(500))."""
         data = self._make_sequential(500)
-        for method in ["zlib", "gzip", "lz4", "lzma"]:
+        for method in ["zlib", "gzip", "lz4", "lzma", "zstd", "blosc2zstd"]:
             compressed = zmat.compress(data, method=method)
             decompressed = zmat.decompress(compressed, method=method)
             self.assertEqual(decompressed, data, f"{method} round-trip failed on sequential data")
@@ -407,13 +459,25 @@ class TestZmatBenchmark(unittest.TestCase):
             row = b"\x00" * (8 * i) + struct.pack("<d", 1.0) + b"\x00" * (8 * (n - i - 1))
             data += row
 
-        methods = ["zlib", "gzip", "lzma", "lz4", "lz4hc"]
-        print(f"\n{'Method':<10} {'Size':>8} {'Ratio':>8} {'Comp(s)':>10} {'Decomp(s)':>10}")
-        print("-" * 50)
+        methods = [
+            "zlib",
+            "gzip",
+            "lzma",
+            "lz4",
+            "lz4hc",
+            "zstd",
+            "blosc2blosclz",
+            "blosc2lz4",
+            "blosc2lz4hc",
+            "blosc2zlib",
+            "blosc2zstd",
+        ]
+        print(f"\n{'Method':<16} {'Size':>8} {'Ratio':>8} {'Comp(s)':>10} {'Decomp(s)':>10}")
+        print("-" * 56)
         for m in methods:
             r = self._benchmark_method(data, m)
             print(
-                f"{r['method']:<10} {r['compressed']:>8} {r['ratio']:>8.4f} "
+                f"{r['method']:<16} {r['compressed']:>8} {r['ratio']:>8.4f} "
                 f"{r['compress_time']:>10.6f} {r['decompress_time']:>10.6f}"
             )
 
@@ -421,13 +485,25 @@ class TestZmatBenchmark(unittest.TestCase):
         """Benchmark on text data."""
         data = b"The quick brown fox jumps over the lazy dog. " * 2000
 
-        methods = ["zlib", "gzip", "lzma", "lz4", "lz4hc"]
-        print(f"\n{'Method':<10} {'Size':>8} {'Ratio':>8} {'Comp(s)':>10} {'Decomp(s)':>10}")
-        print("-" * 50)
+        methods = [
+            "zlib",
+            "gzip",
+            "lzma",
+            "lz4",
+            "lz4hc",
+            "zstd",
+            "blosc2blosclz",
+            "blosc2lz4",
+            "blosc2lz4hc",
+            "blosc2zlib",
+            "blosc2zstd",
+        ]
+        print(f"\n{'Method':<16} {'Size':>8} {'Ratio':>8} {'Comp(s)':>10} {'Decomp(s)':>10}")
+        print("-" * 56)
         for m in methods:
             r = self._benchmark_method(data, m)
             print(
-                f"{r['method']:<10} {r['compressed']:>8} {r['ratio']:>8.4f} "
+                f"{r['method']:<16} {r['compressed']:>8} {r['ratio']:>8.4f} "
                 f"{r['compress_time']:>10.6f} {r['decompress_time']:>10.6f}"
             )
 
