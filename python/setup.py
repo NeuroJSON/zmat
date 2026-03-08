@@ -15,31 +15,30 @@ Release:
     twine upload dist/*       # upload to PyPI
 """
 
-import atexit
-import glob
 import os
-import platform
 import shutil
-
-from setuptools import Extension, setup
+import platform
+import glob
+import atexit
+from setuptools import setup, Extension
 
 # ---------- paths ----------
-here = os.path.dirname(os.path.abspath(__file__))
+here          = os.path.dirname(os.path.abspath(__file__))
 parent_srcdir = os.path.join(here, "..", "src")
 parent_incdir = os.path.join(here, "..", "include")
-csrc_dir = os.path.join(here, "csrc")
+csrc_dir      = os.path.join(here, "csrc")
 
 # items to copy from parent repo into csrc/
 COPY_ITEMS = [
-    ("src/zmatlib.c", "src/zmatlib.c"),
-    ("src/miniz", "src/miniz"),
-    ("src/easylzma", "src/easylzma"),
-    ("src/lz4", "src/lz4"),
-    ("src/blosc2/internal-complibs/zstd", "src/blosc2/internal-complibs/zstd"),
-    ("src/blosc2/include", "src/blosc2/include"),
-    ("src/blosc2/blosc", "src/blosc2/blosc"),
-    ("src/blosc2/plugins", "src/blosc2/plugins"),
-    ("include", "include"),
+    ("src/zmatlib.c",                          "src/zmatlib.c"),
+    ("src/miniz",                              "src/miniz"),
+    ("src/easylzma",                           "src/easylzma"),
+    ("src/lz4",                                "src/lz4"),
+    ("src/blosc2/internal-complibs/zstd",      "src/blosc2/internal-complibs/zstd"),
+    ("src/blosc2/include",                     "src/blosc2/include"),
+    ("src/blosc2/blosc",                       "src/blosc2/blosc"),
+    ("src/blosc2/plugins",                     "src/blosc2/plugins"),
+    ("include",                                "include"),
 ]
 
 
@@ -62,9 +61,8 @@ def ensure_csrc():
         elif os.path.isdir(src_path):
             if os.path.exists(dst_path):
                 shutil.rmtree(dst_path)
-            shutil.copytree(
-                src_path, dst_path, ignore=shutil.ignore_patterns("*.o", "*.a", "*.S", "*.s")
-            )
+            shutil.copytree(src_path, dst_path,
+                            ignore=shutil.ignore_patterns('*.o', '*.a', '*.S', '*.s'))
 
 
 # copy sources into csrc/ so all paths are within setup.py's directory
@@ -78,11 +76,8 @@ os.chdir(_orig_cwd)
 csrc_src = os.path.join(csrc_dir, "src")
 if not os.path.isdir(csrc_src):
     import warnings
-
-    warnings.warn(
-        "csrc/src/ not found - C sources may be missing. "
-        "Build from a full git checkout or a complete sdist."
-    )
+    warnings.warn("csrc/src/ not found - C sources may be missing. "
+                  "Build from a full git checkout or a complete sdist.")
 
 # all paths are relative to here, inside csrc/
 srcdir = os.path.join("csrc", "src")
@@ -169,8 +164,9 @@ use_zstd = os.environ.get("ZMAT_NO_ZSTD", "0") != "1"
 if use_zstd:
     zstd_dir = os.path.join(srcdir, "blosc2", "internal-complibs", "zstd")
     include_dirs.append(zstd_dir)
+    include_dirs.append(os.path.join(zstd_dir, "common"))
 
-    for subdir in ["common", "compress", "decompress"]:
+    for subdir in ["common", "compress", "decompress", "dictBuilder"]:
         abs_pattern = os.path.join(here, zstd_dir, subdir, "*.c")
         for abspath in glob.glob(abs_pattern):
             sources.append(os.path.relpath(abspath, here))
@@ -199,21 +195,10 @@ if use_blosc2:
         define_macros.append(("HAVE_LZ4", "1"))
 
     blosc2_srcs = [
-        "blosc2.c",
-        "blosc2-stdio.c",
-        "blosclz.c",
-        "delta.c",
-        "directories.c",
-        "fastcopy.c",
-        "frame.c",
-        "schunk.c",
-        "sframe.c",
-        "shuffle.c",
-        "shuffle-generic.c",
-        "bitshuffle-generic.c",
-        "stune.c",
-        "timestamp.c",
-        "trunc-prec.c",
+        "blosc2.c", "blosc2-stdio.c", "blosclz.c", "delta.c", "directories.c",
+        "fastcopy.c", "frame.c", "schunk.c", "sframe.c", "shuffle.c",
+        "shuffle-generic.c", "bitshuffle-generic.c", "stune.c",
+        "timestamp.c", "trunc-prec.c",
     ]
     for f in blosc2_srcs:
         p = os.path.join(blosc2_dir, f)
