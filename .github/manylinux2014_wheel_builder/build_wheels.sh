@@ -14,7 +14,7 @@ for PYBIN in /opt/python/cp3{7,8,9,10,11,12,13,14}*/bin/; do
         echo "Python version: ${PYVER}"
 
         # Clean previous build artifacts
-        rm -rf build/ *.egg-info/ dist/ builddir/
+        rm -rf build/ *.egg-info/ tmpwheels/ builddir/
 
         # Install build dependencies
         "${PYBIN}/pip" install --upgrade pip
@@ -23,10 +23,15 @@ for PYBIN in /opt/python/cp3{7,8,9,10,11,12,13,14}*/bin/; do
         # Build wheel
         "${PYBIN}/python" -m build --wheel --outdir tmpwheels/
 
-        # Run unit tests
-        "${PYBIN}/pip" install tmpwheels/zmat-*.whl
+        # Run unit tests — install only the wheel we just built
+        BUILT_WHEEL=$(ls tmpwheels/zmat-*.whl | head -1)
+        "${PYBIN}/pip" install "$BUILT_WHEEL"
         "${PYBIN}/python" -m unittest discover -s tests -v
         "${PYBIN}/pip" uninstall -y zmat
+
+        # Move wheel to final collection directory
+        mkdir -p allwheels/
+        mv "$BUILT_WHEEL" allwheels/
     fi
 done
 
@@ -34,7 +39,7 @@ done
 rm -rf dist/
 mkdir -p dist/
 
-for WHEEL in tmpwheels/*.whl; do
+for WHEEL in allwheels/*.whl; do
     if [ -f "$WHEEL" ]; then
         echo "Checking: ${WHEEL}"
 
@@ -51,7 +56,7 @@ for WHEEL in tmpwheels/*.whl; do
 done
 
 # Cleanup
-rm -rf tmpwheels/ build/ *.egg-info/ builddir/
+rm -rf allwheels/ tmpwheels/ build/ *.egg-info/ builddir/
 
 echo "========================================"
 echo "Built wheels:"
