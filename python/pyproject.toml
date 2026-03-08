@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zmat"
-version = "0.9.9"
+version = "0.9.10"
 description = "A portable data compression/decompression library supporting zlib/gzip/lzma/lz4/zstd/blosc2/base64"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "GPL-3.0-or-later"}
