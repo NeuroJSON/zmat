@@ -41,6 +41,7 @@ PLATFORM = $(shell uname -s)
 
 DLLFLAG=-fPIC
 OMP=-fopenmp
+STATIC     ?= 0
 
 CPPOPT=-g -Wall -O3 -fPIC # -g -Wall -std=c99 # -DUSE_OS_TIMER
 
@@ -66,6 +67,32 @@ else
   endif
 endif
 
+# Static linking flags activated by STATIC=1
+ifeq ($(STATIC),1)
+  ifeq ($(findstring _NT-,$(PLATFORM)), _NT-)
+    # Windows / MinGW: static gcc runtime, stdc++, gomp and winpthread
+    STATIC_LINKFLAGS := -static-libgcc -static-libstdc++ \
+                        -Wl,-Bstatic -lgomp -lwinpthread -Wl,-Bdynamic
+  else ifeq ($(findstring Darwin,$(PLATFORM)), Darwin)
+    # macOS: ask the current compiler for its libgomp.a full path;
+    # if CC is clang (returns bare filename), fall back to Homebrew libomp.
+    _STATIC_LIBGOMP  := $(shell $(CC) -print-file-name=libgomp.a 2>/dev/null)
+    ifeq ($(_STATIC_LIBGOMP),libgomp.a)
+      _STATIC_LIBGOMP := $(shell brew --prefix libomp 2>/dev/null)/lib/libomp.a
+    endif
+    STATIC_LINKFLAGS := -static-libgcc -static-libstdc++ $(_STATIC_LIBGOMP)
+  else
+    # Linux: libgomp.a is NOT compiled with -fPIC and cannot be statically
+    # linked into shared objects (dll/mex/oct all produce .so/.mex files).
+    # Only statically bind the gcc and stdc++ runtimes, which GCC ships in a
+    # PIC-safe form specifically for this use-case.  libgomp remains a normal
+    # dynamic dependency (libgomp.so.1).
+    STATIC_LINKFLAGS := -static-libgcc -static-libstdc++
+  endif
+else
+  STATIC_LINKFLAGS :=
+endif
+
 ifneq ($(HAVE_ZLIB),yes)
   CFLAGS+=-DNO_ZLIB -D_LARGEFILE64_SOURCE=1
   INCLUDEDIRS+=-Iminiz
@@ -89,7 +116,7 @@ ifeq ($(HAVE_BLOSC2),no)
 else
   ifeq ($(HAVE_LZ4),no)
     INCLUDEDIRS+=-Ilz4
-    FILES+= lz4/lz4 lz4/lz4hc
+    FILES+= lz4/lz4 lz4/lz4hc lz4/lz4frame lz4/xxhash
   endif
   ifeq ($(HAVE_ZSTD),no)
     INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
@@ -106,7 +133,9 @@ ifeq ($(HAVE_LZ4),no)
   CFLAGS+=-DNO_LZ4
 else
   INCLUDEDIRS+=-Ilz4
-  FILES+= lz4/lz4 lz4/lz4hc
+  FILES+= lz4/lz4 lz4/lz4hc lz4/lz4frame lz4/xxhash
+  CPPOPT+=$(OMP)
+  LIBZLIB+=$(OMP)
 endif
 
 ifeq ($(HAVE_ZSTD),no)
@@ -149,6 +178,15 @@ dll:   LINKOPT    +=$(LDFLAGS)
 dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
+
+# Propagate static-link flags when STATIC=1
+# dll/oct: append to USERLINKOPT (end of link command)
+# mex: append to MEXLINKOPT so it lands inside LINKLIBS/CXXLIBS strings
+ifneq ($(STATIC_LINKFLAGS),)
+dll oct: USERLINKOPT += $(STATIC_LINKFLAGS)
+mex:     MEXLINKOPT  += $(STATIC_LINKFLAGS)
+endif
+
 oct:   OUTPUT_DIR=..
 oct:   AR= CXXFLAGS='-O3' LDFLAGS='$(MEXLINKOPT)' mkoctfile zmat.cpp
 oct:   BINARY=zmat.mex

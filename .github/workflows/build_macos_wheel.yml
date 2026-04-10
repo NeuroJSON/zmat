@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
         run: |
-          brew install gcc
+          brew install gcc libomp
       - name: Setup compiler
         run: |
           if [[ "$(uname -m)" == "arm64" ]]; then

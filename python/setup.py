@@ -20,6 +20,7 @@ import glob
 import os
 import platform
 import shutil
+import subprocess
 
 from setuptools import Extension, setup
 
@@ -155,7 +156,7 @@ use_lz4 = os.environ.get("ZMAT_NO_LZ4", "0") != "1"
 if use_lz4:
     lz4_dir = os.path.join(srcdir, "lz4")
     include_dirs.append(lz4_dir)
-    for f in ["lz4.c", "lz4hc.c"]:
+    for f in ["lz4.c", "lz4hc.c", "lz4frame.c", "xxhash.c"]:
         p = os.path.join(lz4_dir, f)
         if _exists(p):
             sources.append(p)
@@ -246,6 +247,44 @@ else:
             libraries.append("pthread")
         if "m" not in libraries:
             libraries.append("m")
+
+
+# ---- OpenMP (for multi-threaded LZ4) ----
+def _brew_prefix(pkg):
+    """Return the Homebrew prefix for *pkg*, or None if unavailable."""
+    try:
+        result = subprocess.run(
+            ["brew", "--prefix", pkg],
+            capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
+    except Exception:
+        return None
+
+
+use_omp = use_lz4 and os.environ.get("ZMAT_NO_OMP", "0") != "1"
+
+if use_omp:
+    if platform.system() == "Windows":
+        # MSVC: /openmp enables OpenMP 2.0; runtime is part of the CRT
+        extra_compile_args.append("/openmp")
+    elif platform.system() == "Darwin":
+        # macOS clang does not ship OpenMP; try Homebrew libomp first,
+        # then fall back to whatever -fopenmp the current compiler provides.
+        libomp_prefix = _brew_prefix("libomp")
+        if libomp_prefix and os.path.isdir(libomp_prefix):
+            include_dirs.append(os.path.join(libomp_prefix, "include"))
+            library_dirs.append(os.path.join(libomp_prefix, "lib"))
+            extra_compile_args.extend(["-Xpreprocessor", "-fopenmp"])
+            libraries.append("omp")
+        else:
+            # Homebrew GCC or another compiler with native -fopenmp
+            extra_compile_args.append("-fopenmp")
+            extra_link_args.append("-fopenmp")
+    else:
+        # Linux / other Unix: GCC/Clang with native OpenMP
+        extra_compile_args.append("-fopenmp")
+        extra_link_args.append("-fopenmp")
 
 
 # ---------- define the extension ----------
