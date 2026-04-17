@@ -46,7 +46,12 @@ function varargout = zmat(varargin)
 %     options: a series of ('name', value) pairs, supported options include
 %             'nthread': followed by an integer specifying number of threads for blosc2 meta-compressors
 %             'typesize': followed by an integer specifying the number of bytes per data element (used for shuffle)
-%             'shuffle': shuffle methods in blosc2 meta-compressor, 0 disable, 1, byte-shuffle
+%             'shuffle': 0 to disable (default for non-blosc2), 1 to enable byte-shuffle.
+%                     For blosc2 methods the shuffle is applied inside the C layer.
+%                     For all other methods, when [output,info]=zmat(...) is called,
+%                     the shuffle is applied in MATLAB before compression and reversed
+%                     after decompression; the info struct records 'shuffle' and
+%                     'typesize' so that zmat(compressed, info) restores the original array.
 %
 % output:
 %      output: a uint8 row vector, storing the compressed or decompressed data;
@@ -220,7 +225,34 @@ if ((strcmp(zipmethod, 'zlib') || strcmp(zipmethod, 'gzip')) && iscompress <= -1
     iscompress = -9;
 end
 
-[varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod, nthread, shuffle, typesize);
+%% wrapper-level byte shuffle: applies to non-blosc2 codecs when info is requested
+do_wrapper_shuffle = (nargout > 1 && shuffle > 0 && iscompress ~= 0 && ...
+                      isempty(strfind(zipmethod, 'blosc2')) && ...
+                      ~strcmp(zipmethod, 'base64') && ...
+                      isempty(specialtype) && typesize > 1);
+
+if (do_wrapper_shuffle)
+    %% convert input to bytes, apply byte shuffle, then compress
+    orig_class = class(input);
+    orig_size  = size(input);
+    if (~isa(input, 'uint8'))
+        raw_bytes = typecast(input(:)', 'uint8');
+    else
+        raw_bytes = input(:)';
+    end
+    nelems = numel(raw_bytes) / typesize;
+    M = reshape(raw_bytes, typesize, nelems);   % typesize x nelems: col = one element
+    shuffled_bytes = reshape(M', 1, []);        % flatten row-major: all byte-0s, then byte-1s...
+    [varargout{1:max(1, nargout)}] = zipmat(shuffled_bytes, iscompress, zipmethod, nthread, 0, 1);
+    %% overwrite info with original array metadata and record shuffle state
+    varargout{2}.type     = orig_class;
+    varargout{2}.size     = orig_size;
+    varargout{2}.byte     = typesize;
+    varargout{2}.shuffle  = shuffle;
+    varargout{2}.typesize = typesize;
+else
+    [varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod, nthread, shuffle, typesize);
+end
 
 %% store special matrix type info in the output info struct
 if (nargout > 1 && ~isempty(specialtype))
@@ -293,6 +325,17 @@ if (exist('inputinfo', 'var') && isfield(inputinfo, 'type'))
                                   inputinfo.matrixsize(1), inputinfo.matrixsize(2));
             return
         end
+    end
+
+    %% unshuffle if compression applied wrapper-level byte shuffle
+    if (isfield(inputinfo, 'shuffle') && inputinfo.shuffle > 0 && ...
+        isfield(inputinfo, 'typesize') && inputinfo.typesize > 1 && ...
+        isempty(strfind(inputinfo.method, 'blosc2')))
+        ts = inputinfo.typesize;
+        raw_bytes = varargout{1}(:)';
+        nelems = numel(raw_bytes) / ts;
+        M = reshape(raw_bytes, nelems, ts);     % nelems x ts: col = one byte position
+        varargout{1} = reshape(M', 1, []);      % flatten row-major: bytes of e1, then e2...
     end
 
     if (strcmp(inputinfo.type, 'logical'))
