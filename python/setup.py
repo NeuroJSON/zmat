@@ -33,7 +33,7 @@ csrc_dir = os.path.join(here, "csrc")
 COPY_ITEMS = [
     ("src/zmatlib.c", "src/zmatlib.c"),
     ("src/miniz", "src/miniz"),
-    ("src/easylzma", "src/easylzma"),
+    ("src/easylzma", "src/easylzma"),   # includes easylzma/lzma/ if present
     ("src/lz4", "src/lz4"),
     ("src/blosc2/internal-complibs/zstd", "src/blosc2/internal-complibs/zstd"),
     ("src/blosc2/include", "src/blosc2/include"),
@@ -137,31 +137,57 @@ use_lzma = os.environ.get("ZMAT_NO_LZMA", "0") != "1"
 
 if use_lzma:
     easylzma_dir = os.path.join(srcdir, "easylzma")
-    pavlov_dir = os.path.join(easylzma_dir, "pavlov")
-    include_dirs.extend([easylzma_dir, pavlov_dir])
-    for f in [
-        "compress",
-        "decompress",
-        "lzma_header",
-        "lzip_header",
-        "common_internal",
-    ]:
+    lzma_sdk_dir = os.path.join(easylzma_dir, "lzma")    # new self-contained SDK
+    pavlov_dir   = os.path.join(easylzma_dir, "pavlov")  # legacy 4.63 subset
+
+    use_new_sdk = _exists(os.path.join(lzma_sdk_dir, "LzmaEnc.c"))
+
+    if use_new_sdk:
+        sdk_dir = lzma_sdk_dir
+        define_macros.append(("ZMAT_USE_LZMA_SDK", None))
+    else:
+        sdk_dir = pavlov_dir
+
+    include_dirs.extend([easylzma_dir, sdk_dir])
+
+    for f in ["compress", "decompress", "lzma_header", "lzip_header", "common_internal"]:
         p = os.path.join(easylzma_dir, f + ".c")
         if _exists(p):
             sources.append(p)
-    for f in [
-        "LzmaEnc",
-        "LzmaDec",
-        "LzmaLib",
-        "LzFind",
-        "Bra",
-        "BraIA64",
-        "Alloc",
-        "7zCrc",
-    ]:
-        p = os.path.join(pavlov_dir, f + ".c")
+
+    core_files = ["LzmaEnc", "LzmaDec", "LzmaLib", "LzFind", "Bra", "BraIA64", "Alloc", "7zCrc"]
+    if use_new_sdk:
+        core_files += [
+            "7zCrcOpt", "CpuArch",          # optimised CRC and CPU detection
+            "Lzma2Dec", "Lzma2DecMt",       # LZMA2 decoder (used by XZ)
+            "Lzma2Enc",                      # LZMA2 encoder (used by XZ)
+            "MtCoder", "MtDec",             # MT block coder/decoder
+            "Xz", "XzCrc64", "XzCrc64Opt", # XZ stream support
+            "XzEnc", "XzDec",              # XZ encoder/decoder
+            "Sha256", "Sha256Opt",          # SHA-256 for XZ integrity check
+            "Delta",                        # delta filter
+            "Bra86",                        # x86 BCJ filter (used by XZ encoder/decoder)
+            "7zStream",                     # SeqInStream_ReadMax (used by MtCoder/MtDec)
+        ]
+    for f in core_files:
+        p = os.path.join(sdk_dir, f + ".c")
         if _exists(p):
             sources.append(p)
+
+    # MT pipeline: enabled automatically when new SDK is present (non-Windows)
+    if platform.system() != "Windows":
+        if use_new_sdk:
+            define_macros.append(("COMPRESS_MF_MT", None))
+            for f in ["LzFindMt", "LzFindOpt", "Threads"]:
+                p = os.path.join(sdk_dir, f + ".c")
+                if _exists(p):
+                    sources.append(p)
+        elif os.environ.get("ZMAT_LZMA_MT", "0") == "1":
+            define_macros.append(("COMPRESS_MF_MT", None))
+            for f in ["LzFindMt", "Threads"]:
+                p = os.path.join(pavlov_dir, f + ".c")
+                if _exists(p):
+                    sources.append(p)
 else:
     define_macros.append(("NO_LZMA", None))
 

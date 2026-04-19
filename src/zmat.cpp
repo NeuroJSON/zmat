@@ -73,6 +73,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         "lzip",
         "lzma",
 #endif
+#if defined(ZMAT_USE_LZMA_SDK)
+        "xz",
+#endif
 #if !defined(NO_LZ4)
         "lz4",
         "lz4hc",
@@ -97,6 +100,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 #if !defined(NO_LZMA)
         zmLzip,
         zmLzma,
+#endif
+#if defined(ZMAT_USE_LZMA_SDK)
+        zmXz,
 #endif
 #if !defined(NO_LZ4)
         zmLz4,

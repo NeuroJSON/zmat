@@ -85,7 +85,7 @@ extern "C"
  * -1: unknown
  */
 
-typedef enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmUnknown = -1} TZipMethod;
+typedef enum TZipMethod {zmZlib, zmGzip, zmBase64, zmLzip, zmLzma, zmLz4, zmLz4hc, zmZstd, zmBlosc2Blosclz, zmBlosc2Lz4, zmBlosc2Lz4hc, zmBlosc2Zlib, zmBlosc2Zstd, zmXz, zmUnknown = -1} TZipMethod;
 
 /**
  * @brief advanced ZMat parameters needed for blosc2 metacompressor

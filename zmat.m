@@ -32,8 +32,9 @@ function varargout = zmat(varargin)
 %      method: (optional) compression method, currently, zmat supports the below methods
 %             'zlib': zlib/zip based data compression (default)
 %             'gzip': gzip formatted data compression
-%             'lzip': lzip formatted data compression
+%             'lzip': lzip formatted data compression (nthread>1 compresses chunks in parallel)
 %             'lzma': lzma formatted data compression
+%             'xz':   xz (.xz) compression via LZMA2; nthread sets parallel block threads
 %             'lz4':  lz4 formatted data compression
 %             'lz4hc':lz4hc (LZ4 with high-compression ratio) formatted data compression
 %             'zstd':  zstd formatted data compression
