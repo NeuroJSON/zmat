@@ -94,10 +94,10 @@ else
            $(LZMA_SDK_DIR)/Xz $(LZMA_SDK_DIR)/XzCrc64 $(LZMA_SDK_DIR)/XzCrc64Opt \
            $(LZMA_SDK_DIR)/XzEnc $(LZMA_SDK_DIR)/XzDec \
            $(LZMA_SDK_DIR)/Sha256 $(LZMA_SDK_DIR)/Sha256Opt $(LZMA_SDK_DIR)/Delta \
-           $(LZMA_SDK_DIR)/Bra86 $(LZMA_SDK_DIR)/7zStream
+           $(LZMA_SDK_DIR)/Bra86 $(LZMA_SDK_DIR)/7zStream \
+           $(LZMA_SDK_DIR)/LzFindMt $(LZMA_SDK_DIR)/LzFindOpt $(LZMA_SDK_DIR)/Threads
     ifneq ($(findstring _NT-,$(PLATFORM)), _NT-)
       CFLAGS+=-DCOMPRESS_MF_MT
-      FILES+=$(LZMA_SDK_DIR)/LzFindMt $(LZMA_SDK_DIR)/LzFindOpt $(LZMA_SDK_DIR)/Threads
     endif
   else
     ## fall back to legacy pavlov subset

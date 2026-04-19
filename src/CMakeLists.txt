@@ -91,16 +91,16 @@ if(USE_LZMA)
             easylzma/lzma/Sha256Opt.c
             easylzma/lzma/Delta.c
             easylzma/lzma/7zStream.c
+            # Threading support — always required: LzmaEnc, MtCoder, MtDec all
+            # reference these unconditionally regardless of platform
+            easylzma/lzma/LzFindMt.c
+            easylzma/lzma/LzFindOpt.c
+            easylzma/lzma/Threads.c
         )
 
-        # Multi-threaded match-finder: non-Windows only
+        # COMPRESS_MF_MT enables the lzip parallel-chunk path in zmatlib.c (non-Windows only)
         if(NOT WIN32)
             add_compile_definitions(COMPRESS_MF_MT)
-            list(APPEND LZMA_SOURCES
-                easylzma/lzma/LzFindMt.c
-                easylzma/lzma/LzFindOpt.c
-                easylzma/lzma/Threads.c
-            )
         endif()
 
     else()

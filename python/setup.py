@@ -174,20 +174,22 @@ if use_lzma:
         if _exists(p):
             sources.append(p)
 
-    # MT pipeline: enabled automatically when new SDK is present (non-Windows)
-    if platform.system() != "Windows":
-        if use_new_sdk:
+    if use_new_sdk:
+        # LzFindMt/LzFindOpt/Threads are always required: LzmaEnc.c, MtCoder.c,
+        # and MtDec.c reference their symbols unconditionally on all platforms.
+        for f in ["LzFindMt", "LzFindOpt", "Threads"]:
+            p = os.path.join(sdk_dir, f + ".c")
+            if _exists(p):
+                sources.append(p)
+        # COMPRESS_MF_MT enables the lzip parallel-chunk path in zmatlib.c (non-Windows only)
+        if platform.system() != "Windows":
             define_macros.append(("COMPRESS_MF_MT", None))
-            for f in ["LzFindMt", "LzFindOpt", "Threads"]:
-                p = os.path.join(sdk_dir, f + ".c")
-                if _exists(p):
-                    sources.append(p)
-        elif os.environ.get("ZMAT_LZMA_MT", "0") == "1":
-            define_macros.append(("COMPRESS_MF_MT", None))
-            for f in ["LzFindMt", "Threads"]:
-                p = os.path.join(pavlov_dir, f + ".c")
-                if _exists(p):
-                    sources.append(p)
+    elif platform.system() != "Windows" and os.environ.get("ZMAT_LZMA_MT", "0") == "1":
+        define_macros.append(("COMPRESS_MF_MT", None))
+        for f in ["LzFindMt", "Threads"]:
+            p = os.path.join(pavlov_dir, f + ".c")
+            if _exists(p):
+                sources.append(p)
 else:
     define_macros.append(("NO_LZMA", None))
 
