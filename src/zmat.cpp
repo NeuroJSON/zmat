@@ -167,7 +167,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mxDestroyArray(tmp);
     }
 
-    flags.param.nthread = 1;
+    flags.param.nthread = 4;
     flags.param.shuffle = 1;
     flags.param.typesize = 4;
 

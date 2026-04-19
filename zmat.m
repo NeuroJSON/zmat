@@ -45,7 +45,7 @@ function varargout = zmat(varargin)
 %             'blosc2zstd':  blosc2 meta-compressor with zstd compression
 %             'base64': encode or decode use base64 format
 %     options: a series of ('name', value) pairs, supported options include
-%             'nthread': followed by an integer specifying number of threads for blosc2 meta-compressors
+%             'nthread': number of threads (default 4); used by lzip, lzma, xz, zstd, blosc2
 %             'typesize': followed by an integer specifying the number of bytes per data element (used for shuffle)
 %             'shuffle': 0 to disable (default for non-blosc2), 1 to enable byte-shuffle.
 %                     For blosc2 methods the shuffle is applied inside the C layer.
@@ -216,7 +216,7 @@ if (strfind(zipmethod, 'blosc2'))
     shuffle = 1;
 end
 
-nthread = getoption('nthread', 1, opt);
+nthread = getoption('nthread', 4, opt);
 shuffle = getoption('shuffle', shuffle, opt);
 typesize = getoption('typesize', typesize, opt);
 

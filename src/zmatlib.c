@@ -560,7 +560,8 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 #ifndef NO_ZSTD
         } else if (zipid == zmZstd) {
             /**
-              * zstd compression
+              * zstd compression — uses MT worker threads when nthread > 1
+              * (ZSTD_MULTITHREAD is compiled into the bundled zstd)
               */
             *outputsize = ZSTD_compressBound(inputsize);
 
@@ -569,9 +570,27 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                 return -5;
             }
 
-            *ret = ZSTD_compress((char*)(*outputbuf), *outputsize, (const char*)inputstr, inputsize, (clevel > 0) ? ZSTD_CLEVEL_DEFAULT : (-clevel));
+            {
+                ZSTD_CCtx* zctx = ZSTD_createCCtx();
 
-            if (ZSTD_isError(*ret)) {
+                if (!zctx) {
+                    free(*outputbuf);
+                    *outputbuf = NULL;
+                    *outputsize = 0;
+                    return -5;
+                }
+
+                ZSTD_CCtx_setParameter(zctx, ZSTD_c_compressionLevel,
+                                       (clevel > 0) ? ZSTD_CLEVEL_DEFAULT : (-clevel));
+                /* nbWorkers=0 → single-thread (no overhead); >=1 → MT worker threads */
+                ZSTD_CCtx_setParameter(zctx, ZSTD_c_nbWorkers, (int)nthread > 1 ? (int)nthread : 0);
+
+                *ret = (int)ZSTD_compress2(zctx, (char*)(*outputbuf), *outputsize,
+                                           (const char*)inputstr, inputsize);
+                ZSTD_freeCCtx(zctx);
+            }
+
+            if (ZSTD_isError((size_t)*ret)) {
                 free(*outputbuf);
                 *outputbuf = NULL;
                 *outputsize = 0;
