@@ -16,11 +16,13 @@
 !> C-library (libzmat.a/libzmat.so) that can be called in C/C++/FORTRAN etc to 
 !> provide stream-level compression and decompression.
 !>
-!> Currently, zmat/libzmat supports 6 different compression algorthms, including
-!>    - zlib and gzip : the most widely used algorithm algorithms for .zip and .gz files
-!>    - lzma and lzip : high compression ratio LZMA based algorithms for .lzma and .lzip files
-!>    - lz4 and lz4hc : real-time compression based on LZ4 and LZ4HC algorithms
-!>    - base64        : base64 encoding and decoding
+!> Currently, zmat/libzmat supports the following compression algorithms:
+!>    - zlib and gzip        : the most widely used algorithms for .zip and .gz files
+!>    - lzma, lzip, and xz   : high compression ratio LZMA-based algorithms
+!>    - lz4 and lz4hc        : real-time compression based on LZ4 and LZ4HC algorithms
+!>    - zstd                 : Zstandard high-performance compression
+!>    - blosc2 (5 variants)  : meta-compressor optimized for N-D numeric arrays
+!>    - base64               : base64 encoding and decoding
 !
 !> @section slicense License
 !>          GPL v3, see LICENSE.txt for details
@@ -34,16 +36,26 @@ module zmatlib
 !> @brief Compression/encoding methods
 !
 ! DESCRIPTION:
-!> 0: zmZlib
-!> 1: zmGzip
-!> 2: zmBase64
-!> 3: zmLzip
-!> 4: zmLzma
-!> 5: zmLz4
-!> 6: zmLz4hc
+!>  0: zmZlib
+!>  1: zmGzip
+!>  2: zmBase64
+!>  3: zmLzip
+!>  4: zmLzma
+!>  5: zmLz4
+!>  6: zmLz4hc
+!>  7: zmZstd
+!>  8: zmBlosc2Blosclz
+!>  9: zmBlosc2Lz4
+!> 10: zmBlosc2Lz4hc
+!> 11: zmBlosc2Zlib
+!> 12: zmBlosc2Zstd
+!> 13: zmXz
 !------------------------------------------------------------------------------
 
-  integer(c_int), parameter :: zmZlib=0, zmGzip=1, zmBase64=2, zmLzip=3, zmLzma=4, zmLz4=5, zmLz4hc=6
+  integer(c_int), parameter :: zmZlib=0, zmGzip=1, zmBase64=2, zmLzip=3, zmLzma=4, &
+                                zmLz4=5, zmLz4hc=6, zmZstd=7, &
+                                zmBlosc2Blosclz=8, zmBlosc2Lz4=9, zmBlosc2Lz4hc=10, &
+                                zmBlosc2Zlib=11, zmBlosc2Zstd=12, zmXz=13
 
   interface
 

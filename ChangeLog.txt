@@ -4,6 +4,18 @@
 
 AI coding assistant Claude has been used in the development of this release.
 
+ 2026-04-19*[doc] update README, docs, python README with xz method and nthread for lzip/xz/zstd
+ 2026-04-19*[python] add xz method to pyzmat.c zipmethods[] and zipmethodid[] arrays
+ 2026-04-19*[xz] fix xz block-level MT: auto block-size causes near-zero parallelism on sub-128MB inputs
+ 2026-04-19*[xz] fix xz thread oversubscription: separate numBlockThreads_Max from numThreads (now 1)
+ 2026-04-19*[mex] fix info.method reporting wrong codec name for lz4/lz4hc when xz is compiled in
+ 2026-04-19*[test] fix xz error-status test: expected SZ_ERROR_NO_ARCHIVE (17), not 1
+ 2026-04-19*[safe] remove dead code after loops that guarantee non-negative return in LZ4/blosc2
+ 2026-04-19*[safe] fix ZSTD_decompressBound type: use unsigned long long to avoid 32-bit truncation
+ 2026-04-19*[safe] add overflow guard before realloc in lzip multi-member and xz decompression
+ 2026-04-19*[safe] replace assert() with proper error return in simpleCompress/simpleDecompress
+ 2026-04-19*[safe] add pthread_create error check with cleanup loop in simpleCompressLzipMT
+ 2026-04-19*[safe] remove redundant assignments after memset() in gzip path
  2026-04-15 [1954707] [mex] add Linux mex binaries
  2026-04-15 [1558336]*[doc] bump version to 1.0, add webpage
  2026-04-12 [4310bb1] [macos] allow .mex for octave run older octave

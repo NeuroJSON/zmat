@@ -33,7 +33,8 @@ by the US National Institute of Health (NIH) grant
 | `zlib` | The most widely used algorithm for `.zip` files | Excellent balance of speed and ratio |
 | `gzip` | gzip format, compatible with `.gz` files | Same as zlib with gzip header/footer |
 | `lzma` | High compression ratio LZMA algorithm | Best compression ratio, slowest |
-| `lzip` | LZIP format using LZMA | Similar to lzma with lzip framing |
+| `lzip` | LZIP format using LZMA, multi-threaded | Similar to lzma with lzip framing |
+| `xz`   | XZ format via LZMA2, block-level MT | Maximum compression, parallel blocks |
 | `lz4`  | Real-time LZ4 compression | Fastest compression/decompression |
 | `lz4hc`| LZ4 High Compression mode | Better ratio than lz4, slower |
 | `zstd` | Zstandard compression | Fast with high compression ratio |
@@ -143,9 +144,9 @@ parameters, including blosc2 multi-threading options.
 - `iscompress` — `1` to compress (default level), `0` to decompress,
   negative values to set compression level (e.g., `-9` for maximum)
 - `method` — algorithm name
-- `nthread` — number of threads for blosc2 (default: `1`)
-- `shuffle` — byte shuffle for blosc2: `0` disabled, `1` enabled (default: `1`)
-- `typesize` — element byte size for blosc2 shuffle (default: `4`)
+- `nthread` — number of threads for lzip, xz, zstd, and blosc2 (default: `1`)
+- `shuffle` — byte shuffle: `0` disabled, `1` enabled (default: `1`; used by blosc2)
+- `typesize` — element byte size for shuffle (default: `4`; used by blosc2)
 
 **Returns:** `bytes` — compressed or decompressed data
 

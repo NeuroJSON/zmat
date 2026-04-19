@@ -399,6 +399,7 @@
               <tr><td><strong>zstd</strong></td><td>⚡⚡⚡</td><td>⭐⭐⭐⭐</td><td>Modern high-throughput</td></tr>
               <tr><td><strong>lz4hc</strong></td><td>⚡⚡⚡</td><td>⭐⭐⭐</td><td>LZ4 with better ratio</td></tr>
               <tr><td><strong>lzma / lzip</strong></td><td>⚡</td><td>⭐⭐⭐⭐⭐</td><td>Maximum compression</td></tr>
+              <tr><td><strong>xz</strong></td><td>⚡⚡</td><td>⭐⭐⭐⭐⭐</td><td>LZMA2 with block-level MT</td></tr>
               <tr><td><strong>blosc2*</strong></td><td>⚡⚡⚡⚡</td><td>⭐⭐⭐⭐</td><td>N-D numeric arrays</td></tr>
               <tr><td><strong>base64</strong></td><td>⚡⚡⚡⚡⚡</td><td>—</td><td>Text-safe encoding</td></tr>
             </tbody>
@@ -419,8 +420,8 @@
               <ul><li>Industry-standard algorithms</li><li>Python stdlib interoperable</li><li>Level 1–9 (zstd up to 22)</li></ul>
             </div>
             <div class="perf-card">
-              <h4>🎯 Smallest — LZMA</h4>
-              <ul><li>Highest compression ratio</li><li>Best for archival/cold storage</li><li>Level 1–9</li></ul>
+              <h4>🎯 Smallest — LZMA / XZ</h4>
+              <ul><li>Highest compression ratio</li><li>Best for archival/cold storage</li><li>XZ: block-level multi-threading</li><li>Level 1–9</li></ul>
             </div>
             <div class="perf-card">
               <h4>🔬 Scientific — Blosc2</h4>
@@ -462,8 +463,8 @@
       </div>
       <div class="feat-card neo">
         <div class="feat-icon">📦</div>
-        <h3>12 Codecs Built-in</h3>
-        <p>zlib, gzip, lzma, lzip, lz4, lz4hc, zstd, 5× blosc2, base64.</p>
+        <h3>13 Codecs Built-in</h3>
+        <p>zlib, gzip, lzma, lzip, xz, lz4, lz4hc, zstd, 5× blosc2, base64.</p>
       </div>
       <div class="feat-card neo">
         <div class="feat-icon">🔀</div>
@@ -524,7 +525,7 @@ restored = <span class="fn">zmat</span>(cimg, iimg);    <span class="cmt">% uint
       <div id="mat-methods" class="sub-pane">
         <div class="code-wrap neo-in-lg"><pre><code><span class="cmt">% ── Benchmark all codecs on the same data ───────────────────────</span>
 data   = <span class="fn">rand</span>(<span class="num">500</span>, <span class="num">500</span>);       <span class="cmt">% 2 MB of doubles</span>
-codecs = {<span class="str">'zlib'</span>,<span class="str">'gzip'</span>,<span class="str">'lzma'</span>,<span class="str">'lzip'</span>,<span class="str">'lz4'</span>,<span class="str">'lz4hc'</span>,<span class="str">'zstd'</span>};
+codecs = {<span class="str">'zlib'</span>,<span class="str">'gzip'</span>,<span class="str">'lzma'</span>,<span class="str">'lzip'</span>,<span class="str">'xz'</span>,<span class="str">'lz4'</span>,<span class="str">'lz4hc'</span>,<span class="str">'zstd'</span>};
 
 <span class="kw">for</span> k = <span class="num">1</span>:<span class="fn">numel</span>(codecs)
     t = tic;
@@ -638,7 +639,7 @@ buf = <span class="fn">bytearray</span>(b<span class="str">"buffered data"</span
 
 data = <span class="fn">bytes</span>(<span class="fn">range</span>(<span class="num">256</span>)) * <span class="num">4000</span>   <span class="cmt"># ~1 MB, moderately compressible</span>
 
-methods = [<span class="str">'zlib'</span>, <span class="str">'gzip'</span>, <span class="str">'lzma'</span>, <span class="str">'lzip'</span>, <span class="str">'lz4'</span>, <span class="str">'lz4hc'</span>, <span class="str">'zstd'</span>]
+methods = [<span class="str">'zlib'</span>, <span class="str">'gzip'</span>, <span class="str">'lzma'</span>, <span class="str">'lzip'</span>, <span class="str">'xz'</span>, <span class="str">'lz4'</span>, <span class="str">'lz4hc'</span>, <span class="str">'zstd'</span>]
 
 <span class="fn">print</span>(<span class="fn">f</span><span class="str">"{'Method':<10} {'Size':>8}  {'Ratio':>6}  {'Comp':>8}  {'Decomp':>8}"</span>)
 <span class="fn">print</span>(<span class="str">"-"</span> * <span class="num">50</span>)
@@ -831,7 +832,7 @@ cg = zmat.<span class="fn">compress</span>(text, method=<span class="str">'gzip'
     size_t outputsize = <span class="num">0</span>, decodedsize = <span class="num">0</span>;
     <span class="kw">int</span>    status    = <span class="num">0</span>;
 
-    <span class="cmt">/* zipid: 0=zlib 1=gzip 3=lzma 5=lz4 7=zstd 8-12=blosc2* */</span>
+    <span class="cmt">/* zipid: 0=zlib 1=gzip 2=base64 3=lzip 4=lzma 5=lz4 6=lz4hc 7=zstd 8-12=blosc2* 13=xz */</span>
     <span class="cmt">/* clevel: -1 to -9 to set level;  0 = decompress          */</span>
     <span class="fn">zmat_run</span>(inputsize, input, &amp;outputsize, &amp;output, <span class="num">0</span>, &amp;status, <span class="num">-6</span>);
     printf(<span class="str">"Compressed  : %zu → %zu bytes\n"</span>, inputsize, outputsize);
@@ -861,7 +862,7 @@ program zmat_demo
     integer :: i
 
     input_len = len_trim(input_str)
-    zipid  = <span class="num">0</span>    <span class="cmt">! 0=zlib, 5=lz4, 7=zstd …</span>
+    zipid  = <span class="num">0</span>    <span class="cmt">! 0=zlib 3=lzip 4=lzma 5=lz4 7=zstd 13=xz …</span>
     clevel = <span class="num">-6</span>   <span class="cmt">! compression level</span>
 
     <span class="cmt">! Compress</span>
@@ -920,7 +921,7 @@ target_link_libraries(test_zmat ${ZMAT_LIB} pthread m)</code></pre></div>
           <li><code>zmat(data, 0, method)</code><span class="fn-desc">decompress</span></li>
           <li><code>zmat(data, info)</code><span class="fn-desc">decompress &amp; restore type/size</span></li>
           <li><code>[out, info] = zmat(…)</code><span class="fn-desc">info carries type, size, method</span></li>
-          <li><code>zmat(…, 'nthread', N)</code><span class="fn-desc">blosc2 thread count</span></li>
+          <li><code>zmat(…, 'nthread', N)</code><span class="fn-desc">thread count for lzip/xz/zstd/blosc2</span></li>
           <li><code>zmat(…, 'typesize', B)</code><span class="fn-desc">bytes per element (shuffle)</span></li>
         </ul>
       </div>
@@ -960,12 +961,13 @@ target_link_libraries(test_zmat ${ZMAT_LIB} pthread m)</code></pre></div>
           <li><code>0 / 'zlib'</code><span class="fn-desc">zlib/zip (default)</span></li>
           <li><code>1 / 'gzip'</code><span class="fn-desc">gzip format</span></li>
           <li><code>2 / 'base64'</code><span class="fn-desc">base64 encoding</span></li>
-          <li><code>3 / 'lzma'</code><span class="fn-desc">LZMA</span></li>
-          <li><code>4 / 'lzip'</code><span class="fn-desc">lzip format</span></li>
+          <li><code>3 / 'lzip'</code><span class="fn-desc">lzip format</span></li>
+          <li><code>4 / 'lzma'</code><span class="fn-desc">LZMA</span></li>
           <li><code>5 / 'lz4'</code><span class="fn-desc">LZ4 fast</span></li>
           <li><code>6 / 'lz4hc'</code><span class="fn-desc">LZ4 high compression</span></li>
           <li><code>7 / 'zstd'</code><span class="fn-desc">Zstandard</span></li>
           <li><code>8–12 / 'blosc2*'</code><span class="fn-desc">blosclz, lz4, lz4hc, zlib, zstd</span></li>
+          <li><code>13 / 'xz'</code><span class="fn-desc">XZ/LZMA2 with block-level MT</span></li>
         </ul>
       </div>
 

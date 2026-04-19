@@ -34,6 +34,9 @@ static const char* zipmethods[] = {
     "lzip",
     "lzma",
 #endif
+#if defined(ZMAT_USE_LZMA_SDK)
+    "xz",
+#endif
 #if !defined(NO_LZ4)
     "lz4",
     "lz4hc",
@@ -58,6 +61,9 @@ static const TZipMethod zipmethodid[] = {
 #if !defined(NO_LZMA)
     zmLzip,
     zmLzma,
+#endif
+#if defined(ZMAT_USE_LZMA_SDK)
+    zmXz,
 #endif
 #if !defined(NO_LZ4)
     zmLz4,
@@ -440,9 +446,9 @@ static PyMethodDef ZmatMethods[] = {
      "Args:\n"
      "    data (bytes): Input data buffer\n"
      "    iscompress (int): 1=compress, 0=decompress, negative=set compression level\n"
-     "    method (str): 'zlib','gzip','lzma','lzip','lz4','lz4hc','zstd','base64',\n"
+     "    method (str): 'zlib','gzip','lzma','lzip','xz','lz4','lz4hc','zstd','base64',\n"
      "                  'blosc2blosclz','blosc2lz4','blosc2lz4hc','blosc2zlib','blosc2zstd'\n"
-     "    nthread (int): Thread count for blosc2 (default 1)\n"
+     "    nthread (int): Thread count for lzip, xz, zstd, and blosc2 (default 1)\n"
      "    shuffle (int): Shuffle flag for blosc2 (default 1)\n"
      "    typesize (int): Element byte size for blosc2 shuffle (default 4)\n\n"
      "Returns:\n"
@@ -493,7 +499,7 @@ static struct PyModuleDef zmatmodule = {
     PyModuleDef_HEAD_INIT,
     "_zmat",
     "ZMat C backend — use the 'zmat' package, not this module directly.\n\n"
-    "Supports: zlib, gzip, lzma, lzip, lz4, lz4hc, zstd, blosc2, base64\n\n"
+    "Supports: zlib, gzip, lzma, lzip, xz, lz4, lz4hc, zstd, blosc2, base64\n\n"
     "Part of the NeuroJSON project (https://neurojson.org)\n"
     "More information: https://neurojson.org/zmat\n",
     -1,

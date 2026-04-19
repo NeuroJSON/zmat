@@ -111,6 +111,27 @@ if (ismember('c', tests))
     test_zmat('base64 (no newline)', 'base64', uint8(100), sprintf('ZA==\n'), 'level', 3);
     test_zmat('base64 (trailing newline)', 'base64', ones(7, 1), sprintf('AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA\n8D8='), 'level', 2);
     test_zmat('base64 (all newline)', 'base64', ones(7, 1), sprintf('AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA\n8D8=\n'), 'level', 3);
+
+    %% xz tests — only available when built with ZMAT_USE_LZMA_SDK
+    xz_avail = false;
+    try
+        zmat(uint8(1), 1, 'xz');
+        xz_avail = true;
+    catch
+    end
+    if (xz_avail)
+        test_zmat('xz (empty)', 'xz', [], zeros(1, 0));
+        test_zmat_roundtrip('xz (scalar)', pi, 0, 'xz');
+        test_zmat_roundtrip('xz (uint8 array)', uint8(magic(3)), 0, 'xz');
+        test_zmat_roundtrip('xz (float64 array)', rand(100, 1), 0, 'xz');
+        test_zmat_roundtrip('xz (string)', uint8('xz compression test'), 0, 'xz');
+    else
+        fprintf(1, 'SKIP: xz tests (requires ZMAT_USE_LZMA_SDK build)\n');
+    end
+    %% lzip multi-thread roundtrip — always run; exercises both single-member
+    %% (no ZMAT_USE_LZMA_SDK or Windows) and multi-member v1 (other platforms)
+    test_zmat_roundtrip('lzip (roundtrip)', uint8(reshape(1:100, [10, 10])), 0, 'lzip');
+    test_zmat_roundtrip('lzip (roundtrip, large)', rand(1000, 1), 0, 'lzip');
 end
 %%
 if (ismember('d', tests))
@@ -139,6 +160,18 @@ if (ismember('err', tests))
     test_zmat('zlib wrong input format', 'zlib', [1, 2, 3, 4], [], 'level', 0, 'status', -3);
     test_zmat('blosc2zstd wrong input format', 'blosc2zstd', [1, 2, 3, 4], [], 'level', 0, 'status', -11);
     test_zmat('zstd wrong input format', 'zstd', [1, 2, 3, 4], [], 'level', 0, 'status', -9);
+    xz_avail_err = false;
+    try
+        zmat(uint8(1), 1, 'xz');
+        xz_avail_err = true;
+    catch
+    end
+    if (xz_avail_err)
+        % SZ_ERROR_NO_ARCHIVE = 17 from the LZMA SDK when data has no XZ magic header
+        test_zmat('xz wrong input format', 'xz', [1, 2, 3, 4], [], 'level', 0, 'status', 17);
+    else
+        fprintf(1, 'SKIP: xz error test (requires ZMAT_USE_LZMA_SDK build)\n');
+    end
 end
 %%
 if (ismember('special', tests))

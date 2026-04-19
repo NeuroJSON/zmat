@@ -142,6 +142,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
      */
 
     union TZMatFlags flags = {0};
+    int methidx = 0; /* index into zipmethods[] — used to store info.method correctly */
 
     /**
      * If no input is given for this function, it prints help information and return.
@@ -183,11 +184,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             mexErrMsgTxt("the 'method' field must be a non-empty string");
         }
 
-        if ((zipid = (TZipMethod)zmat_keylookup((char*)mxArrayToString(prhs[2]), zipmethods)) < 0) {
+        if ((methidx = zmat_keylookup((char*)mxArrayToString(prhs[2]), zipmethods)) < 0) {
             mexErrMsgTxt("the specified compression method is not supported");
         }
 
-        zipid = zipmethodid[(int)zipid];
+        zipid = zipmethodid[methidx];
     }
 
     if (nrhs >= 4) {
@@ -267,7 +268,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                     intinputdim[1] = (unsigned int)inputdim[1];
                     val = mxCreateNumericArray(2, (mwSize*)intinputdim, mxUINT32_CLASS, mxREAL);
 
-                    for (int i = 0; i < intinputdim[1]; i++) {
+                    for (unsigned int i = 0; i < intinputdim[1]; i++) {
                         int64inputdim[i] = intdims[i];
                     }
 
@@ -279,7 +280,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                     } else {
                         val = mxCreateNumericArray(2, inputdim, mxUINT32_CLASS, mxREAL);
 
-                        for (int i = 0; i < inputdim[1]; i++) {
+                        for (unsigned int i = 0; i < inputdim[1]; i++) {
                             int64inputdim[i] = dims[i];
                         }
 
@@ -293,7 +294,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                 *mxGetPr(val) = mxGetElementSize(prhs[0]);
                 mxSetFieldByNumber(plhs[1], 0, 2, val);
 
-                val = mxCreateString(zipmethods[zipid]);
+                val = mxCreateString(zipmethods[methidx]);
                 mxSetFieldByNumber(plhs[1], 0, 3, val);
 
                 val = mxCreateDoubleMatrix(1, 1, mxREAL);

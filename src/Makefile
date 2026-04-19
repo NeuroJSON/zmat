@@ -118,6 +118,12 @@ endif
 
 ifeq ($(HAVE_BLOSC2),no)
   CFLAGS+=-DNO_BLOSC2
+  ## lzip/xz MT uses pthreads even without blosc2 (non-Windows only)
+  ifneq ($(HAVE_LZMA),no)
+    ifneq ($(findstring _NT-,$(PLATFORM)), _NT-)
+      LIBZLIB+=-pthread
+    endif
+  endif
 else
   ifeq ($(HAVE_LZ4),no)
     INCLUDEDIRS+=-Ilz4
@@ -188,14 +194,14 @@ dll:   AROUTPUT   :=-o
 
 oct mex: CPPOPT+= $(DLLFLAG)
 oct:   OUTPUT_DIR=..
-oct:   AR= CXXFLAGS='-O3' LDFLAGS='$(MEXLINKOPT) $(STATICLIBFLAGS)' mkoctfile zmat.cpp
+oct:   AR= XTRA_CXXFLAGS='$(CFLAGS)' LDFLAGS='$(MEXLINKOPT) $(STATICLIBFLAGS)' mkoctfile zmat.cpp
 oct:   BINARY=zmat.mex
 oct:   ARFLAGS    :=
 oct:   LINKOPT+=--mex $(INCLUDEDIRS) $(LIBZLIB)
 
 mex:   CXX=$(MEX)
 mex:   OUTPUTFLAG:=-output
-mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS)
+mex:   AR=$(MEX) zmat.cpp $(INCLUDEDIRS) $(CFLAGS)
 mex:   LINKOPT+=-cxx LINKLIBS="$(MEXLINKLIBS) $(MEXLINKOPT) $(LIBZLIB) $(STATICLIBFLAGS)" CXXLIBS="\$$CXXLIBS $(MEXLINKOPT) $(LIBZLIB) $(STATICLIBFLAGS)" -outdir $(ZMATDIR)
 mex:   ARFLAGS    :=
 mex:   OUTPUT_DIR=..
