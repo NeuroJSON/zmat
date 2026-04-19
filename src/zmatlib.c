@@ -47,6 +47,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "zmatlib.h"
 
@@ -66,6 +67,62 @@
     #include "lz4/lz4.h"
     #include "lz4/lz4hc.h"
 #endif
+
+#if !defined(NO_LZ4) && !defined(_WIN32) && !defined(NO_LZ4_MT)
+#include <pthread.h>
+
+/**
+ * LZ4 multi-threaded frame format (host byte-order, little-endian machines):
+ *   [magic:uint32][nchunks:uint32][orig_total:uint64][orig_chunk:uint64]
+ *   [comp_size[0..nchunks-1]:uint32 each]
+ *   [compressed chunk data ...]
+ * The decompressor detects this header via the magic number and handles
+ * both MT and legacy single-chunk LZ4 data transparently.
+ */
+#define ZMAT_LZ4MT_MAGIC     0x5A4C3454U  /**< 'Z','L','4','T' */
+#define ZMAT_LZ4MT_MINCHUNK  16384U        /**< min bytes per chunk to enable MT */
+
+typedef struct {
+    const unsigned char* src;
+    size_t               src_size;
+    unsigned char*       dst;
+    int                  dst_bound;
+    int                  comp_size;   /**< output: compressed size, <=0 on error */
+    int                  level;       /**< lz4hc compression level */
+    int                  is_hc;       /**< 0=lz4, 1=lz4hc */
+} ZMatLz4CmpArg;
+
+typedef struct {
+    const unsigned char* src;
+    int                  src_size;
+    unsigned char*       dst;
+    int                  dst_size;    /**< pre-allocated output capacity */
+    int                  decomp_size; /**< output: decompressed size, <0 on error */
+} ZMatLz4DcmpArg;
+
+static void* zmat_lz4_cmp_thread(void* arg) {
+    ZMatLz4CmpArg* a = (ZMatLz4CmpArg*)arg;
+
+    if (a->is_hc)
+        a->comp_size = LZ4_compress_HC(
+                           (const char*)a->src, (char*)a->dst,
+                           (int)a->src_size, a->dst_bound, a->level);
+    else
+        a->comp_size = LZ4_compress_default(
+                           (const char*)a->src, (char*)a->dst,
+                           (int)a->src_size, a->dst_bound);
+
+    return NULL;
+}
+
+static void* zmat_lz4_dcmp_thread(void* arg) {
+    ZMatLz4DcmpArg* a = (ZMatLz4DcmpArg*)arg;
+    a->decomp_size = LZ4_decompress_safe(
+                         (const char*)a->src, (char*)a->dst,
+                         a->src_size, a->dst_size);
+    return NULL;
+}
+#endif /* !NO_LZ4 && !_WIN32 && !NO_LZ4_MT */
 
 #ifndef NO_BLOSC2
     #include "blosc2.h"
@@ -274,6 +331,7 @@ static void zmat_shrink_buf(unsigned char** buf, size_t used) {
 int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret, const int iscompress) {
     z_stream zs;
     int clevel;
+    unsigned int nthread;   /**< number of threads; available to all codec branches */
     union cflag {
         int iscompress;
         struct settings {
@@ -297,7 +355,8 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
         return -1;
     }
 
-    clevel = flags.param.clevel;
+    clevel  = flags.param.clevel;
+    nthread = (flags.param.nthread <= 0) ? 1 : (unsigned int)flags.param.nthread;
 
     if (clevel) {
         /**
@@ -474,35 +533,173 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 #ifndef NO_LZ4
         } else if (zipid == zmLz4 || zipid == zmLz4hc) {
             /**
-              * lz4 or lz4hc compression
+              * lz4 or lz4hc compression (single- or multi-threaded)
               */
-            *outputsize = LZ4_compressBound(inputsize);
+            int is_hc    = (zipid == zmLz4hc);
+            int lz4_level = is_hc ? ((clevel > 0) ? 8 : (-clevel)) : 0;
 
-            if (*outputsize == 0) {
-                return -6;
-            }
+#if !defined(_WIN32) && !defined(NO_LZ4_MT)
 
-            if (!(*outputbuf = (unsigned char*)malloc(*outputsize))) {
-                *outputsize = 0;
-                return -5;
-            }
+            if (nthread > 1 && inputsize >= (size_t)nthread * ZMAT_LZ4MT_MINCHUNK) {
+                /**
+                  * multi-threaded path: split input into nthread chunks, compress
+                  * each in a separate pthread, prepend a frame header so the
+                  * decompressor can reconstruct the original data.
+                  */
+                unsigned int   nchunks    = nthread;
+                size_t         chunk_size = (inputsize + nchunks - 1) / nchunks;
+                size_t         hdr_size   = 4 + 4 + 8 + 8 + nchunks * 4; /* magic+nchunks+orig_total+orig_chunk+comp_sizes */
+                size_t         total_bound = hdr_size;
+                unsigned int   i;
 
-            if (zipid == zmLz4) {
-                *outputsize = LZ4_compress_default((const char*)inputstr, (char*)(*outputbuf), inputsize, *outputsize);
+                for (i = 0; i < nchunks; i++) {
+                    size_t csz = ((size_t)i < nchunks - 1) ? chunk_size : (inputsize - (size_t)i * chunk_size);
+                    total_bound += (size_t)LZ4_compressBound((int)csz);
+                }
+
+                *outputbuf = (unsigned char*)malloc(total_bound);
+
+                if (!*outputbuf) {
+                    *outputsize = 0;
+                    return -5;
+                }
+
+                /* write header */
+                unsigned char*   hptr = *outputbuf;
+                uint32_t         magic = ZMAT_LZ4MT_MAGIC;
+                uint32_t         nc32  = (uint32_t)nchunks;
+                uint64_t         orig_total = (uint64_t)inputsize;
+                uint64_t         orig_chunk = (uint64_t)chunk_size;
+                memcpy(hptr, &magic,      4);
+                hptr += 4;
+                memcpy(hptr, &nc32,       4);
+                hptr += 4;
+                memcpy(hptr, &orig_total, 8);
+                hptr += 8;
+                memcpy(hptr, &orig_chunk, 8);
+                hptr += 8;
+                uint32_t*        comp_sizes = (uint32_t*)hptr; /* filled after compression */
+                hptr += nchunks * 4;
+
+                ZMatLz4CmpArg*   args       = (ZMatLz4CmpArg*)malloc(nchunks * sizeof(ZMatLz4CmpArg));
+                pthread_t*       threads    = (pthread_t*)malloc(nchunks * sizeof(pthread_t));
+                unsigned char**  chunk_bufs = (unsigned char**)malloc(nchunks * sizeof(unsigned char*));
+
+                if (!args || !threads || !chunk_bufs) {
+                    free(*outputbuf);
+                    *outputbuf = NULL;
+                    *outputsize = 0;
+                    free(args);
+                    free(threads);
+                    free(chunk_bufs);
+                    return -5;
+                }
+
+                for (i = 0; i < nchunks; i++) {
+                    size_t src_off = (size_t)i * chunk_size;
+                    size_t src_sz  = (src_off + chunk_size > inputsize) ? (inputsize - src_off) : chunk_size;
+                    int    bound   = LZ4_compressBound((int)src_sz);
+                    chunk_bufs[i]  = (unsigned char*)malloc((size_t)bound);
+
+                    if (!chunk_bufs[i]) {
+                        unsigned int j;
+
+                        for (j = 0; j < i; j++) {
+                            free(chunk_bufs[j]);
+                        }
+
+                        free(chunk_bufs);
+                        free(args);
+                        free(threads);
+                        free(*outputbuf);
+                        *outputbuf = NULL;
+                        *outputsize = 0;
+                        return -5;
+                    }
+
+                    args[i].src       = inputstr + src_off;
+                    args[i].src_size  = src_sz;
+                    args[i].dst       = chunk_bufs[i];
+                    args[i].dst_bound = bound;
+                    args[i].comp_size = 0;
+                    args[i].level     = lz4_level;
+                    args[i].is_hc     = is_hc;
+                    pthread_create(&threads[i], NULL, zmat_lz4_cmp_thread, &args[i]);
+                }
+
+                int ok = 1;
+                unsigned char* data_ptr = hptr;
+
+                for (i = 0; i < nchunks; i++) {
+                    pthread_join(threads[i], NULL);
+
+                    if (args[i].comp_size <= 0) {
+                        ok = 0;
+                    }
+                }
+
+                if (!ok) {
+                    for (i = 0; i < nchunks; i++) {
+                        free(chunk_bufs[i]);
+                    }
+
+                    free(chunk_bufs);
+                    free(args);
+                    free(threads);
+                    free(*outputbuf);
+                    *outputbuf = NULL;
+                    *outputsize = 0;
+                    return -6;
+                }
+
+                *outputsize = hdr_size;
+
+                for (i = 0; i < nchunks; i++) {
+                    comp_sizes[i] = (uint32_t)args[i].comp_size;
+                    memcpy(data_ptr, chunk_bufs[i], (size_t)args[i].comp_size);
+                    data_ptr   += args[i].comp_size;
+                    *outputsize += (size_t)args[i].comp_size;
+                    free(chunk_bufs[i]);
+                }
+
+                free(chunk_bufs);
+                free(args);
+                free(threads);
+                *ret = (int) * outputsize;
+                zmat_shrink_buf(outputbuf, *outputsize);
             } else {
-                *outputsize = LZ4_compress_HC((const char*)inputstr, (char*)(*outputbuf), inputsize, *outputsize, (clevel > 0) ? 8 : (-clevel));
+#endif /* !_WIN32 && !NO_LZ4_MT */
+                /* single-threaded path */
+                *outputsize = (size_t)LZ4_compressBound((int)inputsize);
+
+                if (*outputsize == 0) {
+                    return -6;
+                }
+
+                if (!(*outputbuf = (unsigned char*)malloc(*outputsize))) {
+                    *outputsize = 0;
+                    return -5;
+                }
+
+                if (is_hc) {
+                    *outputsize = (size_t)LZ4_compress_HC((const char*)inputstr, (char*)(*outputbuf), (int)inputsize, (int) * outputsize, lz4_level);
+                } else {
+                    *outputsize = (size_t)LZ4_compress_default((const char*)inputstr, (char*)(*outputbuf), (int)inputsize, (int) * outputsize);
+                }
+
+                *ret = (int) * outputsize;
+
+                if (*outputsize == 0) {
+                    free(*outputbuf);
+                    *outputbuf = NULL;
+                    return -6;
+                }
+
+                zmat_shrink_buf(outputbuf, *outputsize);
+#if !defined(_WIN32) && !defined(NO_LZ4_MT)
             }
 
-            *ret = *outputsize;
-
-            if (*outputsize == 0) {
-                free(*outputbuf);
-                *outputbuf = NULL;
-                return -6;
-            }
-
-            /* shrink to actual size */
-            zmat_shrink_buf(outputbuf, *outputsize);
+#endif
 
 #endif
 #ifndef NO_ZSTD
@@ -537,12 +734,12 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
             /**
               * blosc2 meta-compressor (support various filters and compression codecs)
               */
-            unsigned int nthread = 1, shuffle = 1, typesize = 4;
+            unsigned int shuffle = 1, typesize = 4;
             const char* codecs[] = {"blosclz", "lz4", "lz4hc", "zlib", "zstd"};
 
-            nthread = (flags.param.nthread == 0 || flags.param.nthread == -1) ? 1 : flags.param.nthread;
-            shuffle = (flags.param.shuffle == 0 || flags.param.shuffle == -1) ? 1 : flags.param.shuffle;
-            typesize = (flags.param.typesize == 0 || flags.param.typesize == -1) ? 4 : flags.param.typesize;
+            /* nthread already extracted at function scope */
+            shuffle  = (flags.param.shuffle  == 0 || flags.param.shuffle  == -1) ? 1 : (unsigned int)flags.param.shuffle;
+            typesize = (flags.param.typesize == 0 || flags.param.typesize == -1) ? 4 : (unsigned int)flags.param.typesize;
 
             if (blosc1_set_compressor(codecs[zipid - zmBlosc2Blosclz]) == -1) {
                 return -7;
@@ -718,42 +915,133 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
         } else if (zipid == zmLz4 || zipid == zmLz4hc) {
             /**
               * lz4 or lz4hc decompression
+              * Detects the ZMAT_LZ4MT_MAGIC frame written by the multi-threaded
+              * compressor and decompresses chunks in parallel using pthreads.
+              * Falls back to the legacy grow-loop for single-chunk LZ4 data.
               */
-            size_t outalloc = zmat_initial_outbuf(inputsize, 4);
-            int rounds = 0;
+            int is_mt_frame = 0;
+#if !defined(_WIN32) && !defined(NO_LZ4_MT)
 
-            if (!(*outputbuf = (unsigned char*)malloc(outalloc))) {
-                return -5;
+            if (inputsize >= 4) {
+                uint32_t probe;
+                memcpy(&probe, inputstr, 4);
+
+                if (probe == ZMAT_LZ4MT_MAGIC) {
+                    is_mt_frame = 1;
+                    /* parse MT frame header */
+                    const unsigned char* hptr = inputstr + 4;
+                    uint32_t nc32;
+                    uint64_t orig_total, orig_chunk;
+                    memcpy(&nc32,       hptr, 4);
+                    hptr += 4;
+                    memcpy(&orig_total, hptr, 8);
+                    hptr += 8;
+                    memcpy(&orig_chunk, hptr, 8);
+                    hptr += 8;
+                    const uint32_t* comp_sizes = (const uint32_t*)hptr;
+                    hptr += nc32 * 4;
+
+                    *outputbuf = (unsigned char*)malloc((size_t)orig_total);
+
+                    if (!*outputbuf) {
+                        *outputsize = 0;
+                        return -5;
+                    }
+
+                    ZMatLz4DcmpArg* args    = (ZMatLz4DcmpArg*)malloc(nc32 * sizeof(ZMatLz4DcmpArg));
+                    pthread_t*      threads = (pthread_t*)malloc(nc32 * sizeof(pthread_t));
+
+                    if (!args || !threads) {
+                        free(*outputbuf);
+                        *outputbuf = NULL;
+                        *outputsize = 0;
+                        free(args);
+                        free(threads);
+                        return -5;
+                    }
+
+                    unsigned int i;
+                    const unsigned char* src_ptr = hptr;
+
+                    for (i = 0; i < nc32; i++) {
+                        size_t dst_off  = (size_t)i * (size_t)orig_chunk;
+                        size_t dst_size = (dst_off + (size_t)orig_chunk > (size_t)orig_total)
+                                          ? ((size_t)orig_total - dst_off) : (size_t)orig_chunk;
+                        args[i].src         = src_ptr;
+                        args[i].src_size    = (int)comp_sizes[i];
+                        args[i].dst         = *outputbuf + dst_off;
+                        args[i].dst_size    = (int)dst_size;
+                        args[i].decomp_size = 0;
+                        src_ptr += comp_sizes[i];
+                        pthread_create(&threads[i], NULL, zmat_lz4_dcmp_thread, &args[i]);
+                    }
+
+                    int ok = 1;
+
+                    for (i = 0; i < nc32; i++) {
+                        pthread_join(threads[i], NULL);
+
+                        if (args[i].decomp_size < 0) {
+                            ok = 0;
+                        }
+                    }
+
+                    free(args);
+                    free(threads);
+
+                    if (!ok) {
+                        free(*outputbuf);
+                        *outputbuf = NULL;
+                        *outputsize = 0;
+                        return -6;
+                    }
+
+                    *outputsize = (size_t)orig_total;
+                    *ret = (int) * outputsize;
+                    /* allocated exactly orig_total — no shrink needed */
+                }
             }
 
-            while ((*ret = LZ4_decompress_safe((const char*)inputstr, (char*)(*outputbuf), inputsize, outalloc)) < 0) {
-                rounds++;
+#endif /* !_WIN32 && !NO_LZ4_MT */
 
-                if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
+            if (!is_mt_frame) {
+                /* legacy single-chunk LZ4 data */
+                size_t outalloc = zmat_initial_outbuf(inputsize, 4);
+                int rounds = 0;
+
+                if (!(*outputbuf = (unsigned char*)malloc(outalloc))) {
+                    return -5;
+                }
+
+                while ((*ret = LZ4_decompress_safe((const char*)inputstr, (char*)(*outputbuf), (int)inputsize, (int)outalloc)) < 0) {
+                    rounds++;
+
+                    if (rounds > ZMAT_MAX_DECOMPRESS_ROUNDS) {
+                        free(*outputbuf);
+                        *outputbuf = NULL;
+                        *outputsize = 0;
+                        return -6;
+                    }
+
+                    if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
+                        /* outputbuf already freed and set to NULL by zmat_grow_buf */
+                        *outputsize = 0;
+                        return -5;
+                    }
+                }
+
+                *outputsize = *ret;
+
+                if (*ret < 0) {
                     free(*outputbuf);
                     *outputbuf = NULL;
                     *outputsize = 0;
                     return -6;
                 }
 
-                if (zmat_grow_buf(outputbuf, &outalloc) != 0) {
-                    /* outputbuf already freed and set to NULL by zmat_grow_buf */
-                    *outputsize = 0;
-                    return -5;
-                }
+                /* shrink to actual size */
+                zmat_shrink_buf(outputbuf, *outputsize);
             }
-
-            *outputsize = *ret;
-
-            if (*ret < 0) {
-                free(*outputbuf);
-                *outputbuf = NULL;
-                *outputsize = 0;
-                return -6;
-            }
-
-            /* shrink to actual size */
-            zmat_shrink_buf(outputbuf, *outputsize);
 
 #endif
 #ifndef NO_ZSTD

@@ -112,6 +112,9 @@ ifeq ($(HAVE_LZ4),no)
 else
   INCLUDEDIRS+=-Ilz4
   FILES+= lz4/lz4 lz4/lz4hc
+  ifneq ($(findstring _NT-,$(PLATFORM)), _NT-)
+    LIBZLIB+=-pthread
+  endif
 endif
 
 ifeq ($(HAVE_ZSTD),no)
