@@ -29,6 +29,7 @@ from _zmat import zmat as _zmat_c
 
 __all__ = ["compress", "decompress", "encode", "decode", "zmat"]
 
+__version__ = "1.1.0"
 
 def _byte_shuffle(data_bytes, typesize):
     """Regroup bytes by position within each element (byte-shuffle filter).
@@ -48,8 +49,6 @@ def _byte_unshuffle(data_bytes, typesize):
     nelems = len(data_bytes) // typesize
     arr = np.frombuffer(data_bytes, dtype=np.uint8).reshape(typesize, nelems)
     return arr.flatten(order='F').tobytes()
-
-__version__ = "1.0.2"
 
 def compress(data, method="zlib", level=1, info=False, shuffle=0):
     """Compress *data* using the requested algorithm.

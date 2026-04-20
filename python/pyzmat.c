@@ -498,7 +498,7 @@ static PyMethodDef ZmatMethods[] = {
 static struct PyModuleDef zmatmodule = {
     PyModuleDef_HEAD_INIT,
     "_zmat",
-    "ZMat C backend — use the 'zmat' package, not this module directly.\n\n"
+    "ZMat (1.2.preview) — use the 'zmat' package, not this module directly.\n\n"
     "Supports: zlib, gzip, lzma, lzip, xz, lz4, lz4hc, zstd, blosc2, base64\n\n"
     "Part of the NeuroJSON project (https://neurojson.org)\n"
     "More information: https://neurojson.org/zmat\n",

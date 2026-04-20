@@ -777,7 +777,8 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                  * simpleDecompress avoids the consumed-overshoot bug where the
                  * decompressor reads ahead into subsequent members.
                  * The v0 decompressor ignores both the version byte and the
-                 * trailing 8 bytes (it reads only the 12-byte footer). */
+                 * trailing 8 bytes (it reads only the 12-byte footer).
+                 */
                 size_t n_members = 0;
                 size_t* member_starts = NULL;
                 size_t* member_sizes  = NULL;

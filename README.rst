@@ -6,7 +6,7 @@ ZMAT: A portable C-library and MATLAB/Octave/Python toolbox for zlib/gzip/lzma/l
 
 * Copyright (C) 2019-2026  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3), see License*.txt
-* Version: 1.0.0 (Foxy the Fantastic Mr. Fox)
+* Version: 1.2.preview (Kylie the Opossum - preview)
 * URL: https://neurojson.org/zmat
 * Github: https://github.com/NeuroJSON/zmat
 * PyPi: https://pypi.org/project/zmat
