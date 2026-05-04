@@ -249,6 +249,9 @@ $(OUTPUT_DIR)/$(BINARY): $(OBJS)
 	@$(ECHO) Building $@
 	$(CUDACC) -c $(CUCCOPT) -o $@  $<
 
+header:
+	@sh $(ZMATDIR)/src/amalgamate.sh $(ROOTDIR)/include/zmat.h
+
 clean:
 	-rm -f $(OBJS) $(OUTPUT_DIR)/$(BINARY)$(EXESUFFIX) zmat$(OBJSUFFIX) $(LIBDIR)/*
 	-$(MAKE) -C blosc2 clean
@@ -275,7 +278,7 @@ pretty:
 	    --break-blocks \
 	   "*.c" "../include/*.h" "*.cpp" "../example/c/*.c"
 
-.PHONY: all mex oct lib dll
+.PHONY: all mex oct lib dll header
 
 .DEFAULT_GOAL := all
 
