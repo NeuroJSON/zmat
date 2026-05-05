@@ -184,9 +184,9 @@ const char* zmat_errcode[] = {
  * @param[in] id: zmat error code
  */
 
-char* zmat_error(int id) {
+const char* zmat_error(int id) {
     if (id >= 0 && id < (int)(sizeof(zmat_errcode) / sizeof(zmat_errcode[0]))) {
-        return (char*)(zmat_errcode[id]);
+        return zmat_errcode[id];
     } else {
         return "zmatlib: unknown error";
     }
@@ -322,6 +322,7 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
 
     clevel = flags.param.clevel;
     unsigned int nthread = (flags.param.nthread <= 0) ? 1 : (unsigned int)flags.param.nthread;
+    (void)nthread;
 
     if (clevel) {
         /**
@@ -1283,7 +1284,7 @@ unsigned char* base64_decode(const unsigned char* src, size_t len,
         dtable[base64_table[i]] = (unsigned char) i;
     }
 
-    dtable['='] = 0;
+    dtable[(unsigned char)'='] = 0;
 
     count = 0;
 

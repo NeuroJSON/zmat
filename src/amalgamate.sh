@@ -65,7 +65,10 @@ echo "/* ======== miniz.h ======== */"
 echo "#ifndef ZMAT_MINIZ_H_INCLUDED"
 echo "#define ZMAT_MINIZ_H_INCLUDED"
 echo "#define MINIZ_NO_ARCHIVE_APIS"
-awk '/^#ifndef MINIZ_NO_ARCHIVE_APIS$/ { exit } { print }' "$MINIZ_H"
+awk '/^#ifndef MINIZ_NO_ARCHIVE_APIS$/ { exit }
+     /^#ifndef MINIZ_NO_ZLIB_COMPATIBLE_NAMES$/ { print "#pragma GCC diagnostic push"; print "#pragma GCC diagnostic ignored \"-Wunused-function\"" }
+     /^#endif \/\* #ifndef MINIZ_NO_ZLIB_COMPATIBLE_NAMES \*\/$/ { print; print "#pragma GCC diagnostic pop"; next }
+     { print }' "$MINIZ_H"
 echo "#endif /* ZMAT_MINIZ_H_INCLUDED */"
 echo ""
 
@@ -99,9 +102,12 @@ IMPL_OPEN
 
 # ---------- miniz.c (strip leading #include "miniz.h" and ZIP archive block) ----------
 echo "/* ======== miniz.c ======== */"
+echo "#pragma GCC diagnostic push"
+echo "#pragma GCC diagnostic ignored \"-Wtype-limits\""
 awk 'NR==1 && /^#include "miniz\.h"$/ { next }
      /^#ifndef MINIZ_NO_ARCHIVE_APIS$/ { exit }
      { print }' "$MINIZ_C"
+echo "#pragma GCC diagnostic pop"
 echo ""
 echo "/* ======== end miniz.c ======== */"
 echo ""

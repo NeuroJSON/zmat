@@ -166,7 +166,7 @@ int  zmat_keylookup(char* origkey, const char* table[]);
  * @param[in] id: zmat error code
  */
 
-char* zmat_error(int id);
+const char* zmat_error(int id);
 
 /**
  * @brief base64_encode - Base64 encode
