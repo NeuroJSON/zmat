@@ -121,14 +121,34 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
  *
  * Identical to zmat_run except that zlib and gzip gain a threaded path.
  *
- * On compression with nthread > 1, the input is deflated in fixed-size blocks
+ * There are two constructions, selected by nthread, and they do not produce the
+ * same bytes:
+ *
+ *   nthread <= -1  the historical single deflate stream, unchanged from
+ *                  zmat_run. Use this to reproduce data written by earlier
+ *                  releases.
+ *   nthread == 0   whatever ZMAT_DEFAULT_NTHREAD selects (blocked, by default).
+ *   nthread >= 1   the blocked construction described below.
+ *
+ * In the blocked construction the input is deflated in fixed-size blocks
  * concurrently, each terminated with Z_FULL_FLUSH so it is independently
  * inflatable, and the blocks are concatenated into one ordinary zlib or gzip
- * stream that any decompressor can read. The output is a pure function of
- * (data, level, blocksize) and is byte-identical however many threads produced
- * it. When offsets is non-NULL it receives a malloc'ed flat index of
- * 2*(nblock+1) entries, laid out as compressed0, uncompressed0, compressed1,
- * ... with a final sentinel row closing the last block; the caller frees it.
+ * stream that any decompressor can read start to finish. Within this
+ * construction the output is a pure function of (data, level, blocksize): it is
+ * byte-identical for nthread of 1, 8 or 32, so a payload can be content
+ * addressed without pinning the thread count of whoever wrote it.
+ *
+ * It is not, and cannot be, identical to the serial construction. Resetting the
+ * LZ77 window at every block boundary is what makes a block independently
+ * inflatable, and it costs compression ratio: negligible on incompressible data
+ * (+0.000% measured on 32 MB of random uint16) but as much as +21% on data whose
+ * redundancy spans the block size, such as a long monotonic counter. Callers who
+ * need the smallest possible output and do not need threading or random access
+ * should pass a negative nthread.
+ *
+ * When offsets is non-NULL it receives a malloc'ed flat index of 2*(nblock+1)
+ * entries, laid out as compressed0, uncompressed0, compressed1, ... with a final
+ * sentinel row closing the last block; the caller frees it.
  *
  * On decompression with nthread > 1 and an index supplied in offsets, the
  * blocks are inflated concurrently into disjoint slices of one allocation. An
