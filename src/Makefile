@@ -50,7 +50,7 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=-fPIC
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -O3 -fPIC $(PTHREADOPT) # -g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -O3 -fPIC # -g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
@@ -75,6 +75,9 @@ else
   endif
   STATICLIBFLAGS=-static-libgcc -static-libstdc++
 endif
+
+# appended after the platform block, which replaces CPPOPT wholesale on Windows
+CPPOPT     +=$(PTHREADOPT)
 
 ifneq ($(HAVE_ZLIB),yes)
   CFLAGS+=-DNO_ZLIB -D_LARGEFILE64_SOURCE=1

@@ -51,7 +51,29 @@
 #include "zmatlib.h"
 
 #ifndef NO_PTHREAD
-    #include <pthread.h>
+    #if defined(_MSC_VER)
+        /* MSVC ships no pthreads, and the Windows wheels are built with it, so
+         * map the handful of primitives used by the block-parallel codec onto
+         * Win32 directly rather than disabling threading on that toolchain or
+         * depending on blosc2's vendored shim being compiled in. */
+        #include <windows.h>
+typedef HANDLE zmat_thread_t;
+typedef CRITICAL_SECTION zmat_mutex_t;
+        #define zmat_mutex_init(m)    (InitializeCriticalSection(m), 0)
+        #define zmat_mutex_lock(m)    EnterCriticalSection(m)
+        #define zmat_mutex_unlock(m)  LeaveCriticalSection(m)
+        #define zmat_mutex_destroy(m) DeleteCriticalSection(m)
+        #define zmat_thread_join(t)   (WaitForSingleObject((t), INFINITE), CloseHandle(t))
+    #else
+        #include <pthread.h>
+typedef pthread_t zmat_thread_t;
+typedef pthread_mutex_t zmat_mutex_t;
+        #define zmat_mutex_init(m)    pthread_mutex_init((m), NULL)
+        #define zmat_mutex_lock(m)    pthread_mutex_lock(m)
+        #define zmat_mutex_unlock(m)  pthread_mutex_unlock(m)
+        #define zmat_mutex_destroy(m) pthread_mutex_destroy(m)
+        #define zmat_thread_join(t)   pthread_join((t), NULL)
+    #endif
 #endif
 
 #ifndef NO_ZLIB
@@ -1149,34 +1171,44 @@ typedef struct {
 } zmat_block;
 
 /** @brief Shared state for the worker pool */
-typedef struct {
+typedef struct zmat_pool_s {
     zmat_block* blocks;
     size_t nblock;
     size_t next;               /**< next block to claim; guarded by lock */
-    pthread_mutex_t lock;
+    zmat_mutex_t lock;
     int level;
     int failed;                /**< set by any worker that errors */
+    void* (*fn)(void*);        /**< the worker, so the Win32 thunk can dispatch */
 } zmat_pool;
+
+#if defined(_MSC_VER)
+/** @brief Win32 entry point: adapts the pthread-shaped worker signature */
+static DWORD WINAPI zmat_thread_thunk(LPVOID arg) {
+    zmat_pool* pool = (zmat_pool*)arg;
+    pool->fn(pool);
+    return 0;
+}
+#endif
 
 /** @brief Claim the next unprocessed block, or return 0 when none are left */
 static int zmat_pool_next(zmat_pool* pool, size_t* idx) {
     int havework = 0;
-    pthread_mutex_lock(&pool->lock);
+    zmat_mutex_lock(&pool->lock);
 
     if (pool->next < pool->nblock && !pool->failed) {
         *idx = pool->next++;
         havework = 1;
     }
 
-    pthread_mutex_unlock(&pool->lock);
+    zmat_mutex_unlock(&pool->lock);
     return havework;
 }
 
 /** @brief Mark the whole job failed so the other workers stop early */
 static void zmat_pool_fail(zmat_pool* pool) {
-    pthread_mutex_lock(&pool->lock);
+    zmat_mutex_lock(&pool->lock);
     pool->failed = 1;
-    pthread_mutex_unlock(&pool->lock);
+    zmat_mutex_unlock(&pool->lock);
 }
 
 /**
@@ -1263,7 +1295,7 @@ static void* zmat_inflate_worker(void* arg) {
 
 /** @brief Run a worker pool over the blocks, joining all threads before return */
 static int zmat_pool_run(zmat_pool* pool, void* (*fn)(void*), int nthread) {
-    pthread_t* tid;
+    zmat_thread_t* tid;
     int i, spawned = 0;
     size_t want = (size_t)nthread;
 
@@ -1275,22 +1307,33 @@ static int zmat_pool_run(zmat_pool* pool, void* (*fn)(void*), int nthread) {
         want = 1;
     }
 
-    if (pthread_mutex_init(&pool->lock, NULL) != 0) {
+    if (zmat_mutex_init(&pool->lock) != 0) {
         return -5;
     }
 
-    tid = (pthread_t*)calloc(want, sizeof(pthread_t));
+    pool->fn = fn;
+    tid = (zmat_thread_t*)calloc(want, sizeof(zmat_thread_t));
 
     if (!tid) {
-        pthread_mutex_destroy(&pool->lock);
+        zmat_mutex_destroy(&pool->lock);
         return -5;
     }
 
     for (i = 0; i < (int)want; i++) {
+#if defined(_MSC_VER)
+        tid[i] = CreateThread(NULL, 0, zmat_thread_thunk, pool, 0, NULL);
+
+        if (tid[i] == NULL) {
+            break;
+        }
+
+#else
+
         if (pthread_create(&tid[i], NULL, fn, pool) != 0) {
             break;
         }
 
+#endif
         spawned++;
     }
 
@@ -1301,11 +1344,11 @@ static int zmat_pool_run(zmat_pool* pool, void* (*fn)(void*), int nthread) {
     }
 
     for (i = 0; i < spawned; i++) {
-        pthread_join(tid[i], NULL);
+        zmat_thread_join(tid[i]);
     }
 
     free(tid);
-    pthread_mutex_destroy(&pool->lock);
+    zmat_mutex_destroy(&pool->lock);
     return pool->failed ? -3 : 0;
 }
 
