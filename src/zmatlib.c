@@ -103,6 +103,17 @@
  */
 #define ZMAT_MIN_OUTBUF 1024
 
+/**
+ * @brief Threads used for zlib/gzip when the caller does not ask for a count.
+ *
+ * Override at build time with -DZMAT_DEFAULT_NTHREAD=N. N=1 makes the threaded
+ * path a no-op in practice; a negative nthread from the caller forces the
+ * historical single-stream output, see zmat_run_indexed.
+ */
+#ifndef ZMAT_DEFAULT_NTHREAD
+    #define ZMAT_DEFAULT_NTHREAD 8
+#endif
+
 #ifdef NO_ZLIB
 int miniz_gzip_uncompress(void* in_data, size_t in_len,
                           void** out_data, size_t* out_len);
@@ -1602,6 +1613,16 @@ int zmat_run_indexed(const size_t inputsize, unsigned char* inputstr, size_t* ou
      * breaks content addressing of the compressed payload; gating on anything
      * always-true would change the output of existing callers. */
     reqthread = (int)flags.param.nthread;
+
+    if (reqthread == 0) {
+        /* caller said nothing: use the build-time default */
+        reqthread = ZMAT_DEFAULT_NTHREAD;
+    }
+
+    /* A negative count is an explicit request for the historical single-stream
+     * output. It is the only way back to those exact bytes now that the
+     * threaded path is the default, and it is needed to reproduce data written
+     * by earlier releases. */
     nthread = (reqthread <= 0) ? 1 : reqthread;
 
 #ifndef NO_PTHREAD

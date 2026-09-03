@@ -16,6 +16,7 @@ option(USE_BLOSC2 "Build with Blosc2 meta-compressor"        ON)
 option(STATIC_LIB "Build static library (OFF = shared)"      ON)
 
 find_package(Matlab)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 
 set(CMAKE_C_FLAGS   "-g -Wall -O3 -fPIC")
@@ -177,8 +178,9 @@ if(USE_BLOSC2)
     if(UNIX AND NOT APPLE)
         target_link_libraries(zmat dl)
     endif()
-elseif(Threads_FOUND AND USE_LZMA AND NOT WIN32)
-    # LZMA SDK uses pthreads for multi-threaded match-finder
+elseif(Threads_FOUND)
+    # pthreads back the block-parallel zlib/gzip path as well as the LZMA SDK's
+    # multi-threaded match-finder, so they are needed whichever codecs are on
     target_link_libraries(zmat Threads::Threads)
 endif()
 

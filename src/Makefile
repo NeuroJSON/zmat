@@ -18,6 +18,14 @@ HAVE_ZSTD  ?=yes
 HAVE_BLOSC2?=yes
 LIBZLIB    ?=-lz
 
+# pthreads back the block-parallel zlib/gzip path (and blosc2's own threading).
+# Linked unconditionally rather than only alongside blosc2, and deliberately
+# not OpenMP: libgomp would be a new hard runtime dependency for a toolbox that
+# ships prebuilt binaries, -static-libgcc below does not cover it, and MATLAB
+# already loads libiomp5 for its BLAS, so a second OpenMP runtime in the same
+# process invites hangs. Build with -DNO_PTHREAD to drop threading entirely.
+PTHREADOPT ?=-pthread
+
 export HAVE_ZLIB HAVE_LZ4 HAVE_ZSTD
 
 MEX?=mex
@@ -42,7 +50,7 @@ PLATFORM = $(shell uname -s)
 DLLFLAG=-fPIC
 OMP=-fopenmp
 
-CPPOPT=-g -Wall -O3 -fPIC # -g -Wall -std=c99 # -DUSE_OS_TIMER
+CPPOPT=-g -Wall -O3 -fPIC $(PTHREADOPT) # -g -Wall -std=c99 # -DUSE_OS_TIMER
 
 OUTPUTFLAG:=-o
 OBJSUFFIX=.o
@@ -156,6 +164,10 @@ else
   INCLUDEDIRS+=-Iblosc2/internal-complibs/zstd
   LIBZLIB+=-Lblosc2/internal-complibs/zstd -lzstd
 endif
+
+# appended last: the HAVE_ZLIB!=yes branch above clears LIBZLIB, so an earlier
+# append would be silently dropped in the default miniz build
+LIBZLIB    +=$(PTHREADOPT)
 
 
 ifeq ($(MAKECMDGOALS),lib)
