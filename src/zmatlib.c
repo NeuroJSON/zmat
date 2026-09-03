@@ -1729,7 +1729,13 @@ int zmat_run_indexed(const size_t inputsize, unsigned char* inputstr, size_t* ou
  */
 
 int zmat_encode(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret) {
-    return zmat_run(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 1);
+    /* Routed through the indexed entry point with a null index so that zlib and
+     * gzip pick up ZMAT_DEFAULT_NTHREAD. This is the path the Fortran binding
+     * and plain C callers take, and it is otherwise identical to zmat_run. */
+    size_t* offsets = NULL;
+    size_t noffsets = 0;
+    return zmat_run_indexed(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 1,
+                            &offsets, &noffsets);
 }
 
 /**
@@ -1744,7 +1750,10 @@ int zmat_encode(const size_t inputsize, unsigned char* inputstr, size_t* outputs
  */
 
 int zmat_decode(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret) {
-    return zmat_run(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 0);
+    size_t* offsets = NULL;
+    size_t noffsets = 0;
+    return zmat_run_indexed(inputsize, inputstr, outputsize, outputbuf, zipid, ret, 0,
+                            &offsets, &noffsets);
 }
 
 /**

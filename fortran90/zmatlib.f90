@@ -83,6 +83,50 @@ module zmatlib
     end function zmat_run
 
 !------------------------------------------------------------------------------
+!> @brief Compression/decompression with an optional block index
+!
+!> Identical to zmat_run except that zlib and gzip gain a threaded path. The
+!> thread count is packed into the low bytes of "level" the same way the MATLAB
+!> and Python bindings do: byte 0 is the compression level, byte 1 the thread
+!> count. A thread count of 0 lets the library choose (ZMAT_DEFAULT_NTHREAD for
+!> zlib and gzip); a negative one forces the historical single deflate stream.
+!
+!> On compression the blocks are closed with Z_FULL_FLUSH so the result stays an
+!> ordinary zlib/gzip stream any decompressor can read, and "offsets" receives a
+!> malloc'ed index of "noffsets" size_t values, laid out as compressed0,
+!> uncompressed0, compressed1, ... with a final sentinel pair. Release it with
+!> zmat_free once done. Pass a c_ptr holding C_NULL_PTR to decline the index.
+!
+!> On decompression, handing back that index inflates the blocks concurrently.
+!> An index that does not describe the stream is rejected in favour of a serial
+!> inflate, so a stale one costs time but never correctness.
+!
+!> @param[in] inputsize: input stream buffer length
+!> @param[in] inputbuf: input stream buffer pointer
+!> @param[out] outputsize: output stream buffer length
+!> @param[out] outputbuf: output stream buffer pointer
+!> @param[in] zipid: compression method id
+!> @param[out] ret: encoder/decoder specific detailed error code (if error occurs)
+!> @param[in] level: packed compression level and thread count
+!> @param[in,out] offsets: block index, see above
+!> @param[in,out] noffsets: number of size_t entries in offsets
+!> @return return the coarse grained zmat error code; detailed error code is in ret.
+!------------------------------------------------------------------------------
+
+    integer(c_int) function zmat_run_indexed(inputsize, inputbuf, outputsize, outputbuf, zipid, ret, level, &
+                                             offsets, noffsets) bind(C)
+      use iso_c_binding, only: c_char,c_size_t,c_int,c_ptr
+      integer(c_size_t), value :: inputsize
+      integer(c_int), value :: zipid, level
+      integer(c_size_t),  intent(out) :: outputsize
+      integer(c_int),  intent(out) :: ret
+      type(c_ptr), value, intent(in)  :: inputbuf
+      type(c_ptr),intent(out) :: outputbuf
+      type(c_ptr),intent(inout) :: offsets
+      integer(c_size_t),intent(inout) :: noffsets
+    end function zmat_run_indexed
+
+!------------------------------------------------------------------------------
 !> @brief Simplified interface to perform compression, same as zmat_run(...,1)
 !
 !> @param[in] inputsize: input stream buffer length
