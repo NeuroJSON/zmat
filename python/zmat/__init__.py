@@ -212,7 +212,17 @@ def decompress(data, method="zlib", info=None):
     return _decompress(data, method=method)
 
 
-def zmat(data, iscompress=1, method="zlib", nthread=1, shuffle=1, typesize=4, info=False):
+def zmat(
+    data,
+    iscompress=1,
+    method="zlib",
+    nthread=8,
+    shuffle=1,
+    typesize=4,
+    info=False,
+    offsets=None,
+    return_offsets=False,
+):
     """Low-level compression/decompression interface with full parameter control.
 
     Mirrors the MATLAB ``[ss, info] = zmat(arr)`` / ``zmat(ss, info)`` pattern
@@ -230,7 +240,11 @@ def zmat(data, iscompress=1, method="zlib", nthread=1, shuffle=1, typesize=4, in
     method : str
         Compression algorithm (default ``'zlib'``).
     nthread : int
-        Thread count for blosc2 codecs (default ``1``).
+        Worker threads. ``0`` (default) means unspecified and lets the library
+        choose: blosc2 uses one thread, while zlib and gzip use the build-time
+        ``ZMAT_DEFAULT_NTHREAD``. A negative value forces zlib/gzip to emit the
+        historical single deflate stream, which is smaller on data whose
+        redundancy spans a block but cannot be inflated in parallel.
     shuffle : int
         Byte-shuffle flag for blosc2: ``0`` = disabled, ``1`` = enabled
         (default ``1``).
@@ -249,10 +263,24 @@ def zmat(data, iscompress=1, method="zlib", nthread=1, shuffle=1, typesize=4, in
           stored metadata.  The method is taken from ``info['method']``;
           the *method* argument is used only as a fallback.
 
+    offsets : sequence of int, optional
+        A block index returned by an earlier compression. Supplying it when
+        decompressing lets zlib and gzip inflate the blocks concurrently. It is
+        only a hint: an index that does not describe the stream is rejected and
+        a serial inflate is used instead, so a stale index costs time but never
+        correctness.
+    return_offsets : bool
+        When true, return ``(data, offsets)`` instead of just ``data``. The
+        index is a flat list laid out as ``compressed0, uncompressed0,
+        compressed1, ...`` with a final sentinel pair closing the last block,
+        and is empty for codecs or sizes that produced no blocks.
+
     Returns
     -------
     bytes
         Compressed or decompressed data when *info* is ``False``.
+    tuple[bytes, list[int]]
+        ``(data, offsets)`` when *return_offsets* is set.
     tuple[bytes, dict | None]
         ``(compressed_bytes, info_dict)`` when *info=True*.
     numpy.ndarray
@@ -272,6 +300,7 @@ def zmat(data, iscompress=1, method="zlib", nthread=1, shuffle=1, typesize=4, in
 
         out = zmat.zmat(data, iscompress=1, method='blosc2zstd',
                         nthread=4, shuffle=1, typesize=8)
+
     """
     _use_shuffle = (shuffle > 0 and "blosc2" not in method and method != "base64")
 
@@ -343,4 +372,6 @@ def zmat(data, iscompress=1, method="zlib", nthread=1, shuffle=1, typesize=4, in
         nthread=nthread,
         shuffle=shuffle,
         typesize=typesize,
+        offsets=offsets,
+        return_offsets=return_offsets,
     )

@@ -45,12 +45,13 @@ COPY_ITEMS = [
 
 def ensure_csrc():
     """Copy C sources from parent directory into csrc/ if needed."""
-    csrc_src = os.path.join(csrc_dir, "src")
-    if os.path.isdir(csrc_src) and os.path.isfile(os.path.join(csrc_src, "zmatlib.c")):
-        return  # already populated
-
     if not os.path.isdir(parent_srcdir):
         return  # no parent sources available (pure sdist build, csrc should be in tree)
+
+    # Note: this used to return early whenever csrc/src/zmatlib.c existed, which
+    # meant a populated csrc was never refreshed -- editing ../src and rebuilding
+    # silently produced a wheel from the previous sources. When the parent tree is
+    # present it is the authority, so copy anything that differs.
 
     parent = os.path.join(here, "..")
     for src_rel, dst_rel in COPY_ITEMS:
