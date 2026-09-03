@@ -117,6 +117,44 @@ typedef union TZMatFlags {
 int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize, unsigned char** outputbuf, const int zipid, int* ret, const int iscompress);
 
 /**
+ * @brief Compression/decompression with an optional block index
+ *
+ * Identical to zmat_run except that zlib and gzip gain a threaded path.
+ *
+ * On compression with nthread > 1, the input is deflated in fixed-size blocks
+ * concurrently, each terminated with Z_FULL_FLUSH so it is independently
+ * inflatable, and the blocks are concatenated into one ordinary zlib or gzip
+ * stream that any decompressor can read. The output is a pure function of
+ * (data, level, blocksize) and is byte-identical however many threads produced
+ * it. When offsets is non-NULL it receives a malloc'ed flat index of
+ * 2*(nblock+1) entries, laid out as compressed0, uncompressed0, compressed1,
+ * ... with a final sentinel row closing the last block; the caller frees it.
+ *
+ * On decompression with nthread > 1 and an index supplied in offsets, the
+ * blocks are inflated concurrently into disjoint slices of one allocation. An
+ * index that does not describe the stream is rejected and the call falls back
+ * to the serial path, so a stale index costs time but never correctness.
+ *
+ * Every other codec, and zlib/gzip with a single thread, is forwarded
+ * unchanged to zmat_run.
+ *
+ * @param[in] inputsize: input stream buffer length
+ * @param[in] inputstr: input stream buffer pointer
+ * @param[out] outputsize: output stream buffer length
+ * @param[out] outputbuf: output stream buffer pointer
+ * @param[in] zipid: compression method id
+ * @param[out] ret: encoder/decoder specific detailed error code
+ * @param[in] iscompress: packed clevel/nthread/shuffle/typesize flags
+ * @param[in,out] offsets: block index, see above; NULL to ignore
+ * @param[in,out] noffsets: number of size_t entries in offsets
+ * @return the coarse grained zmat error code
+ */
+
+int zmat_run_indexed(const size_t inputsize, unsigned char* inputstr, size_t* outputsize,
+                     unsigned char** outputbuf, const int zipid, int* ret, const int iscompress,
+                     size_t** offsets, size_t* noffsets);
+
+/**
  * @brief Simplified interface to perform compression (use default compression level)
  *
  * @param[in] inputsize: input stream buffer length

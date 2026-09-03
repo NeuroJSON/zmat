@@ -45,7 +45,17 @@ function varargout = zmat(varargin)
 %             'blosc2zstd':  blosc2 meta-compressor with zstd compression
 %             'base64': encode or decode use base64 format
 %     options: a series of ('name', value) pairs, supported options include
-%             'nthread': number of threads (default 4); used by lzip, lzma, xz, zstd, blosc2
+%             'nthread': followed by an integer specifying number of threads. It is
+%                     used by lzip, lzma, xz, zstd and the blosc2 meta-compressors,
+%                     and for zlib and gzip it deflates fixed-size blocks
+%                     concurrently, each closed with Z_FULL_FLUSH so the result stays
+%                     an ordinary zlib/gzip stream that any decompressor can read. The
+%                     output is a pure function of the data, level and block size, so
+%                     it does not change with the thread count.
+%             'offsets': followed by a 2-by-N block index previously returned in
+%                     info.offsets; on decompression this lets zlib/gzip inflate the
+%                     blocks concurrently. A mismatched index is ignored rather than
+%                     trusted, falling back to a serial inflate.
 %             'typesize': followed by an integer specifying the number of bytes per data element (used for shuffle)
 %             'shuffle': 0 to disable (default for non-blosc2), 1 to enable byte-shuffle.
 %                     For blosc2 methods the shuffle is applied inside the C layer.
@@ -69,6 +79,11 @@ function varargout = zmat(varargin)
 %                    libraries for details
 %            'level': a copy of the iscompress flag; if non-zero, specifying compression
 %                    level, see above
+%            'offsets': for threaded zlib/gzip compression, a 2-by-(nblock+1) matrix of
+%                    [compressed; uncompressed] byte offsets, one column per block plus
+%                    a final sentinel column closing the last one. Pass it back on
+%                    decompression to inflate the blocks in parallel. Empty for every
+%                    other codec.
 %            'matrixtype': (optional) one of 'diagonal', 'permutation', 'sparse', or
 %                    'range' for special matrix types. Absent for regular dense arrays.
 %                    - 'diagonal': Octave diagonal matrix (e.g. eye(N), diag(v)); only
@@ -226,6 +241,16 @@ if ((strcmp(zipmethod, 'zlib') || strcmp(zipmethod, 'gzip')) && iscompress <= -1
     iscompress = -9;
 end
 
+% On decompression, a block index from a previous compression (info.offsets,
+% or an 'offsets' option) lets zlib/gzip inflate the blocks concurrently. It is
+% only a speed hint: the payload is an ordinary zlib/gzip stream, and an index
+% that does not match it is rejected in favour of a serial inflate.
+offsets = getoption('offsets', [], opt);
+
+if (isempty(offsets) && isstruct(opt) && isfield(opt, 'info') && isstruct(opt.info) && isfield(opt.info, 'offsets'))
+    offsets = opt.info.offsets;
+end
+
 %% wrapper-level byte shuffle: applies to non-blosc2 codecs when info is requested
 do_wrapper_shuffle = (nargout > 1 && shuffle > 0 && iscompress ~= 0 && ...
                       isempty(strfind(zipmethod, 'blosc2')) && ...
@@ -244,7 +269,7 @@ if (do_wrapper_shuffle)
     nelems = numel(raw_bytes) / typesize;
     M = reshape(raw_bytes, typesize, nelems);   % typesize x nelems: col = one element
     shuffled_bytes = reshape(M', 1, []);        % flatten row-major: all byte-0s, then byte-1s...
-    [varargout{1:max(1, nargout)}] = zipmat(shuffled_bytes, iscompress, zipmethod, nthread, 0, 1);
+    [varargout{1:max(1, nargout)}] = zipmat(shuffled_bytes, iscompress, zipmethod, nthread, 0, 1, offsets);
     %% overwrite info with original array metadata and record shuffle state
     varargout{2}.type     = orig_class;
     varargout{2}.size     = orig_size;
@@ -252,7 +277,7 @@ if (do_wrapper_shuffle)
     varargout{2}.shuffle  = shuffle;
     varargout{2}.typesize = typesize;
 else
-    [varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod, nthread, shuffle, typesize);
+    [varargout{1:max(1, nargout)}] = zipmat(input, iscompress, zipmethod, nthread, shuffle, typesize, offsets);
 end
 
 %% store special matrix type info in the output info struct
