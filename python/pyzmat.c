@@ -103,36 +103,24 @@ static TZipMethod pyzmat_method_lookup(const char* method) {
  * @param data: bytes or bytearray input
  * @param iscompress: 1=compress (default), 0=decompress, negative=set level
  * @param method: compression method string (default 'zlib')
- * @param nthread: worker threads. 0, the default, means "unspecified" and lets
- *        the library pick (blosc2 uses 1, zlib/gzip use ZMAT_DEFAULT_NTHREAD);
- *        a negative value forces zlib/gzip's historical single-stream output
+ * @param nthread: number of threads for blosc2 (default 1)
  * @param shuffle: shuffle flag for blosc2 (default 1)
  * @param typesize: element byte size for blosc2 (default 4)
- * @param offsets: on decompression, a block index from a previous compression,
- *        which lets zlib/gzip inflate the blocks concurrently. Only a hint: a
- *        mismatched index is rejected in favour of a serial inflate.
- * @param return_offsets: if true, return (bytes, offsets) instead of bytes
- * @return bytes, or (bytes, list-of-int) when return_offsets is set
+ * @return bytes object with compressed/decompressed data
  */
 static PyObject* pyzmat_zmat(PyObject* self, PyObject* args, PyObject* kwargs) {
     Py_buffer input_buf;
     int iscompress = 1;
     const char* method = "zlib";
-    int nthread = 0;
+    int nthread = 1;
     int shuffle = 1;
     int typesize = 4;
-    PyObject* offsets_in = NULL;
-    int return_offsets = 0;
-    size_t* zoffsets = NULL;
-    size_t noffsets = 0;
 
-    static char* kwlist[] = {"data", "iscompress", "method", "nthread", "shuffle",
-                             "typesize", "offsets", "return_offsets", NULL};
+    static char* kwlist[] = {"data", "iscompress", "method", "nthread", "shuffle", "typesize", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|isiiiOp", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|isiii", kwlist,
                                      &input_buf, &iscompress, &method,
-                                     &nthread, &shuffle, &typesize,
-                                     &offsets_in, &return_offsets)) {
+                                     &nthread, &shuffle, &typesize)) {
         return NULL;
     }
 
@@ -160,51 +148,14 @@ static PyObject* pyzmat_zmat(PyObject* self, PyObject* args, PyObject* kwargs) {
     size_t outputsize = 0;
     int ret = 0;
 
-    /* an index supplied by the caller is only useful when decompressing */
-    if (offsets_in && offsets_in != Py_None && !flags.param.clevel) {
-        PyObject* seq = PySequence_Fast(offsets_in, "offsets must be a sequence of integers");
-
-        if (!seq) {
-            PyBuffer_Release(&input_buf);
-            return NULL;
-        }
-
-        Py_ssize_t cnt = PySequence_Fast_GET_SIZE(seq);
-
-        if (cnt >= 4 && !(cnt & 1)) {
-            zoffsets = (size_t*)malloc((size_t)cnt * sizeof(size_t));
-
-            if (zoffsets) {
-                Py_ssize_t k;
-
-                for (k = 0; k < cnt; k++) {
-                    zoffsets[k] = (size_t)PyLong_AsUnsignedLongLong(PySequence_Fast_GET_ITEM(seq, k));
-                }
-
-                if (PyErr_Occurred()) {
-                    free(zoffsets);
-                    Py_DECREF(seq);
-                    PyBuffer_Release(&input_buf);
-                    return NULL;
-                }
-
-                noffsets = (size_t)cnt;
-            }
-        }
-
-        Py_DECREF(seq);
-    }
-
-    int errcode = zmat_run_indexed(
+    int errcode = zmat_run(
         (size_t)input_buf.len,
         (unsigned char*)input_buf.buf,
         &outputsize,
         &outputbuf,
         zipid,
         &ret,
-        flags.iscompress,
-        &zoffsets,
-        &noffsets
+        flags.iscompress
     );
 
     PyBuffer_Release(&input_buf);
@@ -214,7 +165,6 @@ static PyObject* pyzmat_zmat(PyObject* self, PyObject* args, PyObject* kwargs) {
             free(outputbuf);
         }
 
-        free(zoffsets);
         PyErr_Format(PyExc_RuntimeError, "zmat error %d: %s (status=%d)",
                      errcode, zmat_error(-errcode), ret);
         return NULL;
@@ -226,35 +176,6 @@ static PyObject* pyzmat_zmat(PyObject* self, PyObject* args, PyObject* kwargs) {
         free(outputbuf);
     }
 
-    if (return_offsets) {
-        PyObject* olist;
-
-        if (result && zoffsets && noffsets >= 4) {
-            size_t k;
-            olist = PyList_New((Py_ssize_t)noffsets);
-
-            if (olist) {
-                for (k = 0; k < noffsets; k++) {
-                    PyList_SET_ITEM(olist, (Py_ssize_t)k,
-                                    PyLong_FromUnsignedLongLong((unsigned long long)zoffsets[k]));
-                }
-            }
-        } else {
-            olist = PyList_New(0);
-        }
-
-        free(zoffsets);
-
-        if (!result || !olist) {
-            Py_XDECREF(result);
-            Py_XDECREF(olist);
-            return NULL;
-        }
-
-        return Py_BuildValue("(NN)", result, olist);
-    }
-
-    free(zoffsets);
     return result;
 }
 
@@ -294,27 +215,17 @@ static PyObject* pyzmat_compress(PyObject* self, PyObject* args, PyObject* kwarg
     size_t outputsize = 0;
     int ret = 0;
 
-    /* NULL index: no block index is produced or consumed here, but routing
-     * through the indexed entry point is what lets zlib and gzip use the
-     * build-time default thread count */
-    size_t* zoffsets = NULL;
-    size_t noffsets = 0;
-
-    int errcode = zmat_run_indexed(
+    int errcode = zmat_run(
         (size_t)input_buf.len,
         (unsigned char*)input_buf.buf,
         &outputsize,
         &outputbuf,
         zipid,
         &ret,
-        iscompress,
-        &zoffsets,
-        &noffsets
+        iscompress
     );
 
     PyBuffer_Release(&input_buf);
-
-    free(zoffsets);
 
     if (errcode < 0) {
         if (outputbuf) {
@@ -368,27 +279,17 @@ static PyObject* pyzmat_decompress(PyObject* self, PyObject* args, PyObject* kwa
     size_t outputsize = 0;
     int ret = 0;
 
-    /* NULL index: no block index is produced or consumed here, but routing
-     * through the indexed entry point is what lets zlib and gzip use the
-     * build-time default thread count */
-    size_t* zoffsets = NULL;
-    size_t noffsets = 0;
-
-    int errcode = zmat_run_indexed(
+    int errcode = zmat_run(
         (size_t)input_buf.len,
         (unsigned char*)input_buf.buf,
         &outputsize,
         &outputbuf,
         zipid,
         &ret,
-        0,
-        &zoffsets,
-        &noffsets
+        0
     );
 
     PyBuffer_Release(&input_buf);
-
-    free(zoffsets);
 
     if (errcode < 0) {
         if (outputbuf) {
