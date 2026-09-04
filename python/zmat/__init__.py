@@ -29,7 +29,7 @@ from _zmat import zmat as _zmat_c
 
 __all__ = ["compress", "decompress", "encode", "decode", "zmat"]
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 def _byte_shuffle(data_bytes, typesize):
     """Regroup bytes by position within each element (byte-shuffle filter).
@@ -302,6 +302,10 @@ def zmat(
                         nthread=4, shuffle=1, typesize=8)
 
     """
+    if return_offsets and info is not False:
+        raise ValueError("return_offsets cannot be combined with info; the "
+                         "info forms already return a tuple")
+
     _use_shuffle = (shuffle > 0 and "blosc2" not in method and method != "base64")
 
     # info dict supplied → decompress and reconstruct numpy array
@@ -310,7 +314,8 @@ def zmat(
         # blosc2 shuffle is handled by the C layer; pass it through unchanged
         c_shuffle = shuffle if "blosc2" in actual_method else 0
         raw = _zmat_c(data, iscompress=0, method=actual_method,
-                      nthread=nthread, shuffle=c_shuffle, typesize=typesize)
+                      nthread=nthread, shuffle=c_shuffle, typesize=typesize,
+                      offsets=offsets)
 
         # unshuffle if wrapper-level shuffle was recorded in info
         shuf = info.get("shuffle", 0)
