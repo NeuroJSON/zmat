@@ -44,7 +44,7 @@ if (ismember('c', tests))
     isminiz = zmat('0', 1, 'gzip');
     isminiz = (isminiz(10) == 255);
     if (isminiz)
-        test_zmat('zlib (scalar)', 'zlib', pi, [120 1 1 8 0 247 255 24 45 68 84 251 33 9 64 9 224 2 67]);
+        test_zmat('zlib (scalar)', 'zlib', pi, [120 156 1 8 0 247 255 24 45 68 84 251 33 9 64 9 224 2 67]);
         test_zmat('gzip (scalar)', 'gzip', 'test gzip', [31 139 8 0 0 0 0 0 0 0 1 9 0 246 255 116 101 115 116 32 103 122 105 112 35 1 18 68 9 0 0 0]);
     else
         test_zmat('zlib (scalar)', 'zlib', pi, [120 156 147 208 117 9 249 173 200 233 0 0 9 224 2 67]);
@@ -65,7 +65,7 @@ if (ismember('c', tests))
     test_zmat('base64 (scalar)', 'base64', uint8(100), [90 65 61 61]);
 
     if (isminiz)
-        test_zmat('zlib (array)', 'zlib', uint8([1, 2, 3]), [120 1 1 3 0 252 255 1 2 3 0 13 0 7]);
+        test_zmat('zlib (array)', 'zlib', uint8([1, 2, 3]), [120 156 1 3 0 252 255 1 2 3 0 13 0 7]);
         test_zmat('gzip (array)', 'gzip', single([pi; exp(1)]), [31 139 8 0 0 0 0 0 0 0 1 8 0 247 255 219 15 73 64 84 248 45 64 197 103 247 17 8 0 0 0]);
     else
         test_zmat('zlib (array)', 'zlib', uint8([1, 2, 3]), [120 156 99 100 98 6 0 0 13 0 7]);
@@ -86,8 +86,8 @@ if (ismember('c', tests))
     test_zmat('base64 (array)', 'base64', ['test'; 'zmat'], [100 72 112 108 98 88 78 104 100 72 81 61]);
 
     if (isminiz)
-        test_zmat('zlib (level=9)', 'zlib', 55, [120 1 1 8 0 247 255 0 0 0 0 0 128 75 64 2 94 1 12], 'level', -9);
-        test_zmat('zlib (level=2.6)', 'zlib', 55, [120 1 1 8 0 247 255 0 0 0 0 0 128 75 64 2 94 1 12], 'level', -2.6);
+        test_zmat('zlib (level=9)', 'zlib', 55, [120 218 1 8 0 247 255 0 0 0 0 0 128 75 64 2 94 1 12], 'level', -9);
+        test_zmat('zlib (level=2.6)', 'zlib', 55, [120 94 1 8 0 247 255 0 0 0 0 0 128 75 64 2 94 1 12], 'level', -2.6);
         test_zmat('gzip (level)', 'gzip', 'level 9', [31 139 8 0 0 0 0 0 0 0 1 7 0 248 255 108 101 118 101 108 32 57 182 235 101 120 7 0 0 0], 'level', -9);
     else
         test_zmat('zlib (level=9)', 'zlib', 55, [120 218 99 96 0 130 6 111 7 0 2 94 1 12], 'level', -9);
@@ -105,7 +105,7 @@ if (ismember('c', tests))
     test_zmat('blosc2blosclz (typesize=2)', 'base64', zmat(uint32(magic(4)), 1, 'blosc2blosclz', 'typesize', 2), 'BQEFAkAAAABAAAAATAAAAAAAAAAAAQAAAAAAAAAAAAAkAAAAIAAAABAABQAJAAQAAgALAAcADgADAAoABgAPAA0ACAAMAAEAAAAAAA==');
     test_zmat('blosc2blosclz (typesize=4)', 'base64', zmat(uint32(magic(4)), 1, 'blosc2blosclz', 'typesize', 4), 'BQEXBEAAAABAAAAAYAAAAAAAAAAAAQAAAAAAAAAAAAAQAAAABQAAAAkAAAAEAAAAAgAAAAsAAAAHAAAADgAAAAMAAAAKAAAABgAAAA8AAAANAAAACAAAAAwAAAABAAAA');
     test_zmat('blosc2blosclz (typesize=8)', 'base64', zmat(uint32(magic(4)), 1, 'blosc2blosclz', 'typesize', 8), 'BQEXCEAAAABAAAAAYAAAAAAAAAAAAQAAAAAAAAAAAAAQAAAABQAAAAkAAAAEAAAAAgAAAAsAAAAHAAAADgAAAAMAAAAKAAAABgAAAA8AAAANAAAACAAAAAwAAAABAAAA');
-    test_zmat('blosc2zstd (typesize=2)', 'base64', zmat(single(magic(4)), 1, 'blosc2zstd', 'typesize', 2), 'BQGXAkAAAABAAAAAYAAAAAAAAAAAAQUAAAAAAAAAAAAAAIBBAACgQAAAEEEAAIBAAAAAQAAAMEEAAOBAAABgQQAAQEAAACBBAADAQAAAcEEAAFBBAAAAQQAAQEEAAIA/');
+    test_zmat('blosc2zstd (typesize=2)', 'base64', zmat(single(magic(4)), 1, 'blosc2zstd', 'typesize', 2), 'BQGHAkAAAABAAAAAYAAAAAAAAAAAAQUAAAAAAAAAAAAAAIBBAACgQAAAEEEAAIBAAAAAQAAAMEEAAOBAAABgQQAAQEAAACBBAADAQAAAcEEAAFBBAAAAQQAAQEEAAIA/');
     test_zmat('blosc2zstd (typesize=4)', 'base64', zmat(single(magic(4)), 1, 'blosc2zstd', 'typesize', 4), 'BQGVBEAAAABAAAAAVQAAAAAAAAAAAQUAAAAAAAAAAAAkAAAALQAAACi1L/0gQCUBAOAAAICgEIAAMOBgQCDAcFAAQIBBQEFAQEFBQUE/AgByQxMBFg==');
     test_zmat('blosc2zstd (typesize=8)', 'base64', zmat(single(magic(4)), 1, 'blosc2zstd', 'typesize', 8), 'BQGXCEAAAABAAAAAYAAAAAAAAAAAAQUAAAAAAAAAAAAAAIBBAACgQAAAEEEAAIBAAAAAQAAAMEEAAOBAAABgQQAAQEAAACBBAADAQAAAcEEAAFBBAAAAQQAAQEEAAIA/');
     test_zmat('base64 (no newline)', 'base64', uint8(100), sprintf('ZA==\n'), 'level', 3);
@@ -185,6 +185,10 @@ if (ismember('special', tests))
     %% sparse matrix tests (both MATLAB and Octave)
 
     test_zmat_roundtrip('sparse eye(100)', sparse(eye(100)));
+    % seed first: sprand is the only random input in the suite, and unseeded it
+    % made the reported compressed size differ from run to run, which shows up
+    % as a spurious diff when comparing two runs of the suite
+    rand('state', 1);
     test_zmat_roundtrip('sparse sprand(200,150,0.05)', sprand(200, 150, 0.05), 1e-15);
     test_zmat_roundtrip('sparse specific values', sparse([1 2 3 10], [5 6 7 20], [1.5 -2.3 4.7 100], 50, 50));
     test_zmat_roundtrip('sparse column vector', sparse([3; 0; 0; 7; 0; 0; 0; 0; 0; 11]));

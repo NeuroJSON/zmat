@@ -42,8 +42,15 @@ if (ispc)
 end
 if (~exist('OCTAVE_VERSION', 'builtin'))
     delete(['*', suffix]);
-    CCFLAG = ['CFLAGS=''-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 ' includdir ' -fPIC'' -c'];
-    LINKFLAG = 'CXXLIBS=''$CXXLIBS'' -output ../zipmat -outdir ../';
+    % -pthread backs the block-parallel zlib/gzip path. MSVC has no pthreads
+    % and takes a Win32 code path inside zmatlib.c instead, so the flag is
+    % only added for the gcc-family compilers that understand it.
+    pthreadflag = '';
+    if (~ispc)
+        pthreadflag = ' -pthread';
+    end
+    CCFLAG = ['CFLAGS=''-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 ' includdir ' -fPIC' pthreadflag ''' -c'];
+    LINKFLAG = ['CXXLIBS=''$CXXLIBS' pthreadflag ''' -output ../zipmat -outdir ../'];
     for i = 1:length(filelist)
         fprintf(1, 'mex %s %s\n', CCFLAG, filelist{i});
         eval(sprintf('mex %s %s', CCFLAG, filelist{i}));
@@ -55,8 +62,12 @@ if (~exist('OCTAVE_VERSION', 'builtin'))
     eval(cmd);
 else
     delete('*.o');
-    CCFLAG = ['-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 -c ' includdir];
-    LINKFLAG = '-o ../zipmat';
+    pthreadflag = '';
+    if (~ispc)
+        pthreadflag = ' -pthread';
+    end
+    CCFLAG = ['-O3 -g -DNO_BLOSC2 -DNO_ZSTD -DNO_ZLIB -D_LARGEFILE64_SOURCE=1 -c ' includdir pthreadflag];
+    LINKFLAG = ['-o ../zipmat' pthreadflag];
     for i = 1:length(filelist)
         fprintf(stdout, 'mex %s %s\n', CCFLAG, filelist{i});
         fflush(stdout);

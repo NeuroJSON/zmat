@@ -57,7 +57,7 @@
 
 void zmat_usage();
 
-const char*  metadata[] = {"type", "size", "byte", "method", "status", "level"};
+const char*  metadata[] = {"type", "size", "byte", "method", "status", "level", "offsets"};
 
 /** @brief Mex function for the zmat - an interface to compress/decompress binary data
  *  This is the master function to interface for zipping and unzipping a char/int8 buffer
@@ -216,9 +216,34 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             unsigned char* inputstr = (mxIsChar(prhs[0]) ? (unsigned char*)mxArrayToString(prhs[0]) : (unsigned char*)mxGetData(prhs[0]));
             int errcode = 0;
 
-            // if input buffer is not empty, run main function zmat_run
+            // Block index for threaded zlib/gzip: filled in on compression,
+            // consumed on decompression when the caller passes back the
+            // info.offsets it received earlier. Any other codec ignores it.
+            size_t* zoffsets = NULL;
+            size_t noffsets = 0;
+            double* inoffsets = NULL;
+
+            if (nrhs >= 7 && !mxIsEmpty(prhs[6]) && mxIsNumeric(prhs[6]) && !flags.param.clevel) {
+                size_t cnt = mxGetNumberOfElements(prhs[6]);
+                inoffsets = mxGetPr(prhs[6]);
+
+                if (inoffsets && cnt >= 4 && !(cnt & 1)) {
+                    zoffsets = (size_t*)malloc(cnt * sizeof(size_t));
+
+                    if (zoffsets) {
+                        for (size_t k = 0; k < cnt; k++) {
+                            zoffsets[k] = (size_t)inoffsets[k];
+                        }
+
+                        noffsets = cnt;
+                    }
+                }
+            }
+
+            // if input buffer is not empty, run main function zmat_run_indexed
             if (inputsize > 0) {
-                errcode = zmat_run(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret, flags.iscompress);
+                errcode = zmat_run_indexed(inputsize, inputstr, &outputsize, &outputbuf, zipid, &ret,
+                                           flags.iscompress, &zoffsets, &noffsets);
             }
 
             // test error code
@@ -254,7 +279,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             if (nlhs > 1) {
                 mwSize inputdim[2] = {1, 0}, *dims = (mwSize*)mxGetDimensions(prhs[0]);
                 unsigned int* int64inputdim = NULL;
-                plhs[1] = mxCreateStructMatrix(1, 1, 6, metadata);
+                plhs[1] = mxCreateStructMatrix(1, 1, 7, metadata);
                 mxArray* val = mxCreateString(mxGetClassName(prhs[0]));
                 mxSetFieldByNumber(plhs[1], 0, 0, val);
 
@@ -304,6 +329,27 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
                 val = mxCreateDoubleMatrix(1, 1, mxREAL);
                 *mxGetPr(val) = flags.param.clevel;
                 mxSetFieldByNumber(plhs[1], 0, 5, val);
+
+                // the block index, as a 2-by-nblock+1 matrix of
+                // [compressed; uncompressed] byte offsets; empty when the
+                // codec or thread count did not produce one
+                if (zoffsets && noffsets >= 4) {
+                    val = mxCreateDoubleMatrix(2, noffsets / 2, mxREAL);
+                    double* op = mxGetPr(val);
+
+                    for (size_t k = 0; k < noffsets; k++) {
+                        op[k] = (double)zoffsets[k];
+                    }
+                } else {
+                    val = mxCreateDoubleMatrix(0, 0, mxREAL);
+                }
+
+                mxSetFieldByNumber(plhs[1], 0, 6, val);
+            }
+
+            if (zoffsets) {
+                free(zoffsets);
+                zoffsets = NULL;
             }
 
             if (errcode < 0) {
