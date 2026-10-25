@@ -1575,8 +1575,10 @@ static int zmat_inflate_blocks(const size_t inputsize, unsigned char* inputstr,
     nblock = noffsets / 2 - 1;
     outlen = offsets[2 * nblock + 1];
 
-    /* sanity: the index must stay inside the buffers it describes */
-    if (offsets[2 * nblock] > inputsize || outlen == 0 || outlen > ZMAT_MAX_ALLOC) {
+    /* sanity: the index must stay inside the buffers it describes, and the
+     * first block must start the output -- otherwise its leading bytes would
+     * be returned uninitialized */
+    if (offsets[1] != 0 || offsets[2 * nblock] > inputsize || outlen == 0 || outlen > ZMAT_MAX_ALLOC) {
         return -3;
     }
 

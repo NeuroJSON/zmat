@@ -67,6 +67,7 @@ int main(void) {
                 free(chk); free(cbuf); free(off); free(in);
                 continue;
             }
+            if (gz) inflateEnd(&zs);   /* the probe above */
             memset(&zs,0,sizeof(zs));
             inflateInit2(&zs, gz ? (15|32) : 15);
             zs.next_in = cbuf; zs.avail_in = cs; zs.next_out = chk; zs.avail_out = n + 64;
@@ -97,6 +98,22 @@ int main(void) {
                     ck(nm, 1);
                 }
                 free(bad);
+
+                /* an index whose first block does not start the output must not
+                 * hand back the bytes before it uninitialized */
+                size_t* late = malloc(noff * sizeof(size_t));
+                memcpy(late, off, noff * sizeof(size_t));
+                late[1] = 16;
+                size_t* latep = late; size_t laten = noff;
+                if (zmat_run_indexed(cs, cbuf, &ds, &dbuf, zipid, &ret, pack(0, 8), &latep, &laten) == 0) {
+                    snprintf(nm, sizeof(nm), "%s n=%-9zu index not at 0 -> correct via fallback", gz?"gzip":"zlib", n);
+                    ck(nm, ds == n && !memcmp(dbuf, in, n));
+                    free(dbuf); dbuf = NULL;
+                } else {
+                    snprintf(nm, sizeof(nm), "%s n=%-9zu index not at 0 -> error", gz?"gzip":"zlib", n);
+                    ck(nm, 1);
+                }
+                free(late);
             }
 
             /* thread count must not change the bytes */
