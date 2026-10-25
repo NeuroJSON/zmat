@@ -200,18 +200,16 @@ jobs:
           path: zmat.mltbx
       - name: Install msys2 libraries (Windows only)
         if: ${{ runner.os == 'Windows' }}
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-winpthreads-git
-            base-devel
+        run: |
+          # the runner's preinstalled MSYS2, without refreshing its package database:
+          # the latest mingw-w64 runtime (gcc 16) does not link with MATLAB's mex
+          # (undefined __mingw_fe_dfl_env in libmingwex)
+          /c/msys64/usr/bin/pacman -S --noconfirm --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-zlib
+          echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
       - name: Set up mex gcc (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          echo "MW_MINGW64_LOC=${{ runner.temp }}/msys64/mingw64" >> $GITHUB_ENV
+          echo 'MW_MINGW64_LOC=C:\msys64\mingw64' >> $GITHUB_ENV
           echo 'COMPFLAGS=""' >> $GITHUB_ENV
       - name: Build MATLAB mex
         run: |
