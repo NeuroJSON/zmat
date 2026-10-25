@@ -1,5 +1,5 @@
-ZMAT is written by Qianqian Fang. Qianqian is currently an
-Associate Professor in the Department of Bioengineering at
+ZMAT is written by Qianqian Fang. Qianqian is currently a
+Professor in the Department of Bioengineering at
 Northeastern University.
 
 Address: Dept. of Bioengineering
