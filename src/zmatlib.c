@@ -743,6 +743,17 @@ int zmat_run(const size_t inputsize, unsigned char* inputstr, size_t* outputsize
                         return -3;
                     }
 
+                    /* no progress with room left to write: the input ran out before
+                       the stream ended (truncated data), and inflate would say so
+                       forever; Z_OK with room left is progress (miniz returns it
+                       after a block), so inflate is called again */
+                    if (*ret == Z_BUF_ERROR && zs.avail_out != 0) {
+                        inflateEnd(&zs);
+                        free(*outputbuf);
+                        *outputbuf = NULL;
+                        return -3;
+                    }
+
                     /* output buffer full — need to grow */
                     if (zs.avail_out == 0) {
                         rounds++;

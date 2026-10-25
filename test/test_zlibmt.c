@@ -112,6 +112,28 @@ int main(void) {
 
             free(cbuf); free(off); free(in);
         }
+
+        /* a truncated stream must be an error: inflate then makes no progress
+         * with output room left, and the decoder used to call it forever (a
+         * hang found by fuzzing the JData input of mcx/mmc) */
+        {
+            size_t n = 100000, cs = 0, ds = 0;
+            unsigned char* in = malloc(n);
+            unsigned char* cbuf = NULL; unsigned char* dbuf = NULL;
+            char nm[128];
+            for (size_t i = 0; i < n; i++) in[i] = (unsigned char)(i * 7 % 251);
+            if (zmat_run(n, in, &cs, &cbuf, zipid, &ret, 1) == 0) {
+                snprintf(nm, sizeof(nm), "%s truncated stream -> error, no hang", gz?"gzip":"zlib");
+                ck(nm, zmat_run(cs / 2, cbuf, &ds, &dbuf, zipid, &ret, 0) != 0);
+                free(dbuf); dbuf = NULL;
+                snprintf(nm, sizeof(nm), "%s whole stream after it decodes", gz?"gzip":"zlib");
+                ck(nm, zmat_run(cs, cbuf, &ds, &dbuf, zipid, &ret, 0) == 0 && ds == n && !memcmp(dbuf, in, n));
+                free(dbuf);
+            } else {
+                ck(gz ? "gzip truncated stream: compress" : "zlib truncated stream: compress", 0);
+            }
+            free(cbuf); free(in);
+        }
     }
     printf("\n%s (%d failures)\n", fails ? "FAILURES PRESENT" : "ALL PASS", fails);
     return fails != 0;
