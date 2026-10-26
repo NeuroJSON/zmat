@@ -1,5 +1,29 @@
 = Change Log =
 
+== ZMAT 1.2.0, FangQ <q.fang (a) neu.edu> ==
+
+ 2026-10-25 [e0a9543] [doc] update the author's title to Professor
+ 2026-10-25 [34bd8c3] [ci] build the Windows MATLAB mex with the runner's preinstalled MSYS2
+ 2026-10-25 [d1a1e94] [bug] reject a block index whose first block does not start the output
+ 2026-10-25 [41c4498]*[bug] fail on a truncated zlib/gzip stream instead of looping forever
+ 2026-09-04 [fa6a42b] [feat] reconcile with upstream, nthread default 8, bump to 1.2.0
+ 2026-09-03 [358a02a] [test] fix five stale golden expectations, seed the random input
+ 2026-09-03 [3141a81] [fortran] wire the fortran binding to zmat_run_indexed
+ 2026-09-03 [7c591f1] [python] wire the python binding to zmat_run_indexed
+ 2026-09-03 [79162a1] [doc] clarify that blocked and serial are different streams
+ 2026-09-03 [9e2ebb2] [build] carry threading through every build path, including msvc
+ 2026-09-03 [032bd5f] [build] link pthreads in base build, default zlib/gzip to 8 threads
+ 2026-09-03 [d1f50c4]*[feat] add block-parallel zlib/gzip with pthreads and a block index
+ 2026-05-05 [d3055a8] [header] update zmat.h to remove warnings on c++11 compilers
+ 2026-05-04 [e5a405b] [feat] add make header to create header-only lib include/zmat.h
+ 2026-04-19 [478c60e] [doc] bump python module to 1.1.0, start 1.2.preview
+ 2026-04-19 [2266f75] [ci] fix windows ci build after xz and lzma sdk
+ 2026-04-19 [25d6e8c]*[feat] support xz, multi-threading for xz,lzip,zstd,lzma, update doc,cmake
+ 2026-04-19 [05da8bb] [lzma] add lzma sdk 26.00 from https://www.7-zip.org/sdk.html
+ 2026-04-19 [f07681e]*[feat] support xz/lzma2 with multi-threading support, enable lzip multi-threading
+ 2026-04-17 [2a2a934] [feat] enable shuffle for all codecs,accept info in zmat.zmat
+ 2026-04-15 [2da9980] [cmake] add the missing cmakefile
+
 == ZMAT 1.0.0 (Foxy the Fantastic Mr. Fox), FangQ <q.fang (a) neu.edu> ==
 
 AI coding assistant Claude has been used in the development of this release.
