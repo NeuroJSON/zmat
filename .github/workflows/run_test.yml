@@ -34,20 +34,6 @@ jobs:
             echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
             echo "$PWD/octave/octave-10.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
           fi
-      - name: Install msys2 libraries (Windows only)
-        if: ${{ runner.os == 'Windows' }}
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-winpthreads-git
-            base-devel
-      - name: Set up mex gcc (Windows only)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          echo "MW_MINGW64_LOC=${{ runner.temp }}/msys64/mingw64" >> $GITHUB_ENV
       - name: Build static library
         run: |
           which gcc
@@ -72,20 +58,27 @@ jobs:
           fi
       - name: Build octave mex (Windows only)
         if: ${{ runner.os == 'Windows' }}
-        shell: msys2 {0}
         run: |
-          export PATH="/mingw64/bin":"$PWD/octave/octave-10.3.0-w64-64/mingw64/bin":$PATH
-          which gcc
-          gcc -v
+          # use the gcc bundled with Octave, matching its MinGW headers; a rolling MSYS2
+          # gcc (16 and newer) clashes with them
+          OCT="$PWD/octave/octave-10.3.0-w64-64/mingw64"
+          export PATH="$OCT/bin:$PATH"
+          which gcc && gcc --version | head -1
+          # winpthread statically when Octave ships its static library, otherwise its DLL
+          # goes into the package next to the mex
+          PTHREAD=""
+          [[ -f "$OCT/lib/libwinpthread.a" ]] && PTHREAD="-Wl,-Bstatic -lwinpthread -Wl,-Bdynamic"
           # Octave 10's mkoctfile links the mex against the stable liboctmex alone, so
           # it loads in any Octave 10 or newer; no liboctinterp, which ties it to 10.3
-          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector -L/mingw64/lib -Wl,-Bstatic -lz -lwinpthread -Wl,-Bdynamic -v -s"
+          make -C src oct CC=gcc CXX=g++ USERLINKOPT="-static-libgcc -static-libstdc++ -fstack-protector $PTHREAD -v -s"
           objdump -p zipmat.mex | grep "DLL Name:"
           if objdump -p zipmat.mex | grep -iE "DLL Name: *(liboctinterp|liboctave)"; then
               echo "the mex links an Octave library other than liboctmex"; exit 1
           fi
+          if objdump -p zipmat.mex | grep -qi "DLL Name: *libwinpthread-1.dll"; then
+              cp "$OCT/bin/libwinpthread-1.dll" .
+          fi
           strip zipmat.mex
-          echo "$PWD/octave/octave-10.3.0-w64-64/mingw64/bin" >> $GITHUB_PATH
       - name: Build octave mex (Linux and Mac)
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -149,6 +142,7 @@ jobs:
       - name: Zip zmat
         run: |
           mv zipmat.mex zmat/octave/${{ env.OCTAVE_ARCH }}
+          [[ -f libwinpthread-1.dll ]] && mv libwinpthread-1.dll zmat/octave/${{ env.OCTAVE_ARCH }}
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             7z a -tzip packages/zmat-octave-${{ env.RELEASE_TAG }}.zip zmat
           else
