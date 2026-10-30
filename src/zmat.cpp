@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <exception>
+#include <string>
 #include <ctype.h>
 #include <assert.h>
 
@@ -206,8 +207,18 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         flags.param.typesize = val[0];
     }
 
+    if (!(mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && !mxIsComplex(prhs[0])) || mxIsLogical(prhs[0]))) {
+        mexErrMsgTxt("the input must be a char, non-complex numerical or logical array");
+    }
+
+    /**
+     * an error caught below is raised after the try block: mexErrMsgTxt does not
+     * return, and raised inside it, the catch (...) would swallow it
+     */
+    std::string errmsg;
+
     try {
-        if (mxIsChar(prhs[0]) || (mxIsNumeric(prhs[0]) && !mxIsComplex(prhs[0])) || mxIsLogical(prhs[0])) {
+        {
             int ret = -1;
             mwSize inputsize = mxGetNumberOfElements(prhs[0]) * mxGetElementSize(prhs[0]);
             mwSize buflen[2] = {0};
@@ -355,15 +366,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
             if (errcode < 0) {
                 mexWarnMsgTxt(zmat_error(-errcode));
             }
-        } else {
-            mexErrMsgTxt("the input must be a char, non-complex numerical or logical array");
         }
     } catch (const char* err) {
-        mexPrintf("Error: %s\n", err);
+        errmsg = std::string("Error: ") + err;
     } catch (const std::exception& err) {
-        mexPrintf("C++ Error: %s\n", err.what());
+        errmsg = std::string("C++ Error: ") + err.what();
     } catch (...) {
-        mexPrintf("Unknown Exception\n");
+        errmsg = "Unknown Exception";
+    }
+
+    if (!errmsg.empty()) {
+        mexErrMsgTxt(errmsg.c_str());
     }
 
     return;
